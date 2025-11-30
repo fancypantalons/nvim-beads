@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Beads Template Show Schema",
+  "description": "Schema for the JSON output of the 'bd template show --json' command.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "The name of the template."
+    },
+    "description": {
+      "type": "string",
+      "description": "A detailed description of the template's purpose or content."
+    },
+    "type": {
+      "type": "string",
+      "description": "The issue type associated with this template (e.g., bug, feature, task, epic, chore)."
+    },
+    "priority": {
+      "type": "integer",
+      "description": "The default priority for issues created using this template (0-4)."
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "A list of default labels to apply to issues created from this template."
+    },
+    "design": {
+      "type": "string",
+      "description": "Default design notes or considerations for issues created with this template."
+    },
+    "acceptance_criteria": {
+      "type": "string",
+      "description": "Default acceptance criteria for issues created with this template."
+    }
+  },
+  "required": [
+    "name",
+    "description",
+    "type",
+    "priority",
+    "labels"
+  ]
+}

@@ -1,4 +1,4 @@
---- The file that auto-creates documentation for `plugin_template`.
+--- The file that auto-creates documentation for `nvim_beads`.
 
 local vimdoc = require("mega.vimdoc")
 
@@ -16,12 +16,12 @@ local function main()
 
     vimdoc.make_documentation_files({
         {
-            source = vim.fs.joinpath(root, "lua", "plugin_template", "init.lua"),
-            destination = vim.fs.joinpath(root, "doc", "plugin_template_api.txt"),
+            source = vim.fs.joinpath(root, "lua", "nvim_beads", "init.lua"),
+            destination = vim.fs.joinpath(root, "doc", "nvim_beads_api.txt"),
         },
         {
-            source = vim.fs.joinpath(root, "lua", "plugin_template", "types.lua"),
-            destination = vim.fs.joinpath(root, "doc", "plugin_template_types.txt"),
+            source = vim.fs.joinpath(root, "lua", "nvim_beads", "types.lua"),
+            destination = vim.fs.joinpath(root, "doc", "nvim_beads_types.txt"),
         },
     }, { enable_module_in_signature = false })
 end

@@ -1,16 +1,16 @@
-*plugin-template-news.txt*
+*nvim-beads-news.txt*
 
-Notable changes since PluginTemplate 1.10
+Notable changes since YourPlugin 1.10
 
 
 ===============================================================================
-NEW FEATURES                                     *plugin-template-new-features*
+NEW FEATURES                                     *nvim-beads-new-features*
 
 - Added `mdformat` support for auto-formatting Markdown files!
 
 
 ===============================================================================
-BREAKING CHANGES                                 *plugin-template-new-breaking*
+BREAKING CHANGES                                 *nvim-beads-new-breaking*
 
 n/a
 

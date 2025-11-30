@@ -1,0 +1,167 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Beads Issue List",
+  "description": "A list of issues from the 'bd list --json' command.",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/IssueWithCounts"
+  },
+  "definitions": {
+    "IssueWithCounts": {
+      "type": "object",
+      "description": "An issue with its dependency counts.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique identifier for the issue."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the issue."
+        },
+        "description": {
+          "type": "string",
+          "description": "The detailed description of the issue."
+        },
+        "design": {
+          "type": "string",
+          "description": "The proposed design for the issue resolution."
+        },
+        "acceptance_criteria": {
+          "type": "string",
+          "description": "The criteria that must be met for the issue to be considered done."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes or context."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the issue.",
+          "enum": ["open", "in_progress", "blocked", "closed"]
+        },
+        "priority": {
+          "type": "integer",
+          "description": "The priority of the issue (0=critical, 4=backlog).",
+          "minimum": 0,
+          "maximum": 4
+        },
+        "issue_type": {
+          "type": "string",
+          "description": "The type of the issue.",
+          "enum": ["bug", "feature", "task", "epic", "chore"]
+        },
+        "assignee": {
+          "type": "string",
+          "description": "The person assigned to the issue."
+        },
+        "estimated_minutes": {
+          "type": ["integer", "null"],
+          "description": "The estimated time in minutes to complete the issue."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the issue was created."
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The timestamp when the issue was last updated."
+        },
+        "closed_at": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "The timestamp when the issue was closed."
+        },
+        "close_reason": {
+          "type": "string",
+          "description": "The reason why the issue was closed."
+        },
+        "external_ref": {
+          "type": ["string", "null"],
+          "description": "An external reference, e.g., to a GitHub or JIRA issue."
+        },
+        "compaction_level": {
+          "type": "integer"
+        },
+        "compacted_at": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "compacted_at_commit": {
+          "type": ["string", "null"]
+        },
+        "original_size": {
+          "type": "integer"
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "A list of labels associated with the issue."
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Dependency"
+          },
+          "description": "A list of dependencies for the issue."
+        },
+        "comments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Comment"
+          },
+          "description": "A list of comments on the issue."
+        },
+        "dependency_count": {
+          "type": "integer",
+          "description": "The number of issues that this issue depends on."
+        },
+        "dependent_count": {
+          "type": "integer",
+          "description": "The number of issues that depend on this issue."
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "description",
+        "status",
+        "priority",
+        "issue_type",
+        "created_at",
+        "updated_at",
+        "dependency_count",
+        "dependent_count"
+      ]
+    },
+    "Dependency": {
+      "type": "object",
+      "properties": {
+        "issue_id": { "type": "string" },
+        "depends_on_id": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["blocks", "related", "parent-child", "discovered-from"]
+        },
+        "created_at": { "type": "string", "format": "date-time" },
+        "created_by": { "type": "string" }
+      },
+      "required": ["issue_id", "depends_on_id", "type", "created_at", "created_by"]
+    },
+    "Comment": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "integer" },
+        "issue_id": { "type": "string" },
+        "author": { "type": "string" },
+        "text": { "type": "string" },
+        "created_at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "issue_id", "author", "text", "created_at"]
+    }
+  }
+}

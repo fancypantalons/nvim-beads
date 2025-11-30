@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Beads Doctor Result",
+  "description": "Schema for the output of the 'bd doctor --json' command.",
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "The filesystem path that was checked."
+    },
+    "checks": {
+      "type": "array",
+      "description": "A list of health checks performed.",
+      "items": {
+        "$ref": "#/definitions/DoctorCheck"
+      }
+    },
+    "overall_ok": {
+      "type": "boolean",
+      "description": "A boolean indicating if all checks passed without errors."
+    },
+    "cli_version": {
+      "type": "string",
+      "description": "The version of the beads CLI that ran the check."
+    }
+  },
+  "required": [
+    "path",
+    "checks",
+    "overall_ok",
+    "cli_version"
+  ],
+  "definitions": {
+    "DoctorCheck": {
+      "type": "object",
+      "description": "The result of a single health check.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the check."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the check.",
+          "enum": ["ok", "warning", "error"]
+        },
+        "message": {
+          "type": "string",
+          "description": "A human-readable message describing the result of the check."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Optional additional details about the check result."
+        },
+        "fix": {
+          "type": "string",
+          "description": "An optional suggested fix for any issues found."
+        }
+      },
+      "required": [
+        "name",
+        "status",
+        "message"
+      ]
+    }
+  }
+}
