@@ -38,3 +38,6 @@ end, {
     nargs = 1,
     desc = "Open a beads issue by ID in a buffer",
 })
+
+-- Setup autocommands for beads:// buffers
+require("nvim-beads.autocmds").setup()

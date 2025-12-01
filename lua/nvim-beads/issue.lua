@@ -152,9 +152,17 @@ function M.open_issue_buffer(issue_id)
   local final_lines = {}
   for _, line in ipairs(lines) do
     if line:find('\n') then
-      -- Split on newlines
-      for subline in line:gmatch('[^\n]+') do
-        table.insert(final_lines, subline)
+      -- Split on newlines, preserving blank lines
+      local pos = 1
+      while pos <= #line do
+        local next_newline = line:find('\n', pos, true)
+        if next_newline then
+          table.insert(final_lines, line:sub(pos, next_newline - 1))
+          pos = next_newline + 1
+        else
+          table.insert(final_lines, line:sub(pos))
+          break
+        end
       end
     else
       table.insert(final_lines, line)
@@ -400,11 +408,26 @@ function M.diff_issues(original, modified)
   end
 
   -- Compare dependencies (set-based comparison)
-  local orig_deps = original.dependencies or {}
+  -- Extract dependency IDs from original (bd show returns objects with id, title, dependency_type)
+  -- but parser returns just strings (IDs), and we only want to compare "blocks" type dependencies
+  local orig_deps_raw = original.dependencies or {}
+  local orig_dep_ids = {}
+  for _, dep in ipairs(orig_deps_raw) do
+    if type(dep) == 'table' then
+      -- From bd show --json: filter for "blocks" type only
+      if dep.dependency_type == 'blocks' then
+        table.insert(orig_dep_ids, dep.id)
+      end
+    else
+      -- From tests or other sources: already a string ID
+      table.insert(orig_dep_ids, dep)
+    end
+  end
+
   local mod_deps = modified.dependencies or {}
 
-  local deps_added = set_difference(mod_deps, orig_deps)
-  local deps_removed = set_difference(orig_deps, mod_deps)
+  local deps_added = set_difference(mod_deps, orig_dep_ids)
+  local deps_removed = set_difference(orig_dep_ids, mod_deps)
 
   if deps_added or deps_removed then
     changes.dependencies = {}
