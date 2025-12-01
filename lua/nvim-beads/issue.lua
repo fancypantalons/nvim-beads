@@ -672,4 +672,74 @@ function M.open_new_issue_buffer(issue_type, template_data)
   return true
 end
 
+---Build bd create command from parsed issue data
+---@param parsed_issue table The parsed issue from parse_markdown_to_issue
+---@return string|nil command The bd create command string or nil if validation fails
+---@return string|nil error Error message if validation fails
+function M.build_create_command(parsed_issue)
+  -- Validate required fields
+  if not parsed_issue.title or parsed_issue.title == '' then
+    return nil, 'Title is required'
+  end
+
+  if not parsed_issue.issue_type or parsed_issue.issue_type == '' then
+    return nil, 'Issue type is required'
+  end
+
+  -- Start building the command
+  local parts = {'bd create'}
+
+  -- Add title (required, positional argument)
+  table.insert(parts, shell_escape(parsed_issue.title))
+
+  -- Add type (required flag)
+  table.insert(parts, '--type ' .. parsed_issue.issue_type)
+
+  -- Add optional fields only if populated
+
+  -- Priority
+  if parsed_issue.priority then
+    table.insert(parts, '--priority ' .. tostring(parsed_issue.priority))
+  end
+
+  -- Description
+  if parsed_issue.description and parsed_issue.description ~= '' then
+    table.insert(parts, '--description ' .. shell_escape(parsed_issue.description))
+  end
+
+  -- Acceptance criteria
+  if parsed_issue.acceptance_criteria and parsed_issue.acceptance_criteria ~= '' then
+    table.insert(parts, '--acceptance ' .. shell_escape(parsed_issue.acceptance_criteria))
+  end
+
+  -- Design
+  if parsed_issue.design and parsed_issue.design ~= '' then
+    table.insert(parts, '--design ' .. shell_escape(parsed_issue.design))
+  end
+
+  -- Labels (comma-separated)
+  if parsed_issue.labels and #parsed_issue.labels > 0 then
+    local labels_str = table.concat(parsed_issue.labels, ',')
+    table.insert(parts, '--labels ' .. shell_escape(labels_str))
+  end
+
+  -- Parent
+  if parsed_issue.parent and parsed_issue.parent ~= '' then
+    table.insert(parts, '--parent ' .. parsed_issue.parent)
+  end
+
+  -- Dependencies (comma-separated with type prefix)
+  if parsed_issue.dependencies and #parsed_issue.dependencies > 0 then
+    -- Format as 'blocks:id1,blocks:id2' since these are blocking dependencies
+    local deps = {}
+    for _, dep_id in ipairs(parsed_issue.dependencies) do
+      table.insert(deps, 'blocks:' .. dep_id)
+    end
+    local deps_str = table.concat(deps, ',')
+    table.insert(parts, '--deps ' .. shell_escape(deps_str))
+  end
+
+  return table.concat(parts, ' '), nil
+end
+
 return M
