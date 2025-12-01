@@ -37,10 +37,14 @@ function M.execute_bd(args, opts)
 
     -- Check for command execution errors
     if result.code ~= 0 then
+        local stderr = result.stderr
+        if not stderr or stderr == '' then
+            stderr = 'no error output'
+        end
         local error_msg = string.format(
             'bd command failed (exit code %d): %s',
             result.code,
-            result.stderr or 'no error output'
+            stderr
         )
         return nil, error_msg
     end
