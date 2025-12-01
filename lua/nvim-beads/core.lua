@@ -3,6 +3,57 @@
 
 local M = {}
 
+--- Execute a bd command asynchronously with JSON output parsing
+---@param args table List of command arguments (e.g., {'ready', '--json'})
+---@param opts? table Options for vim.system (optional)
+---@return table|nil result Parsed JSON result on success, nil on failure
+---@return string? error Error message on failure, nil on success
+function M.execute_bd(args, opts)
+    -- Validate arguments
+    if type(args) ~= 'table' then
+        return nil, 'execute_bd: args must be a table'
+    end
+
+    -- Ensure --json flag is present
+    local has_json = false
+    for _, arg in ipairs(args) do
+        if arg == '--json' then
+            has_json = true
+            break
+        end
+    end
+    if not has_json then
+        table.insert(args, '--json')
+    end
+
+    -- Build command
+    local cmd = vim.list_extend({'bd'}, args)
+
+    -- Default options: text=true for clean output
+    local system_opts = vim.tbl_extend('force', {text = true}, opts or {})
+
+    -- Execute command synchronously
+    local result = vim.system(cmd, system_opts):wait()
+
+    -- Check for command execution errors
+    if result.code ~= 0 then
+        local error_msg = string.format(
+            'bd command failed (exit code %d): %s',
+            result.code,
+            result.stderr or 'no error output'
+        )
+        return nil, error_msg
+    end
+
+    -- Parse JSON output
+    local ok, parsed = pcall(vim.json.decode, result.stdout)
+    if not ok then
+        return nil, string.format('Failed to parse JSON output: %s', parsed)
+    end
+
+    return parsed, nil
+end
+
 --- Show ready (unblocked) beads issues
 function M.show_ready()
     -- TODO: Implement show_ready functionality

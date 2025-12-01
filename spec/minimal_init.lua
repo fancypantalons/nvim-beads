@@ -37,4 +37,5 @@ vim.cmd("runtime plugin/nvim_beads.lua")
 
 require("lualine").setup()
 
-require("nvim_beads._core.configuration").initialize_data_if_needed()
+-- TODO: Uncomment when configuration module exists
+-- require("nvim_beads._core.configuration").initialize_data_if_needed()
