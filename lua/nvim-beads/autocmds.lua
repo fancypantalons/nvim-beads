@@ -24,7 +24,7 @@ function M.on_buffer_write(args)
 
     -- Check if this is a new issue buffer
     if buffer_name:match("beads://issue/new") then
-        M.handle_new_issue_save(bufnr, buffer_name)
+        M.handle_new_issue_save(bufnr)
         return
     end
 
@@ -41,7 +41,7 @@ end
 --- Handle save workflow for new issue buffers
 ---@param bufnr number The buffer number
 ---@param buffer_name string The buffer name
-function M.handle_new_issue_save(bufnr, buffer_name)
+function M.handle_new_issue_save(bufnr)
     -- Get buffer content
     local buffer_content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
@@ -230,7 +230,7 @@ function M.handle_existing_issue_save(bufnr, issue_id)
 
     -- Execute commands sequentially
     local all_success = true
-    for i, cmd in ipairs(commands) do
+    for _, cmd in ipairs(commands) do
         -- Execute command via shell
         local cmd_result = vim.fn.system(cmd)
         local exit_code = vim.v.shell_error

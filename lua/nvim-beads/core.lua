@@ -62,8 +62,23 @@ end
 
 --- Show list of all beads issues
 function M.show_list()
-    -- TODO: Implement show_list functionality
-    vim.notify("nvim-beads: show_list not yet implemented", vim.log.levels.INFO)
+    local has_telescope, telescope = pcall(require, "telescope")
+    if not has_telescope then
+        vim.notify(
+            "nvim-beads: Telescope not found. Install telescope.nvim or use :Beads ready/list/create",
+            vim.log.levels.WARN
+        )
+        return
+    end
+
+    -- Load the extension if not already loaded
+    if not telescope.extensions.nvim_beads then
+        telescope.load_extension("nvim_beads")
+    end
+
+    -- Call the default telescope picker
+    telescope.extensions.nvim_beads.nvim_beads()
+    return
 end
 
 --- Fetch template for a given issue type
@@ -88,9 +103,37 @@ function M.fetch_template(issue_type)
 end
 
 --- Create a new beads issue
-function M.create_issue()
-    -- TODO: Implement create_issue functionality
-    vim.notify("nvim-beads: create_issue not yet implemented", vim.log.levels.INFO)
+function M.create_issue(args)
+    -- Validate that we have exactly one argument
+    if #args == 0 then
+        vim.notify("BeadsCreateIssue: missing issue type. Usage: :BeadsCreateIssue <type>", vim.log.levels.ERROR)
+        vim.notify("Valid types: bug, feature, task, epic, chore", vim.log.levels.INFO)
+        return
+    end
+
+    if #args > 1 then
+        vim.notify("BeadsCreateIssue: too many arguments. Usage: :BeadsCreateIssue <type>", vim.log.levels.ERROR)
+        return
+    end
+
+    local issue_type = args[1]
+
+    -- Fetch the template
+    local core = require("nvim-beads.core")
+    local template, err = core.fetch_template(issue_type)
+
+    if err then
+        vim.notify("BeadsCreateIssue: " .. err, vim.log.levels.ERROR)
+        return
+    end
+
+    -- Open new issue buffer with template
+    local issue = require("nvim-beads.issue")
+    local success = issue.open_new_issue_buffer(issue_type, template)
+
+    if not success then
+        vim.notify("BeadsCreateIssue: Failed to create issue buffer", vim.log.levels.ERROR)
+    end
 end
 
 return M

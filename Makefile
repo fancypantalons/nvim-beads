@@ -25,7 +25,7 @@ llscheck: download-dependencies
 	VIMRUNTIME="`nvim --clean --headless --cmd 'lua io.write(os.getenv("VIMRUNTIME"))' --cmd 'quit'`" llscheck --configpath $(CONFIGURATION) .
 
 luacheck:
-	luacheck lua plugin scripts spec
+	luacheck --no-color lua plugin scripts spec
 
 check-stylua:
 	stylua lua plugin scripts spec --color always --check

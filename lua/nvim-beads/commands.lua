@@ -9,19 +9,19 @@ local M = {}
 
 ---@type table<string, Subcommand>
 local subcommands = {
-    ready = {
-        impl = function(args, opts)
-            require("nvim-beads.core").show_ready()
-        end,
-    },
     list = {
         impl = function(args, opts)
             require("nvim-beads.core").show_list()
         end,
     },
     create = {
-        impl = function(args, opts)
-            require("nvim-beads.core").create_issue()
+        impl = function(args)
+            require("nvim-beads.core").create_issue(args)
+        end,
+    },
+    open = {
+        impl = function(args)
+            require("nvim-beads.issue").open_issue_buffer(args[1])
         end,
     },
 }
@@ -30,27 +30,6 @@ local subcommands = {
 ---@param opts table Command options from nvim_create_user_command
 function M.execute(opts)
     local fargs = opts.fargs
-
-    if #fargs == 0 then
-        -- No subcommand: open Telescope picker (lazy-loaded)
-        local has_telescope, telescope = pcall(require, "telescope")
-        if not has_telescope then
-            vim.notify(
-                "nvim-beads: Telescope not found. Install telescope.nvim or use :Beads ready/list/create",
-                vim.log.levels.WARN
-            )
-            return
-        end
-
-        -- Load the extension if not already loaded
-        if not telescope.extensions.nvim_beads then
-            telescope.load_extension("nvim_beads")
-        end
-
-        -- Call the default telescope picker
-        telescope.extensions.nvim_beads.nvim_beads()
-        return
-    end
 
     local subcmd_name = fargs[1]
     local subcmd = subcommands[subcmd_name]
