@@ -39,5 +39,45 @@ end, {
     desc = "Open a beads issue by ID in a buffer",
 })
 
+-- Command to create a new issue with template
+vim.api.nvim_create_user_command("BeadsCreateIssue", function(opts)
+    local args = opts.fargs
+
+    -- Validate that we have exactly one argument
+    if #args == 0 then
+        vim.notify("BeadsCreateIssue: missing issue type. Usage: :BeadsCreateIssue <type>", vim.log.levels.ERROR)
+        vim.notify("Valid types: bug, feature, task, epic, chore", vim.log.levels.INFO)
+        return
+    end
+
+    if #args > 1 then
+        vim.notify("BeadsCreateIssue: too many arguments. Usage: :BeadsCreateIssue <type>", vim.log.levels.ERROR)
+        return
+    end
+
+    local issue_type = args[1]
+
+    -- Fetch the template
+    local core = require("nvim-beads.core")
+    local template, err = core.fetch_template(issue_type)
+
+    if err then
+        vim.notify("BeadsCreateIssue: " .. err, vim.log.levels.ERROR)
+        return
+    end
+
+    -- TODO: Pass template to buffer manager (to be implemented in next issue)
+    vim.notify(string.format("Template fetched for type '%s' (buffer creation not yet implemented)", issue_type), vim.log.levels.INFO)
+end, {
+    nargs = "+",
+    desc = "Create a new beads issue from template",
+    complete = function(arg_lead, cmdline, cursor_pos)
+        local valid_types = {"bug", "feature", "task", "epic", "chore"}
+        return vim.tbl_filter(function(type)
+            return type:find(arg_lead) == 1
+        end, valid_types)
+    end,
+})
+
 -- Setup autocommands for beads:// buffers
 require("nvim-beads.autocmds").setup()

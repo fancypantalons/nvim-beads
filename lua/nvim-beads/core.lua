@@ -70,6 +70,26 @@ function M.show_list()
     vim.notify("nvim-beads: show_list not yet implemented", vim.log.levels.INFO)
 end
 
+--- Fetch template for a given issue type
+---@param issue_type string The issue type (bug, feature, task, epic, chore)
+---@return table|nil template Parsed template data on success, nil on failure
+---@return string? error Error message on failure, nil on success
+function M.fetch_template(issue_type)
+    -- Validate issue type
+    local valid_types = {bug = true, feature = true, task = true, epic = true, chore = true}
+    if not valid_types[issue_type] then
+        return nil, string.format("Invalid issue type '%s'. Must be one of: bug, feature, task, epic, chore", issue_type)
+    end
+
+    -- Execute bd template show command
+    local result, err = M.execute_bd({'template', 'show', issue_type})
+    if err then
+        return nil, err
+    end
+
+    return result, nil
+end
+
 --- Create a new beads issue
 function M.create_issue()
     -- TODO: Implement create_issue functionality
