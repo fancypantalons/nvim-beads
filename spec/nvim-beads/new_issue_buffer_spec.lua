@@ -48,15 +48,15 @@ describe("nvim-beads.issue", function()
             notifications = {}
 
             -- Mock vim.api functions
-            vim.api.nvim_create_buf = function(listed, scratch)
+            vim.api.nvim_create_buf = function(_, _)
                 return created_bufnr
             end
 
-            vim.api.nvim_buf_set_name = function(bufnr, name)
+            vim.api.nvim_buf_set_name = function(_, name)
                 buffer_name = name
             end
 
-            vim.api.nvim_buf_set_lines = function(bufnr, start, end_line, strict_indexing, lines)
+            vim.api.nvim_buf_set_lines = function(_, _, _, _, lines)
                 buffer_lines = lines
             end
 
@@ -73,7 +73,7 @@ describe("nvim-beads.issue", function()
                 current_buf = bufnr
             end
 
-            vim.api.nvim_win_set_cursor = function(win, pos)
+            vim.api.nvim_win_set_cursor = function(_, pos)
                 cursor_position = pos
             end
 

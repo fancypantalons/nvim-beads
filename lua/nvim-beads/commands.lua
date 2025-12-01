@@ -10,7 +10,7 @@ local M = {}
 ---@type table<string, Subcommand>
 local subcommands = {
     list = {
-        impl = function(args, opts)
+        impl = function()
             require("nvim-beads.core").show_list()
         end,
     },
@@ -47,9 +47,8 @@ end
 --- Completion for :Beads command
 ---@param arg_lead string The leading portion of the argument being completed
 ---@param cmdline string The entire command line
----@param cursor_pos number The cursor position in the command line
 ---@return string[] List of completion candidates
-function M.complete(arg_lead, cmdline, cursor_pos)
+function M.complete(arg_lead, cmdline)
     -- Parse subcommand and its arguments
     local subcmd, subcmd_arg_lead = cmdline:match("^['<,'>]*Beads[!]*%s+(%S+)%s+(.*)$")
 

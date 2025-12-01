@@ -74,7 +74,7 @@ describe("BeadsCreateIssue command", function()
 
     describe("valid issue type handling", function()
         it('should accept "bug" as valid type', function()
-            vim.system = function(cmd, opts)
+            vim.system = function(_, _)
                 return {
                     wait = function()
                         return {
@@ -94,7 +94,7 @@ describe("BeadsCreateIssue command", function()
         end)
 
         it('should accept "feature" as valid type', function()
-            vim.system = function(cmd, opts)
+            vim.system = function(_, _)
                 return {
                     wait = function()
                         return {
@@ -114,7 +114,7 @@ describe("BeadsCreateIssue command", function()
         end)
 
         it('should accept "task" as valid type', function()
-            vim.system = function(cmd, opts)
+            vim.system = function(_, _)
                 return {
                     wait = function()
                         return {
@@ -134,7 +134,7 @@ describe("BeadsCreateIssue command", function()
         end)
 
         it('should accept "epic" as valid type', function()
-            vim.system = function(cmd, opts)
+            vim.system = function(_, _)
                 return {
                     wait = function()
                         return {
@@ -154,7 +154,7 @@ describe("BeadsCreateIssue command", function()
         end)
 
         it('should accept "chore" as valid type', function()
-            vim.system = function(cmd, opts)
+            vim.system = function(_, _)
                 return {
                     wait = function()
                         return {
@@ -190,7 +190,7 @@ describe("BeadsCreateIssue command", function()
                 local issue_type = args[1]
 
                 local core = require("nvim-beads.core")
-                local template, err = core.fetch_template(issue_type)
+                local _, err = core.fetch_template(issue_type)
 
                 if err then
                     vim.notify("BeadsCreateIssue: " .. err, vim.log.levels.ERROR)
@@ -208,7 +208,7 @@ describe("BeadsCreateIssue command", function()
 
     describe("command completion", function()
         it("should provide all valid types as completion candidates", function()
-            local complete_func = function(arg_lead, cmdline, cursor_pos)
+            local complete_func = function(arg_lead, _, _)
                 local valid_types = { "bug", "feature", "task", "epic", "chore" }
                 return vim.tbl_filter(function(type)
                     return type:find(arg_lead) == 1
@@ -226,7 +226,7 @@ describe("BeadsCreateIssue command", function()
         end)
 
         it('should filter completion by prefix: "ta"', function()
-            local complete_func = function(arg_lead, cmdline, cursor_pos)
+            local complete_func = function(arg_lead, _, _)
                 local valid_types = { "bug", "feature", "task", "epic", "chore" }
                 return vim.tbl_filter(function(type)
                     return type:find(arg_lead) == 1
@@ -240,7 +240,7 @@ describe("BeadsCreateIssue command", function()
         end)
 
         it('should filter completion by prefix: "f"', function()
-            local complete_func = function(arg_lead, cmdline, cursor_pos)
+            local complete_func = function(arg_lead, _, _)
                 local valid_types = { "bug", "feature", "task", "epic", "chore" }
                 return vim.tbl_filter(function(type)
                     return type:find(arg_lead) == 1
@@ -254,7 +254,7 @@ describe("BeadsCreateIssue command", function()
         end)
 
         it("should return empty list for no matches", function()
-            local complete_func = function(arg_lead, cmdline, cursor_pos)
+            local complete_func = function(arg_lead, _, _)
                 local valid_types = { "bug", "feature", "task", "epic", "chore" }
                 return vim.tbl_filter(function(type)
                     return type:find(arg_lead) == 1

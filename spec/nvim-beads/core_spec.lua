@@ -46,7 +46,7 @@ describe("nvim-beads.core", function()
         describe("successful command execution", function()
             it("should parse JSON output correctly", function()
                 -- Mock successful command execution
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -70,7 +70,7 @@ describe("nvim-beads.core", function()
             it("should automatically add --json flag if not present", function()
                 local called_with_json = false
 
-                vim.system = function(cmd, opts)
+                vim.system = function(cmd, _)
                     -- Check if --json flag is present
                     for _, arg in ipairs(cmd) do
                         if arg == "--json" then
@@ -90,7 +90,7 @@ describe("nvim-beads.core", function()
                     }
                 end
 
-                local result, err = core.execute_bd({ "ready" })
+                local _, err = core.execute_bd({ "ready" })
                 assert.is_nil(err)
                 assert.is_true(called_with_json)
             end)
@@ -98,7 +98,7 @@ describe("nvim-beads.core", function()
             it("should not duplicate --json flag if already present", function()
                 local json_count = 0
 
-                vim.system = function(cmd, opts)
+                vim.system = function(cmd, _)
                     -- Count how many times --json appears
                     for _, arg in ipairs(cmd) do
                         if arg == "--json" then
@@ -117,7 +117,7 @@ describe("nvim-beads.core", function()
                     }
                 end
 
-                local result, err = core.execute_bd({ "ready", "--json" })
+                local _, err = core.execute_bd({ "ready", "--json" })
                 assert.is_nil(err)
                 assert.equals(1, json_count)
             end)
@@ -125,7 +125,7 @@ describe("nvim-beads.core", function()
             it("should pass text=true option to vim.system", function()
                 local received_opts = nil
 
-                vim.system = function(cmd, opts)
+                vim.system = function(_, opts)
                     received_opts = opts
 
                     return {
@@ -139,7 +139,7 @@ describe("nvim-beads.core", function()
                     }
                 end
 
-                local result, err = core.execute_bd({ "ready" })
+                local _, err = core.execute_bd({ "ready" })
                 assert.is_nil(err)
                 assert.is_not_nil(received_opts)
                 assert.is_true(received_opts.text)
@@ -148,7 +148,7 @@ describe("nvim-beads.core", function()
             it("should allow custom options to override defaults", function()
                 local received_opts = nil
 
-                vim.system = function(cmd, opts)
+                vim.system = function(_, opts)
                     received_opts = opts
 
                     return {
@@ -162,7 +162,7 @@ describe("nvim-beads.core", function()
                     }
                 end
 
-                local result, err = core.execute_bd({ "ready" }, { timeout = 5000 })
+                local _, err = core.execute_bd({ "ready" }, { timeout = 5000 })
                 assert.is_nil(err)
                 assert.is_not_nil(received_opts)
                 assert.equals(5000, received_opts.timeout)
@@ -172,7 +172,7 @@ describe("nvim-beads.core", function()
 
         describe("command failure handling", function()
             it("should return error when command fails with non-zero exit code", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -193,7 +193,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should handle empty stderr in error message", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -213,7 +213,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should handle nil stderr in error message", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -234,7 +234,7 @@ describe("nvim-beads.core", function()
 
         describe("JSON parsing error handling", function()
             it("should return error when output is not valid JSON", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -253,7 +253,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should return error when JSON is incomplete", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -272,7 +272,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should return error when JSON is empty string", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -293,7 +293,7 @@ describe("nvim-beads.core", function()
 
         describe("complex JSON structures", function()
             it("should parse nested objects correctly", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -312,7 +312,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should parse arrays with multiple elements", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -334,7 +334,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should handle null values in JSON", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -357,7 +357,7 @@ describe("nvim-beads.core", function()
     describe("fetch_template", function()
         describe("issue type validation", function()
             it("should accept valid issue type: bug", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -375,7 +375,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should accept valid issue type: feature", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -393,7 +393,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should accept valid issue type: task", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -411,7 +411,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should accept valid issue type: epic", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -429,7 +429,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should accept valid issue type: chore", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -473,7 +473,7 @@ describe("nvim-beads.core", function()
             it("should execute correct bd command with type", function()
                 local executed_cmd = nil
 
-                vim.system = function(cmd, opts)
+                vim.system = function(cmd, _)
                     executed_cmd = cmd
 
                     return {
@@ -487,7 +487,7 @@ describe("nvim-beads.core", function()
                     }
                 end
 
-                local result, err = core.fetch_template("task")
+                local _, err = core.fetch_template("task")
                 assert.is_nil(err)
                 assert.is_not_nil(executed_cmd)
                 assert.equals("bd", executed_cmd[1])
@@ -499,7 +499,7 @@ describe("nvim-beads.core", function()
             it("should include --json flag in command", function()
                 local executed_cmd = nil
 
-                vim.system = function(cmd, opts)
+                vim.system = function(cmd, _)
                     executed_cmd = cmd
 
                     return {
@@ -513,7 +513,7 @@ describe("nvim-beads.core", function()
                     }
                 end
 
-                local result, err = core.fetch_template("bug")
+                local _, err = core.fetch_template("bug")
                 assert.is_nil(err)
                 assert.is_not_nil(executed_cmd)
 
@@ -530,12 +530,13 @@ describe("nvim-beads.core", function()
 
         describe("template parsing", function()
             it("should parse template JSON correctly", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
                                 code = 0,
-                                stdout = '{"title": "Test Title", "type": "task", "priority": 2, "description": "Test description"}',
+                                stdout = '{"title": "Test Title", "type": "task", '
+                                       .. '"priority": 2, "description": "Test description"}',
                                 stderr = "",
                             }
                         end,
@@ -552,12 +553,15 @@ describe("nvim-beads.core", function()
             end)
 
             it("should handle template with all fields", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
                                 code = 0,
-                                stdout = '{"title": "", "type": "feature", "priority": 1, "description": "Desc", "design": "Design", "acceptance_criteria": "AC", "labels": ["label1"], "parent": null, "dependencies": []}',
+                                stdout = '{"title": "", "type": "feature", '
+                                       .. '"priority": 1, "description": "Desc", '
+                                       .. '"design": "Design", "acceptance_criteria": "AC", '
+                                       .. '"labels": ["label1"], "parent": null, "dependencies": []}',
                                 stderr = "",
                             }
                         end,
@@ -577,7 +581,7 @@ describe("nvim-beads.core", function()
 
         describe("error handling", function()
             it("should return error when bd command fails", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {
@@ -596,7 +600,7 @@ describe("nvim-beads.core", function()
             end)
 
             it("should return error when JSON parsing fails", function()
-                vim.system = function(cmd, opts)
+                vim.system = function(_, _)
                     return {
                         wait = function()
                             return {

@@ -23,7 +23,7 @@ local issue_module = require("nvim-beads.issue")
 local function create_issue_previewer()
     return previewers.new_buffer_previewer({
         title = "Issue Preview",
-        define_preview = function(self, entry, status)
+        define_preview = function(self, entry)
             -- Extract issue_id from entry.value
             local issue_id = entry.value.id
 
@@ -83,15 +83,6 @@ local function create_issue_previewer()
     })
 end
 
---- Run the `:Telescope nvim_beads ready` command to show ready issues
----
----@param opts telescope.CommandOptions The Telescope UI / layout options
----
-local function ready(opts)
-    -- TODO: Implement telescope picker for ready issues
-    vim.notify("nvim-beads: Telescope ready picker not yet implemented", vim.log.levels.INFO)
-end
-
 --- Run the `:Telescope nvim_beads list` command to show all issues
 ---
 ---@param opts telescope.CommandOptions The Telescope UI / layout options
@@ -132,7 +123,7 @@ local function list(opts)
             }),
             sorter = conf.generic_sorter(opts),
             previewer = create_issue_previewer(),
-            attach_mappings = function(prompt_bufnr, map)
+            attach_mappings = function(prompt_bufnr)
                 actions.select_default:replace(function()
                     local selection = action_state.get_selected_entry()
                     actions.close(prompt_bufnr)
@@ -146,7 +137,6 @@ end
 
 return telescope.register_extension({
     exports = {
-        ready = ready,
         list = list,
         nvim_beads = list, -- Default action
     },

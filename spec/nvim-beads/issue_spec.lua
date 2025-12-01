@@ -500,15 +500,15 @@ describe("nvim-beads.issue", function()
             notifications = {}
 
             -- Mock vim.api functions
-            vim.api.nvim_create_buf = function(listed, scratch)
+            vim.api.nvim_create_buf = function(_, _)
                 return created_bufnr
             end
 
-            vim.api.nvim_buf_set_name = function(bufnr, name)
+            vim.api.nvim_buf_set_name = function(_, name)
                 buffer_name = name
             end
 
-            vim.api.nvim_buf_set_lines = function(bufnr, start, end_line, strict_indexing, lines)
+            vim.api.nvim_buf_set_lines = function(_, _, _, _, lines)
                 buffer_lines = lines
             end
 
@@ -603,7 +603,7 @@ describe("nvim-beads.issue", function()
             it("should return false and notify error when bd command fails", function()
                 local core = require("nvim-beads.core")
                 local original_execute_bd = core.execute_bd
-                core.execute_bd = function(args)
+                core.execute_bd = function(_)
                     return nil, "Command failed: bd not found"
                 end
 
@@ -622,7 +622,7 @@ describe("nvim-beads.issue", function()
             it("should return false when issue data is invalid", function()
                 local core = require("nvim-beads.core")
                 local original_execute_bd = core.execute_bd
-                core.execute_bd = function(args)
+                core.execute_bd = function(_)
                     return {}, nil -- Empty array
                 end
 
@@ -639,7 +639,7 @@ describe("nvim-beads.issue", function()
             it("should return false when result array contains invalid issue", function()
                 local core = require("nvim-beads.core")
                 local original_execute_bd = core.execute_bd
-                core.execute_bd = function(args)
+                core.execute_bd = function(_)
                     return { {} }, nil -- Array with empty object
                 end
 
@@ -658,8 +658,7 @@ describe("nvim-beads.issue", function()
             before_each(function()
                 -- Mock successful bd execution
                 local core = require("nvim-beads.core")
-                local original_execute_bd = core.execute_bd
-                core.execute_bd = function(args)
+                core.execute_bd = function(_)
                     return {
                         {
                             id = "bd-1",
@@ -684,7 +683,7 @@ describe("nvim-beads.issue", function()
             it("should create buffer with correct name for longer issue IDs", function()
                 -- Mock bd execution for longer ID
                 local core = require("nvim-beads.core")
-                core.execute_bd = function(args)
+                core.execute_bd = function(_)
                     return {
                         {
                             id = "nvim-beads-p69",
@@ -753,7 +752,7 @@ describe("nvim-beads.issue", function()
         describe("integration with format_issue_to_markdown", function()
             it("should format complete issue correctly in buffer", function()
                 local core = require("nvim-beads.core")
-                core.execute_bd = function(args)
+                core.execute_bd = function(_)
                     return {
                         {
                             id = "bd-20",

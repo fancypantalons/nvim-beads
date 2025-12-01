@@ -3,7 +3,6 @@
 
 describe("autocmd save workflow", function()
     local autocmds
-    local issue_module
     local core_module
     local original_vim_system
     local original_notify
@@ -20,7 +19,6 @@ describe("autocmd save workflow", function()
         package.loaded["nvim-beads.core"] = nil
 
         autocmds = require("nvim-beads.autocmds")
-        issue_module = require("nvim-beads.issue")
         core_module = require("nvim-beads.core")
 
         -- Save original functions
@@ -38,7 +36,7 @@ describe("autocmd save workflow", function()
         -- Mock vim.v with writable shell_error
         mock_shell_error = 0
         vim.v = setmetatable({}, {
-            __index = function(t, k)
+            __index = function(_, k)
                 if k == "shell_error" then
                     return mock_shell_error
                 end
