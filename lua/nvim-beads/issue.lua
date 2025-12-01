@@ -304,4 +304,283 @@ function M.parse_markdown_to_issue(buffer_content)
   return issue
 end
 
+---Compare two issue states and return structured changes
+---@param original table The original issue state (from bd show --json)
+---@param modified table The modified issue state (from parse_markdown_to_issue)
+---@return table changes Structured table of changes by field type
+function M.diff_issues(original, modified)
+  local changes = {}
+
+  -- Helper function to convert array to set for efficient lookup
+  local function to_set(arr)
+    local set = {}
+    if arr then
+      for _, v in ipairs(arr) do
+        set[v] = true
+      end
+    end
+    return set
+  end
+
+  -- Helper function to compute set difference (items in a but not in b)
+  local function set_difference(a, b)
+    local a_set = to_set(a)
+    local b_set = to_set(b)
+    local diff = {}
+
+    for item, _ in pairs(a_set) do
+      if not b_set[item] then
+        table.insert(diff, item)
+      end
+    end
+
+    return #diff > 0 and diff or nil
+  end
+
+  -- Helper function to normalize nil and empty string
+  local function normalize(value)
+    if value == nil or value == '' then
+      return nil
+    end
+    return value
+  end
+
+  -- Compare metadata fields (title, priority, assignee)
+  local metadata = {}
+  local has_metadata_changes = false
+
+  if original.title ~= modified.title then
+    metadata.title = modified.title
+    has_metadata_changes = true
+  end
+
+  if original.priority ~= modified.priority then
+    metadata.priority = modified.priority
+    has_metadata_changes = true
+  end
+
+  -- Handle assignee (can be added, removed, or changed)
+  local orig_assignee = normalize(original.assignee)
+  local mod_assignee = normalize(modified.assignee)
+
+  if orig_assignee ~= mod_assignee then
+    -- Use empty string to indicate removal (since nil means "no change")
+    if mod_assignee == nil then
+      metadata.assignee = ''
+    else
+      metadata.assignee = mod_assignee
+    end
+    has_metadata_changes = true
+  end
+
+  if has_metadata_changes then
+    changes.metadata = metadata
+  end
+
+  -- Compare status
+  if original.status ~= modified.status then
+    changes.status = modified.status
+  end
+
+  -- Compare labels (set-based comparison)
+  local orig_labels = original.labels or {}
+  local mod_labels = modified.labels or {}
+
+  local labels_added = set_difference(mod_labels, orig_labels)
+  local labels_removed = set_difference(orig_labels, mod_labels)
+
+  if labels_added or labels_removed then
+    changes.labels = {}
+    if labels_added then
+      changes.labels.add = labels_added
+    end
+    if labels_removed then
+      changes.labels.remove = labels_removed
+    end
+  end
+
+  -- Compare dependencies (set-based comparison)
+  local orig_deps = original.dependencies or {}
+  local mod_deps = modified.dependencies or {}
+
+  local deps_added = set_difference(mod_deps, orig_deps)
+  local deps_removed = set_difference(orig_deps, mod_deps)
+
+  if deps_added or deps_removed then
+    changes.dependencies = {}
+    if deps_added then
+      changes.dependencies.add = deps_added
+    end
+    if deps_removed then
+      changes.dependencies.remove = deps_removed
+    end
+  end
+
+  -- Compare parent field
+  local orig_parent = normalize(original.parent)
+  local mod_parent = normalize(modified.parent)
+
+  if orig_parent ~= mod_parent then
+    -- Use empty string to indicate removal (since nil means "no change")
+    if mod_parent == nil then
+      changes.parent = ''
+    else
+      changes.parent = mod_parent
+    end
+  end
+
+  -- Compare text sections (description, acceptance_criteria, design, notes)
+  local sections = {}
+  local section_fields = {'description', 'acceptance_criteria', 'design', 'notes'}
+
+  for _, field in ipairs(section_fields) do
+    local orig_value = normalize(original[field])
+    local mod_value = modified[field]  -- Don't normalize modified value to detect nil -> ''
+
+    -- Detect changes, including nil -> '' and vice versa
+    if orig_value ~= mod_value then
+      -- Store the modified value (could be '', which is different from nil)
+      sections[field] = mod_value or ''
+    end
+  end
+
+  if next(sections) then
+    changes.sections = sections
+  end
+
+  return changes
+end
+
+---Escape a string for safe use in shell commands
+---@param str string The string to escape
+---@return string escaped The escaped string suitable for shell command arguments
+local function shell_escape(str)
+  if not str then
+    return '""'
+  end
+
+  -- Use single quotes to avoid most shell interpretation
+  -- Escape any single quotes by replacing ' with '\''
+  local escaped = str:gsub("'", "'\\''")
+  return "'" .. escaped .. "'"
+end
+
+---Generate bd CLI commands to apply changes from diff_issues
+---@param issue_id string The issue ID (e.g., "bd-1")
+---@param changes table The changes table from diff_issues()
+---@return string[] commands List of bd command strings to execute in order
+function M.generate_update_commands(issue_id, changes)
+  local commands = {}
+
+  -- Helper to add a command
+  local function add_cmd(cmd)
+    table.insert(commands, cmd)
+  end
+
+  -- Process in order: parent/deps first, then labels, then status, then metadata/text
+
+  -- 1. Handle parent changes (may need to remove old parent first)
+  if changes.parent ~= nil then
+    if changes.parent == '' then
+      -- Parent removed - need to find and remove the old parent-child dependency
+      -- Note: The caller will need to know the old parent ID to remove it
+      -- For now, we'll just note this in comments - actual removal would require
+      -- knowing the original parent ID from the original issue state
+      -- This is handled by the caller checking the original.dependencies array
+      -- and removing any parent-child type dependencies first
+      add_cmd('bd dep remove ' .. issue_id .. ' <parent-id>')
+    else
+      -- Parent added or changed
+      add_cmd('bd dep add ' .. issue_id .. ' ' .. changes.parent .. ' --type parent-child')
+    end
+  end
+
+  -- 2. Handle dependency changes
+  if changes.dependencies then
+    -- Remove dependencies first
+    if changes.dependencies.remove then
+      for _, dep_id in ipairs(changes.dependencies.remove) do
+        add_cmd('bd dep remove ' .. issue_id .. ' ' .. dep_id)
+      end
+    end
+    -- Then add new dependencies
+    if changes.dependencies.add then
+      for _, dep_id in ipairs(changes.dependencies.add) do
+        add_cmd('bd dep add ' .. issue_id .. ' ' .. dep_id .. ' --type blocks')
+      end
+    end
+  end
+
+  -- 3. Handle label changes
+  if changes.labels then
+    -- Remove labels first
+    if changes.labels.remove then
+      for _, label in ipairs(changes.labels.remove) do
+        add_cmd('bd label remove ' .. issue_id .. ' ' .. label)
+      end
+    end
+    -- Then add new labels
+    if changes.labels.add then
+      for _, label in ipairs(changes.labels.add) do
+        add_cmd('bd label add ' .. issue_id .. ' ' .. label)
+      end
+    end
+  end
+
+  -- 4. Handle status changes
+  if changes.status then
+    if changes.status == 'closed' then
+      add_cmd('bd close ' .. issue_id)
+    elseif changes.status == 'open' then
+      add_cmd('bd reopen ' .. issue_id)
+    else
+      -- in_progress or blocked
+      add_cmd('bd update ' .. issue_id .. ' --status ' .. changes.status)
+    end
+  end
+
+  -- 5. Handle metadata and text section changes
+  -- We can combine these into a single bd update command with multiple flags
+  local update_parts = {'bd update ' .. issue_id}
+
+  if changes.metadata then
+    if changes.metadata.title then
+      table.insert(update_parts, '--title ' .. shell_escape(changes.metadata.title))
+    end
+    if changes.metadata.priority then
+      table.insert(update_parts, '--priority ' .. tostring(changes.metadata.priority))
+    end
+    if changes.metadata.assignee ~= nil then
+      if changes.metadata.assignee == '' then
+        -- Empty string means removal
+        table.insert(update_parts, '--assignee ""')
+      else
+        table.insert(update_parts, '--assignee ' .. shell_escape(changes.metadata.assignee))
+      end
+    end
+  end
+
+  if changes.sections then
+    if changes.sections.description ~= nil then
+      table.insert(update_parts, '--description ' .. shell_escape(changes.sections.description))
+    end
+    if changes.sections.acceptance_criteria ~= nil then
+      table.insert(update_parts, '--acceptance ' .. shell_escape(changes.sections.acceptance_criteria))
+    end
+    if changes.sections.design ~= nil then
+      table.insert(update_parts, '--design ' .. shell_escape(changes.sections.design))
+    end
+    if changes.sections.notes ~= nil then
+      table.insert(update_parts, '--notes ' .. shell_escape(changes.sections.notes))
+    end
+  end
+
+  -- Only add the update command if there are actual updates
+  if #update_parts > 1 then
+    add_cmd(table.concat(update_parts, ' '))
+  end
+
+  return commands
+end
+
 return M
