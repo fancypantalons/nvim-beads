@@ -168,9 +168,16 @@ vim.api.nvim_set_hl(0, "YourPluginTelescopeSecondary", {link="Question"})
 ## Commands
 
 ```vim
+:Beads          " Open Telescope picker (requires telescope.nvim)
 :Beads ready    " Show ready (unblocked) issues
 :Beads list     " List all issues
 :Beads create   " Create a new issue
+```
+
+**Note**: The bare `:Beads` command requires telescope.nvim to be installed and will automatically load the extension. If you prefer to load the extension manually in your config, add:
+
+```lua
+require('telescope').load_extension('nvim_beads')
 ```
 
 ## Keymaps

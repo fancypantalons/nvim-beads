@@ -32,7 +32,23 @@ function M.execute(opts)
     local fargs = opts.fargs
 
     if #fargs == 0 then
-        vim.notify("nvim-beads: No subcommand provided. Try :Beads ready", vim.log.levels.WARN)
+        -- No subcommand: open Telescope picker (lazy-loaded)
+        local has_telescope, telescope = pcall(require, "telescope")
+        if not has_telescope then
+            vim.notify(
+                "nvim-beads: Telescope not found. Install telescope.nvim or use :Beads ready/list/create",
+                vim.log.levels.WARN
+            )
+            return
+        end
+
+        -- Load the extension if not already loaded
+        if not telescope.extensions.nvim_beads then
+            telescope.load_extension("nvim_beads")
+        end
+
+        -- Call the default telescope picker
+        telescope.extensions.nvim_beads.nvim_beads()
         return
     end
 
