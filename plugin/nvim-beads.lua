@@ -66,8 +66,13 @@ vim.api.nvim_create_user_command("BeadsCreateIssue", function(opts)
         return
     end
 
-    -- TODO: Pass template to buffer manager (to be implemented in next issue)
-    vim.notify(string.format("Template fetched for type '%s' (buffer creation not yet implemented)", issue_type), vim.log.levels.INFO)
+    -- Open new issue buffer with template
+    local issue = require("nvim-beads.issue")
+    local success = issue.open_new_issue_buffer(issue_type, template)
+
+    if not success then
+        vim.notify("BeadsCreateIssue: Failed to create issue buffer", vim.log.levels.ERROR)
+    end
 end, {
     nargs = "+",
     desc = "Create a new beads issue from template",

@@ -22,12 +22,154 @@ function M.on_buffer_write(args)
   local bufnr = args.buf
   local buffer_name = vim.api.nvim_buf_get_name(bufnr)
 
+  -- Check if this is a new issue buffer
+  if buffer_name:match('beads://issue/new') then
+    M.handle_new_issue_save(bufnr, buffer_name)
+    return
+  end
+
   -- Extract issue ID from buffer name (beads://issue/<id>)
   local issue_id = buffer_name:match('beads://issue/(.+)$')
   if not issue_id then
     vim.notify('nvim-beads: Invalid buffer name format', vim.log.levels.ERROR)
     return
   end
+
+  M.handle_existing_issue_save(bufnr, issue_id)
+end
+
+--- Handle save workflow for new issue buffers
+---@param bufnr number The buffer number
+---@param buffer_name string The buffer name
+function M.handle_new_issue_save(bufnr, buffer_name)
+  -- Get buffer content
+  local buffer_content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+
+  -- Parse buffer content
+  local issue_module = require('nvim-beads.issue')
+  local ok, parsed_issue = pcall(issue_module.parse_markdown_to_issue, buffer_content)
+  if not ok then
+    vim.notify(
+      string.format('nvim-beads: Failed to parse buffer: %s', parsed_issue),
+      vim.log.levels.ERROR
+    )
+    return
+  end
+
+  -- Validate title is non-empty
+  if not parsed_issue.title or parsed_issue.title == '' or parsed_issue.title == '(new)' then
+    vim.notify('nvim-beads: Title is required to create issue', vim.log.levels.ERROR)
+    return
+  end
+
+  -- Build create command
+  local create_cmd, build_err = issue_module.build_create_command(parsed_issue)
+  if build_err then
+    vim.notify(
+      string.format('nvim-beads: Failed to build create command: %s', build_err),
+      vim.log.levels.ERROR
+    )
+    return
+  end
+
+  -- Add --json flag for programmatic output
+  -- Discard stderr as bd emits additional messages there
+  create_cmd = create_cmd .. ' --json 2>/dev/null'
+
+  -- Execute create command
+  local output = vim.fn.system(create_cmd)
+  local exit_code = vim.v.shell_error
+
+  if exit_code ~= 0 then
+    vim.notify(
+      string.format(
+        'nvim-beads: Failed to create issue (exit %d): %s',
+        exit_code,
+        output
+      ),
+      vim.log.levels.ERROR
+    )
+    return
+  end
+
+  -- Extract new issue ID from output
+  local new_id, extract_err = issue_module.extract_id_from_create_output(output)
+  if extract_err then
+    vim.notify(
+      string.format('nvim-beads: Failed to extract issue ID: %s', extract_err),
+      vim.log.levels.ERROR
+    )
+    return
+  end
+
+  -- Rename buffer to use the new issue ID
+  local new_buffer_name = string.format('beads://issue/%s', new_id)
+  vim.api.nvim_buf_set_name(bufnr, new_buffer_name)
+
+  -- Fetch the authoritative state from bd
+  local core = require('nvim-beads.core')
+  local result, err = core.execute_bd({ 'show', new_id })
+  if err then
+    vim.notify(
+      string.format('nvim-beads: Failed to fetch created issue %s: %s', new_id, err),
+      vim.log.levels.ERROR
+    )
+    return
+  end
+
+  -- Extract issue from result array
+  local created_issue = nil
+  if type(result) == 'table' and #result > 0 then
+    created_issue = result[1]
+  end
+
+  if not created_issue or not created_issue.id then
+    vim.notify(
+      string.format('nvim-beads: Invalid issue data for %s', new_id),
+      vim.log.levels.ERROR
+    )
+    return
+  end
+
+  -- Format the created issue
+  local updated_lines = issue_module.format_issue_to_markdown(created_issue)
+
+  -- Split any lines that contain newlines
+  local final_lines = {}
+  for _, line in ipairs(updated_lines) do
+    if line:find('\n') then
+      local pos = 1
+      while pos <= #line do
+        local next_newline = line:find('\n', pos, true)
+        if next_newline then
+          table.insert(final_lines, line:sub(pos, next_newline - 1))
+          pos = next_newline + 1
+        else
+          table.insert(final_lines, line:sub(pos))
+          break
+        end
+      end
+    else
+      table.insert(final_lines, line)
+    end
+  end
+
+  -- Update buffer with authoritative content
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
+
+  -- Clear modified flag
+  vim.api.nvim_set_option_value('modified', false, { buf = bufnr })
+
+  vim.notify(
+    string.format('nvim-beads: Issue %s created successfully', new_id),
+    vim.log.levels.INFO
+  )
+end
+
+--- Handle save workflow for existing issue buffers
+---@param bufnr number The buffer number
+---@param issue_id string The issue ID
+function M.handle_existing_issue_save(bufnr, issue_id)
 
   -- Save cursor position before reload
   local cursor_pos = vim.api.nvim_win_get_cursor(0)

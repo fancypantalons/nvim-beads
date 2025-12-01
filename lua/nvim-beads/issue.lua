@@ -647,6 +647,27 @@ function M.open_new_issue_buffer(issue_type, template_data)
   -- Format the new issue to markdown
   local lines = M.format_issue_to_markdown(new_issue)
 
+  -- Split any lines that contain newlines (since nvim_buf_set_lines requires single-line strings)
+  local final_lines = {}
+  for _, line in ipairs(lines) do
+    if line:find('\n') then
+      -- Split on newlines, preserving blank lines
+      local pos = 1
+      while pos <= #line do
+        local next_newline = line:find('\n', pos, true)
+        if next_newline then
+          table.insert(final_lines, line:sub(pos, next_newline - 1))
+          pos = next_newline + 1
+        else
+          table.insert(final_lines, line:sub(pos))
+          break
+        end
+      end
+    else
+      table.insert(final_lines, line)
+    end
+  end
+
   -- Create a new buffer
   local bufnr = vim.api.nvim_create_buf(false, false)
 
@@ -655,7 +676,7 @@ function M.open_new_issue_buffer(issue_type, template_data)
   vim.api.nvim_buf_set_name(bufnr, buffer_name)
 
   -- Populate buffer with formatted content
-  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
 
   -- Configure buffer options
   vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
@@ -740,6 +761,40 @@ function M.build_create_command(parsed_issue)
   end
 
   return table.concat(parts, ' '), nil
+end
+
+---Extract issue ID from bd create command JSON output
+---@param output string The stdout from bd create --json command
+---@return string|nil id The extracted issue ID or nil if extraction fails
+---@return string|nil error Error message if extraction fails
+function M.extract_id_from_create_output(output)
+  -- Validate input
+  if not output or output == '' then
+    return nil, 'Empty output'
+  end
+
+  -- Try to decode JSON
+  local ok, result = pcall(vim.json.decode, output)
+  if not ok then
+    return nil, 'Failed to parse JSON: ' .. tostring(result)
+  end
+
+  -- Check if result is a table with id field
+  if type(result) ~= 'table' then
+    return nil, 'JSON output is not a table'
+  end
+
+  -- Handle vim.NIL (JSON null)
+  local id = result.id
+  if id == vim.NIL then
+    id = nil
+  end
+
+  if not id or id == '' then
+    return nil, 'No id field in JSON output'
+  end
+
+  return id, nil
 end
 
 return M

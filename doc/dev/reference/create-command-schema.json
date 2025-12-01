@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Beads Issue",
+  "description": "Schema for a beads issue object, as returned by 'bd create --json'",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "The unique identifier for the issue (e.g., 'bd-a1b2c3d').",
+      "type": "string",
+      "pattern": "^[a-z0-9]+-[a-f0-9]+(\.[0-9]+)*$"
+    },
+    "parent_id": {
+      "description": "The ID of the parent issue if this is a sub-issue. Null otherwise.",
+      "type": ["null", "string"]
+    },
+    "title": {
+      "description": "The title of the issue.",
+      "type": "string"
+    },
+    "description": {
+      "description": "A detailed description of the issue.",
+      "type": "string"
+    },
+    "status": {
+      "description": "The current status of the issue.",
+      "type": "string",
+      "enum": ["open", "in_progress", "closed"]
+    },
+    "priority": {
+      "description": "The priority of the issue (0=critical, 1=high, 2=medium, 3=low, 4=backlog).",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4
+    },
+    "issue_type": {
+      "description": "The type of the issue.",
+      "type": "string",
+      "enum": ["task", "bug", "feature", "epic", "chore"]
+    },
+    "assignee": {
+      "description": "The person assigned to the issue.",
+      "type": "string"
+    },
+    "labels": {
+      "description": "A list of labels associated with the issue.",
+      "type": ["null", "array"],
+      "items": {
+        "type": "string"
+      }
+    },
+    "acceptance_criteria": {
+      "description": "The criteria for the issue to be considered complete.",
+      "type": "string"
+    },
+    "design": {
+      "description": "Details about the proposed design or implementation.",
+      "type": "string"
+    },
+    "external_ref": {
+      "description": "A reference to an external system (e.g., a GitHub issue URL).",
+      "type": ["null", "string"]
+    },
+    "source_repo": {
+      "description": "The repository where the issue is managed, if different from the primary.",
+      "type": "string"
+    },
+    "created_at": {
+      "description": "The ISO 8601 timestamp of when the issue was created.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "description": "The ISO 8601 timestamp of when the issue was last updated.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "closed_at": {
+      "description": "The ISO 8601 timestamp of when the issue was closed. Null if open.",
+      "type": ["null", "string"],
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "description",
+    "status",
+    "priority",
+    "issue_type",
+    "assignee",
+    "labels",
+    "acceptance_criteria",
+    "design",
+    "external_ref",
+    "source_repo",
+    "created_at",
+    "updated_at",
+    "closed_at"
+  ],
+  "additionalProperties": false
+}
