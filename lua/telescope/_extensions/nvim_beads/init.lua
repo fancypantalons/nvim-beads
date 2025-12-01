@@ -8,6 +8,79 @@ if not has_telescope then
     error("nvim-beads telescope extension requires telescope.nvim (https://github.com/nvim-telescope/telescope.nvim)")
 end
 
+local pickers = require("telescope.pickers")
+local finders = require("telescope.finders")
+local previewers = require("telescope.previewers")
+local conf = require("telescope.config").values
+local issue_module = require("nvim-beads.issue")
+
+--- Create a previewer for beads issues
+---
+---@return table The telescope previewer
+---
+local function create_issue_previewer()
+    return previewers.new_buffer_previewer({
+        title = "Issue Preview",
+        define_preview = function(self, entry, status)
+            -- Extract issue_id from entry.value
+            local issue_id = entry.value.id
+
+            -- Call bd show --json asynchronously
+            vim.system({ "bd", "show", "--json", issue_id }, { text = true }, function(result)
+                -- Schedule UI update for main thread
+                vim.schedule(function()
+                    if result.code ~= 0 then
+                        -- Handle error gracefully
+                        local error_lines = {
+                            "Error fetching issue details:",
+                            "",
+                            result.stderr or "Unknown error",
+                        }
+                        vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, error_lines)
+                        return
+                    end
+
+                    -- Parse JSON response (bd show returns an array with a single issue)
+                    local ok, issues = pcall(vim.json.decode, result.stdout)
+                    if not ok or not issues or type(issues) ~= "table" or #issues == 0 then
+                        local error_lines = {
+                            "Error parsing issue JSON:",
+                            "",
+                            "Failed to decode bd show output",
+                        }
+                        vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, error_lines)
+                        return
+                    end
+
+                    -- Extract the first (and only) issue from the array
+                    local issue = issues[1]
+
+                    -- Format issue to markdown
+                    local lines = issue_module.format_issue_to_markdown(issue)
+
+                    -- Split any lines that contain newlines (nvim_buf_set_lines doesn't accept embedded newlines)
+                    local flattened_lines = {}
+                    for _, line in ipairs(lines) do
+                        if line:find("\n") then
+                            for subline in line:gmatch("[^\n]+") do
+                                table.insert(flattened_lines, subline)
+                            end
+                        else
+                            table.insert(flattened_lines, line)
+                        end
+                    end
+
+                    -- Write lines to preview buffer
+                    vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, flattened_lines)
+
+                    -- Set filetype to markdown for syntax highlighting
+                    vim.api.nvim_set_option_value("filetype", "markdown", { buf = self.state.bufnr })
+                end)
+            end)
+        end,
+    })
+end
+
 --- Run the `:Telescope nvim_beads ready` command to show ready issues
 ---
 ---@param opts telescope.CommandOptions The Telescope UI / layout options
@@ -23,10 +96,6 @@ end
 ---
 local function list(opts)
     opts = opts or {}
-
-    local pickers = require("telescope.pickers")
-    local finders = require("telescope.finders")
-    local conf = require("telescope.config").values
 
     -- Run bd list --json and parse the output
     local result = vim.system({ "bd", "list", "--json" }, { text = true }):wait()
@@ -59,6 +128,7 @@ local function list(opts)
             entry_maker = entry_maker,
         }),
         sorter = conf.generic_sorter(opts),
+        previewer = create_issue_previewer(),
     }):find()
 end
 
