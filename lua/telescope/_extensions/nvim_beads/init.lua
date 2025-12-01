@@ -123,23 +123,25 @@ local function list(opts)
         }
     end
 
-    pickers.new(opts, {
-        prompt_title = "Beads Issues",
-        finder = finders.new_table({
-            results = issues,
-            entry_maker = entry_maker,
-        }),
-        sorter = conf.generic_sorter(opts),
-        previewer = create_issue_previewer(),
-        attach_mappings = function(prompt_bufnr, map)
-            actions.select_default:replace(function()
-                local selection = action_state.get_selected_entry()
-                actions.close(prompt_bufnr)
-                issue_module.open_issue_buffer(selection.value.id)
-            end)
-            return true
-        end,
-    }):find()
+    pickers
+        .new(opts, {
+            prompt_title = "Beads Issues",
+            finder = finders.new_table({
+                results = issues,
+                entry_maker = entry_maker,
+            }),
+            sorter = conf.generic_sorter(opts),
+            previewer = create_issue_previewer(),
+            attach_mappings = function(prompt_bufnr, map)
+                actions.select_default:replace(function()
+                    local selection = action_state.get_selected_entry()
+                    actions.close(prompt_bufnr)
+                    issue_module.open_issue_buffer(selection.value.id)
+                end)
+                return true
+            end,
+        })
+        :find()
 end
 
 return telescope.register_extension({

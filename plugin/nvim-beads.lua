@@ -77,7 +77,7 @@ end, {
     nargs = "+",
     desc = "Create a new beads issue from template",
     complete = function(arg_lead, cmdline, cursor_pos)
-        local valid_types = {"bug", "feature", "task", "epic", "chore"}
+        local valid_types = { "bug", "feature", "task", "epic", "chore" }
         return vim.tbl_filter(function(type)
             return type:find(arg_lead) == 1
         end, valid_types)

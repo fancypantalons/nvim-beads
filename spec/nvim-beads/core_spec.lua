@@ -1,14 +1,14 @@
 --- Unit tests for nvim-beads core module
 --- Tests use mocked vim.system to verify JSON parsing and error handling
 
-describe('nvim-beads.core', function()
+describe("nvim-beads.core", function()
     local core
     local original_vim_system
 
     before_each(function()
         -- Clear the module cache to get fresh instance
-        package.loaded['nvim-beads.core'] = nil
-        core = require('nvim-beads.core')
+        package.loaded["nvim-beads.core"] = nil
+        core = require("nvim-beads.core")
 
         -- Save original vim.system
         original_vim_system = vim.system
@@ -19,32 +19,32 @@ describe('nvim-beads.core', function()
         vim.system = original_vim_system
     end)
 
-    describe('execute_bd', function()
-        describe('argument validation', function()
-            it('should return error when args is not a table', function()
-                local result, err = core.execute_bd('not a table')
+    describe("execute_bd", function()
+        describe("argument validation", function()
+            it("should return error when args is not a table", function()
+                local result, err = core.execute_bd("not a table")
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('args must be a table', err)
+                assert.matches("args must be a table", err)
             end)
 
-            it('should return error when args is nil', function()
+            it("should return error when args is nil", function()
                 local result, err = core.execute_bd(nil)
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('args must be a table', err)
+                assert.matches("args must be a table", err)
             end)
 
-            it('should return error when args is a number', function()
+            it("should return error when args is a number", function()
                 local result, err = core.execute_bd(42)
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('args must be a table', err)
+                assert.matches("args must be a table", err)
             end)
         end)
 
-        describe('successful command execution', function()
-            it('should parse JSON output correctly', function()
+        describe("successful command execution", function()
+            it("should parse JSON output correctly", function()
                 -- Mock successful command execution
                 vim.system = function(cmd, opts)
                     return {
@@ -52,28 +52,28 @@ describe('nvim-beads.core', function()
                             return {
                                 code = 0,
                                 stdout = '{"result": [{"id": "bd-1", "title": "Test issue"}]}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(err)
                 assert.is_not_nil(result)
                 assert.is_table(result)
                 assert.is_table(result.result)
-                assert.equals('bd-1', result.result[1].id)
-                assert.equals('Test issue', result.result[1].title)
+                assert.equals("bd-1", result.result[1].id)
+                assert.equals("Test issue", result.result[1].title)
             end)
 
-            it('should automatically add --json flag if not present', function()
+            it("should automatically add --json flag if not present", function()
                 local called_with_json = false
 
                 vim.system = function(cmd, opts)
                     -- Check if --json flag is present
                     for _, arg in ipairs(cmd) do
-                        if arg == '--json' then
+                        if arg == "--json" then
                             called_with_json = true
                             break
                         end
@@ -84,24 +84,24 @@ describe('nvim-beads.core', function()
                             return {
                                 code = 0,
                                 stdout = '{"result": []}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(err)
                 assert.is_true(called_with_json)
             end)
 
-            it('should not duplicate --json flag if already present', function()
+            it("should not duplicate --json flag if already present", function()
                 local json_count = 0
 
                 vim.system = function(cmd, opts)
                     -- Count how many times --json appears
                     for _, arg in ipairs(cmd) do
-                        if arg == '--json' then
+                        if arg == "--json" then
                             json_count = json_count + 1
                         end
                     end
@@ -111,18 +111,18 @@ describe('nvim-beads.core', function()
                             return {
                                 code = 0,
                                 stdout = '{"result": []}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready', '--json' })
+                local result, err = core.execute_bd({ "ready", "--json" })
                 assert.is_nil(err)
                 assert.equals(1, json_count)
             end)
 
-            it('should pass text=true option to vim.system', function()
+            it("should pass text=true option to vim.system", function()
                 local received_opts = nil
 
                 vim.system = function(cmd, opts)
@@ -133,19 +133,19 @@ describe('nvim-beads.core', function()
                             return {
                                 code = 0,
                                 stdout = '{"result": []}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(err)
                 assert.is_not_nil(received_opts)
                 assert.is_true(received_opts.text)
             end)
 
-            it('should allow custom options to override defaults', function()
+            it("should allow custom options to override defaults", function()
                 local received_opts = nil
 
                 vim.system = function(cmd, opts)
@@ -156,13 +156,13 @@ describe('nvim-beads.core', function()
                             return {
                                 code = 0,
                                 stdout = '{"result": []}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' }, { timeout = 5000 })
+                local result, err = core.execute_bd({ "ready" }, { timeout = 5000 })
                 assert.is_nil(err)
                 assert.is_not_nil(received_opts)
                 assert.equals(5000, received_opts.timeout)
@@ -170,183 +170,183 @@ describe('nvim-beads.core', function()
             end)
         end)
 
-        describe('command failure handling', function()
-            it('should return error when command fails with non-zero exit code', function()
+        describe("command failure handling", function()
+            it("should return error when command fails with non-zero exit code", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 1,
-                                stdout = '',
-                                stderr = 'Command not found'
+                                stdout = "",
+                                stderr = "Command not found",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'invalid_command' })
+                local result, err = core.execute_bd({ "invalid_command" })
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('bd command failed', err)
-                assert.matches('exit code 1', err)
-                assert.matches('Command not found', err)
+                assert.matches("bd command failed", err)
+                assert.matches("exit code 1", err)
+                assert.matches("Command not found", err)
             end)
 
-            it('should handle empty stderr in error message', function()
+            it("should handle empty stderr in error message", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 127,
-                                stdout = '',
-                                stderr = ''
+                                stdout = "",
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'missing_command' })
+                local result, err = core.execute_bd({ "missing_command" })
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('exit code 127', err)
-                assert.matches('no error output', err)
+                assert.matches("exit code 127", err)
+                assert.matches("no error output", err)
             end)
 
-            it('should handle nil stderr in error message', function()
+            it("should handle nil stderr in error message", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 1,
-                                stdout = '',
-                                stderr = nil
+                                stdout = "",
+                                stderr = nil,
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'failing_command' })
+                local result, err = core.execute_bd({ "failing_command" })
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('no error output', err)
+                assert.matches("no error output", err)
             end)
         end)
 
-        describe('JSON parsing error handling', function()
-            it('should return error when output is not valid JSON', function()
+        describe("JSON parsing error handling", function()
+            it("should return error when output is not valid JSON", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
-                                stdout = 'This is not JSON',
-                                stderr = ''
+                                stdout = "This is not JSON",
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('Failed to parse JSON output', err)
+                assert.matches("Failed to parse JSON output", err)
             end)
 
-            it('should return error when JSON is incomplete', function()
+            it("should return error when JSON is incomplete", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"result": [',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('Failed to parse JSON output', err)
+                assert.matches("Failed to parse JSON output", err)
             end)
 
-            it('should return error when JSON is empty string', function()
+            it("should return error when JSON is empty string", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
-                                stdout = '',
-                                stderr = ''
+                                stdout = "",
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('Failed to parse JSON output', err)
+                assert.matches("Failed to parse JSON output", err)
             end)
         end)
 
-        describe('complex JSON structures', function()
-            it('should parse nested objects correctly', function()
+        describe("complex JSON structures", function()
+            it("should parse nested objects correctly", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"result": {"nested": {"deep": "value"}}}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(err)
                 assert.is_not_nil(result)
-                assert.equals('value', result.result.nested.deep)
+                assert.equals("value", result.result.nested.deep)
             end)
 
-            it('should parse arrays with multiple elements', function()
+            it("should parse arrays with multiple elements", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"issues": [{"id": "bd-1"}, {"id": "bd-2"}, {"id": "bd-3"}]}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'list' })
+                local result, err = core.execute_bd({ "list" })
                 assert.is_nil(err)
                 assert.is_not_nil(result)
                 assert.equals(3, #result.issues)
-                assert.equals('bd-1', result.issues[1].id)
-                assert.equals('bd-2', result.issues[2].id)
-                assert.equals('bd-3', result.issues[3].id)
+                assert.equals("bd-1", result.issues[1].id)
+                assert.equals("bd-2", result.issues[2].id)
+                assert.equals("bd-3", result.issues[3].id)
             end)
 
-            it('should handle null values in JSON', function()
+            it("should handle null values in JSON", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"result": null}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.execute_bd({ 'ready' })
+                local result, err = core.execute_bd({ "ready" })
                 assert.is_nil(err)
                 assert.is_not_nil(result)
                 assert.is_table(result)
@@ -354,114 +354,114 @@ describe('nvim-beads.core', function()
         end)
     end)
 
-    describe('fetch_template', function()
-        describe('issue type validation', function()
-            it('should accept valid issue type: bug', function()
+    describe("fetch_template", function()
+        describe("issue type validation", function()
+            it("should accept valid issue type: bug", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "bug"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('bug')
+                local result, err = core.fetch_template("bug")
                 assert.is_nil(err)
                 assert.is_not_nil(result)
             end)
 
-            it('should accept valid issue type: feature', function()
+            it("should accept valid issue type: feature", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "feature"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('feature')
+                local result, err = core.fetch_template("feature")
                 assert.is_nil(err)
                 assert.is_not_nil(result)
             end)
 
-            it('should accept valid issue type: task', function()
+            it("should accept valid issue type: task", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "task"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('task')
+                local result, err = core.fetch_template("task")
                 assert.is_nil(err)
                 assert.is_not_nil(result)
             end)
 
-            it('should accept valid issue type: epic', function()
+            it("should accept valid issue type: epic", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "epic"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('epic')
+                local result, err = core.fetch_template("epic")
                 assert.is_nil(err)
                 assert.is_not_nil(result)
             end)
 
-            it('should accept valid issue type: chore', function()
+            it("should accept valid issue type: chore", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "chore"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('chore')
+                local result, err = core.fetch_template("chore")
                 assert.is_nil(err)
                 assert.is_not_nil(result)
             end)
 
-            it('should reject invalid issue type', function()
-                local result, err = core.fetch_template('invalid')
+            it("should reject invalid issue type", function()
+                local result, err = core.fetch_template("invalid")
                 assert.is_nil(result)
                 assert.is_not_nil(err)
                 assert.matches("Invalid issue type 'invalid'", err)
-                assert.matches('bug, feature, task, epic, chore', err)
+                assert.matches("bug, feature, task, epic, chore", err)
             end)
 
-            it('should reject empty string issue type', function()
-                local result, err = core.fetch_template('')
+            it("should reject empty string issue type", function()
+                local result, err = core.fetch_template("")
                 assert.is_nil(result)
                 assert.is_not_nil(err)
                 assert.matches("Invalid issue type", err)
             end)
 
-            it('should reject nil issue type', function()
+            it("should reject nil issue type", function()
                 local result, err = core.fetch_template(nil)
                 assert.is_nil(result)
                 assert.is_not_nil(err)
@@ -469,8 +469,8 @@ describe('nvim-beads.core', function()
             end)
         end)
 
-        describe('command construction', function()
-            it('should execute correct bd command with type', function()
+        describe("command construction", function()
+            it("should execute correct bd command with type", function()
                 local executed_cmd = nil
 
                 vim.system = function(cmd, opts)
@@ -481,22 +481,22 @@ describe('nvim-beads.core', function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "task"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('task')
+                local result, err = core.fetch_template("task")
                 assert.is_nil(err)
                 assert.is_not_nil(executed_cmd)
-                assert.equals('bd', executed_cmd[1])
-                assert.equals('template', executed_cmd[2])
-                assert.equals('show', executed_cmd[3])
-                assert.equals('task', executed_cmd[4])
+                assert.equals("bd", executed_cmd[1])
+                assert.equals("template", executed_cmd[2])
+                assert.equals("show", executed_cmd[3])
+                assert.equals("task", executed_cmd[4])
             end)
 
-            it('should include --json flag in command', function()
+            it("should include --json flag in command", function()
                 local executed_cmd = nil
 
                 vim.system = function(cmd, opts)
@@ -507,19 +507,19 @@ describe('nvim-beads.core', function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "bug"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('bug')
+                local result, err = core.fetch_template("bug")
                 assert.is_nil(err)
                 assert.is_not_nil(executed_cmd)
 
                 local has_json = false
                 for _, arg in ipairs(executed_cmd) do
-                    if arg == '--json' then
+                    if arg == "--json" then
                         has_json = true
                         break
                     end
@@ -528,90 +528,90 @@ describe('nvim-beads.core', function()
             end)
         end)
 
-        describe('template parsing', function()
-            it('should parse template JSON correctly', function()
+        describe("template parsing", function()
+            it("should parse template JSON correctly", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "Test Title", "type": "task", "priority": 2, "description": "Test description"}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('task')
+                local result, err = core.fetch_template("task")
                 assert.is_nil(err)
                 assert.is_not_nil(result)
-                assert.equals('Test Title', result.title)
-                assert.equals('task', result.type)
+                assert.equals("Test Title", result.title)
+                assert.equals("task", result.type)
                 assert.equals(2, result.priority)
-                assert.equals('Test description', result.description)
+                assert.equals("Test description", result.description)
             end)
 
-            it('should handle template with all fields', function()
+            it("should handle template with all fields", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "feature", "priority": 1, "description": "Desc", "design": "Design", "acceptance_criteria": "AC", "labels": ["label1"], "parent": null, "dependencies": []}',
-                                stderr = ''
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('feature')
+                local result, err = core.fetch_template("feature")
                 assert.is_nil(err)
                 assert.is_not_nil(result)
-                assert.equals('feature', result.type)
+                assert.equals("feature", result.type)
                 assert.equals(1, result.priority)
-                assert.equals('Desc', result.description)
-                assert.equals('Design', result.design)
-                assert.equals('AC', result.acceptance_criteria)
+                assert.equals("Desc", result.description)
+                assert.equals("Design", result.design)
+                assert.equals("AC", result.acceptance_criteria)
             end)
         end)
 
-        describe('error handling', function()
-            it('should return error when bd command fails', function()
+        describe("error handling", function()
+            it("should return error when bd command fails", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 1,
-                                stdout = '',
-                                stderr = 'Template not found'
+                                stdout = "",
+                                stderr = "Template not found",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('task')
+                local result, err = core.fetch_template("task")
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('bd command failed', err)
+                assert.matches("bd command failed", err)
             end)
 
-            it('should return error when JSON parsing fails', function()
+            it("should return error when JSON parsing fails", function()
                 vim.system = function(cmd, opts)
                     return {
                         wait = function()
                             return {
                                 code = 0,
-                                stdout = 'Invalid JSON',
-                                stderr = ''
+                                stdout = "Invalid JSON",
+                                stderr = "",
                             }
-                        end
+                        end,
                     }
                 end
 
-                local result, err = core.fetch_template('task')
+                local result, err = core.fetch_template("task")
                 assert.is_nil(result)
                 assert.is_not_nil(err)
-                assert.matches('Failed to parse JSON output', err)
+                assert.matches("Failed to parse JSON output", err)
             end)
         end)
     end)

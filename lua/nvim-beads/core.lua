@@ -10,27 +10,27 @@ local M = {}
 ---@return string? error Error message on failure, nil on success
 function M.execute_bd(args, opts)
     -- Validate arguments
-    if type(args) ~= 'table' then
-        return nil, 'execute_bd: args must be a table'
+    if type(args) ~= "table" then
+        return nil, "execute_bd: args must be a table"
     end
 
     -- Ensure --json flag is present
     local has_json = false
     for _, arg in ipairs(args) do
-        if arg == '--json' then
+        if arg == "--json" then
             has_json = true
             break
         end
     end
     if not has_json then
-        table.insert(args, '--json')
+        table.insert(args, "--json")
     end
 
     -- Build command
-    local cmd = vim.list_extend({'bd'}, args)
+    local cmd = vim.list_extend({ "bd" }, args)
 
     -- Default options: text=true for clean output
-    local system_opts = vim.tbl_extend('force', {text = true}, opts or {})
+    local system_opts = vim.tbl_extend("force", { text = true }, opts or {})
 
     -- Execute command synchronously
     local result = vim.system(cmd, system_opts):wait()
@@ -38,21 +38,17 @@ function M.execute_bd(args, opts)
     -- Check for command execution errors
     if result.code ~= 0 then
         local stderr = result.stderr
-        if not stderr or stderr == '' then
-            stderr = 'no error output'
+        if not stderr or stderr == "" then
+            stderr = "no error output"
         end
-        local error_msg = string.format(
-            'bd command failed (exit code %d): %s',
-            result.code,
-            stderr
-        )
+        local error_msg = string.format("bd command failed (exit code %d): %s", result.code, stderr)
         return nil, error_msg
     end
 
     -- Parse JSON output
     local ok, parsed = pcall(vim.json.decode, result.stdout)
     if not ok then
-        return nil, string.format('Failed to parse JSON output: %s', parsed)
+        return nil, string.format("Failed to parse JSON output: %s", parsed)
     end
 
     return parsed, nil
@@ -76,13 +72,14 @@ end
 ---@return string? error Error message on failure, nil on success
 function M.fetch_template(issue_type)
     -- Validate issue type
-    local valid_types = {bug = true, feature = true, task = true, epic = true, chore = true}
+    local valid_types = { bug = true, feature = true, task = true, epic = true, chore = true }
     if not valid_types[issue_type] then
-        return nil, string.format("Invalid issue type '%s'. Must be one of: bug, feature, task, epic, chore", issue_type)
+        return nil,
+            string.format("Invalid issue type '%s'. Must be one of: bug, feature, task, epic, chore", issue_type)
     end
 
     -- Execute bd template show command
-    local result, err = M.execute_bd({'template', 'show', issue_type})
+    local result, err = M.execute_bd({ "template", "show", issue_type })
     if err then
         return nil, err
     end

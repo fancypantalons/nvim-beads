@@ -7,7 +7,7 @@ describe("telescope nvim_beads extension", function()
             register_extension = function(ext)
                 extension = ext
                 return ext
-            end
+            end,
         }
     end)
 
@@ -28,7 +28,6 @@ describe("telescope nvim_beads extension", function()
 
     it("should have list as the default action", function()
         local ext = require("telescope._extensions.nvim_beads")
-        assert.are.equal(extension.exports.nvim_beads, extension.exports.list,
-            "nvim_beads should be the same as list")
+        assert.are.equal(extension.exports.nvim_beads, extension.exports.list, "nvim_beads should be the same as list")
     end)
 end)

@@ -81,12 +81,9 @@ function M.complete(arg_lead, cmdline, cursor_pos)
 
     -- Otherwise, complete subcommand names
     if cmdline:match("^['<,'>]*Beads[!]*%s+%w*$") then
-        return vim.tbl_filter(
-            function(key)
-                return key:find(arg_lead) ~= nil
-            end,
-            vim.tbl_keys(subcommands)
-        )
+        return vim.tbl_filter(function(key)
+            return key:find(arg_lead) ~= nil
+        end, vim.tbl_keys(subcommands))
     end
 
     return {}
