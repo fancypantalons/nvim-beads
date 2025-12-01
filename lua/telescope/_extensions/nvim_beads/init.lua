@@ -1,43 +1,35 @@
---- Register `nvim_beads` to telescope.nvim.
+--- Register `nvim_beads` to telescope.nvim
 ---
 ---@source https://github.com/nvim-telescope/telescope.nvim
----
 
 local has_telescope, telescope = pcall(require, "telescope")
 
 if not has_telescope then
-    error("Telescope interface requires telescope.nvim (https://github.com/nvim-telescope/telescope.nvim)")
+    error("nvim-beads telescope extension requires telescope.nvim (https://github.com/nvim-telescope/telescope.nvim)")
 end
 
-local configuration = require("nvim_beads._core.configuration")
-local runner = require("telescope._extensions.nvim_beads.runner")
-
--- NOTE: This file is defer-loaded so it's okay to run this in the global scope
-configuration.initialize_data_if_needed()
-
---- Run the `:Telescope nvim_beads goodnight-moon` command.
+--- Run the `:Telescope nvim_beads ready` command to show ready issues
 ---
----@param options telescope.CommandOptions The Telescope UI / layout options.
+---@param opts telescope.CommandOptions The Telescope UI / layout options
 ---
-local function _run_goodnight_moon(options)
-    local picker = runner.get_goodnight_moon_picker(options)
-
-    picker:find()
+local function ready(opts)
+    -- TODO: Implement telescope picker for ready issues
+    vim.notify("nvim-beads: Telescope ready picker not yet implemented", vim.log.levels.INFO)
 end
 
---- Run the `:Telescope nvim_beads hello-world` command.
+--- Run the `:Telescope nvim_beads list` command to show all issues
 ---
----@param options telescope.CommandOptions The Telescope UI / layout options.
+---@param opts telescope.CommandOptions The Telescope UI / layout options
 ---
-local function _run_hello_world(options)
-    local picker = runner.get_hello_world_picker(options)
-
-    picker:find()
+local function list(opts)
+    -- TODO: Implement telescope picker for all issues
+    vim.notify("nvim-beads: Telescope list picker not yet implemented", vim.log.levels.INFO)
 end
 
 return telescope.register_extension({
     exports = {
-        ["goodnight-moon"] = _run_goodnight_moon,
-        ["hello-world"] = _run_hello_world,
+        ready = ready,
+        list = list,
+        nvim_beads = list, -- Default action
     },
 })

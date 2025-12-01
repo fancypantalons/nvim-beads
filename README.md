@@ -1,6 +1,6 @@
-# A Neovim Plugin Template
+# nvim-beads
 
-A template repository used to create Neovim plugins.
+A Neovim plugin for integrating with the [beads (bd)](https://github.com/steveyegge/beads) issue tracker.
 
 | <!-- --> | <!-- --> |
 |--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -10,50 +10,13 @@ A template repository used to create Neovim plugins.
 
 # Features
 
-- Follows [nvim-best-practices](https://github.com/nvim-neorocks/nvim-best-practices)
-- Fast start-up (~1 ms)
-- Auto-release to [luarocks](https://luarocks.org) & [GitHub](https://github.com/YourUsername/nvim-beads.nvim/releases)
-- Automated user documentation (using [panvimdoc](https://github.com/kdheepak/panvimdoc))
-- Automated API documentation (using [mini.doc](https://github.com/echasnovski/mini.doc))
-- Automated HTML documentation + self-publishing using [emmylua_doc_cli](https://github.com/CppCXY/emmylua-analyzer-rust/tree/main/crates/emmylua_doc_cli) & [mkdocs-material](https://github.com/squidfunk/mkdocs-material)
-  - Yes, this repository has a website! Check it out at [nvim-beads.nvim](https://colinkennedy.github.io/nvim-beads.nvim)!
-- Vimtags generation
-- Built-in Vim commands
-- A high quality command mode parser
-- Auto-completes your commands at any cursor position
-- No external dependencies[\*](https://github.com/YourUsername/nvim-beads.nvim/wiki/External-Dependencies-Disclaimer)
-- [LuaCATS](https://luals.github.io/wiki/annotations/) annotations and type-hints, everywhere
-- [RSS feed support](https://github.com/YourUsername/nvim-beads.nvim/commits/main/doc/news.txt.atom)
-- Built-in logging to stdout / files
-- Unittests use the full power of native [busted](https://github.com/lunarmodules/busted)
-  - Supports [LuaCov](https://luarocks.org/modules/mpeterv/luacov) for coverage reports!
-- Automated testing matrix supports 12 Neovim/OS combinations
-  - neovim: `[v0.10.0, v0.11.0, stable, nightly]`
-  - os: `[ubuntu-latest, macos-latest, windows-latest]`
+- View ready (unblocked) beads issues directly in Neovim
+- Browse all issues with Telescope integration
+- Create new issues from within Neovim
+- Fast startup with lazy-loaded modules
+- Follows Neovim plugin best practices
 - 100% Lua
-- Uses [Semantic Versioning](https://semver.org)
-- Integrations
-  - [lualine.nvim](https://github.com/nvim-lualine/lualine.nvim)
-  - [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)
-  - [`:checkhealth`](https://github.com/YourUsername/nvim-beads.nvim/actions/workflows/checkhealth.yml)
-- Github actions for:
-  - [StyLua](https://github.com/JohnnyMorganz/StyLua) - Auto-formats Lua code
-  - [llscheck](https://github.com/jeffzi/llscheck) - Checks for Lua type mismatches
-  - [luacheck](https://github.com/mpeterv/luacheck) - Checks for Lua code issues
-  - [luarocks](https://luarocks.org) auto-release ([LUAROCKS_API_KEY secret](https://github.com/nvim-neorocks/sample-luarocks-plugin?tab=readme-ov-file#publishing-to-luarocks) configuration required)
-  - [GitHub](https://github.com/YourUsername/nvim-beads.nvim/releases) auto-release ([PERSONAL_ACCESS_TOKEN secret](https://github.com/nvim-neorocks/sample-luarocks-plugin?tab=readme-ov-file#installing-release-please-recommended) configuration required)
-  - [mdformat](https://github.com/hukkin/mdformat) - Auto-formats project Markdown files
-  - [mini.doc](https://github.com/echasnovski/mini.doc) - API documentation auto-generator
-  - [panvimdoc](https://github.com/kdheepak/panvimdoc) - User documentation auto-generator
-  - [emmylua_doc_cli](https://github.com/CppCXY/emmylua-analyzer-rust/tree/main/crates/emmylua_doc_cli) & [mkdocs-material](https://github.com/squidfunk/mkdocs-material) - Generate HTML from Lua files automatically
-  - [urlchecker](https://github.com/urlstechie/urlchecker-action) - Checks for broken URL links
-  - PR reviews - Reminds users to update `doc/news.txt`
-
-# Using This Template
-
-1. Follow the [Wiki instructions](https://github.com/YourUsername/nvim-beads.nvim/wiki/Using-This-Template)
-1. Run `make download-dependencies` so all the Lua LSP features work as expected.
-1. Once you're done, remove this section (the rest of this README.md file should be kept / customized to your needs)
+- [LuaCATS](https://luals.github.io/wiki/annotations/) type annotations
 
 # Installation
 
@@ -63,10 +26,16 @@ A template repository used to create Neovim plugins.
 
 ```lua
 {
-    "YourUsername/nvim-beads.nvim",
-    dependencies = { "YourUsername/mega.cmdparse", "ColinKennedy/mega.logging" },
-    -- TODO: (you) - Make sure your first release matches v1.0.0 so it auto-releases!
-    version = "v1.*",
+    "brettk/nvim-beads",
+    dependencies = {
+        "nvim-telescope/telescope.nvim", -- Optional, for Telescope integration
+    },
+    cmd = "Beads",
+    keys = {
+        { "<leader>br", "<Plug>(BeadsReady)", desc = "Show ready beads issues" },
+        { "<leader>bl", "<Plug>(BeadsList)", desc = "List all beads issues" },
+        { "<leader>bc", "<Plug>(BeadsCreate)", desc = "Create beads issue" },
+    },
 }
 ```
 
@@ -194,26 +163,33 @@ vim.api.nvim_set_hl(0, "YourPluginTelescopeEntry", {link="Statement"})
 vim.api.nvim_set_hl(0, "YourPluginTelescopeSecondary", {link="Question"})
 ```
 
-# Commands
+# Usage
 
-Here are some example commands:
-
-<!-- TODO: (you) - You'll probably want to change all this or remove it. See -->
-
-<!-- plugin/nvim_beads.lua for details. -->
+## Commands
 
 ```vim
-" A typical subcommand
-:YourPlugin hello-world say phrase "Hello, World!" " How are you?"
-:YourPlugin hello-world say phrase "Hello, World!" --repeat=2 --style=lowercase
+:Beads ready    " Show ready (unblocked) issues
+:Beads list     " List all issues
+:Beads create   " Create a new issue
+```
 
-" An example of a flag this repeatable and 3 flags, -a, -b, -c, as one dash
-:YourPlugin arbitrary-thing -vvv -abc -f
+## Keymaps
 
-" Separate commands with completely separate, flexible APIs
-:YourPlugin goodnight-moon count-sheep 42
-:YourPlugin goodnight-moon read "a book"
-:YourPlugin goodnight-moon sleep -z -z -z
+The plugin provides `<Plug>` mappings you can bind to your preferred keys:
+
+```lua
+vim.keymap.set("n", "<leader>br", "<Plug>(BeadsReady)")
+vim.keymap.set("n", "<leader>bl", "<Plug>(BeadsList)")
+vim.keymap.set("n", "<leader>bc", "<Plug>(BeadsCreate)")
+```
+
+## Telescope Integration
+
+If you have telescope.nvim installed:
+
+```vim
+:Telescope nvim_beads ready
+:Telescope nvim_beads list
 ```
 
 # Tests
