@@ -606,4 +606,70 @@ function M.generate_update_commands(issue_id, changes)
   return commands
 end
 
+---Open a new issue buffer for creating a new issue
+---Creates a buffer pre-filled with template data in Markdown format with YAML frontmatter
+---@param issue_type string The issue type (bug, feature, task, epic, chore)
+---@param template_data table The template data from fetch_template
+---@return boolean success True if buffer was opened successfully
+function M.open_new_issue_buffer(issue_type, template_data)
+  -- Validate issue_type
+  local valid_types = {bug = true, feature = true, task = true, epic = true, chore = true}
+  if not issue_type or not valid_types[issue_type] then
+    vim.notify('Invalid issue type', vim.log.levels.ERROR)
+    return false
+  end
+
+  -- Validate template_data
+  if not template_data or type(template_data) ~= 'table' then
+    vim.notify('Invalid template data', vim.log.levels.ERROR)
+    return false
+  end
+
+  -- Build an issue structure for new issue with template defaults
+  local new_issue = {
+    id = '(new)',
+    title = template_data.title or '',
+    issue_type = issue_type,
+    status = 'open',
+    priority = template_data.priority or 2,
+    created_at = 'null',
+    updated_at = 'null',
+    closed_at = nil,
+    assignee = template_data.assignee,
+    labels = template_data.labels or {},
+    dependencies = {},
+    description = template_data.description or '',
+    acceptance_criteria = template_data.acceptance_criteria or '',
+    design = template_data.design or '',
+    notes = template_data.notes or ''
+  }
+
+  -- Format the new issue to markdown
+  local lines = M.format_issue_to_markdown(new_issue)
+
+  -- Create a new buffer
+  local bufnr = vim.api.nvim_create_buf(false, false)
+
+  -- Set buffer name using beads:// URI scheme for new issues
+  local buffer_name = string.format('beads://issue/new?type=%s', issue_type)
+  vim.api.nvim_buf_set_name(bufnr, buffer_name)
+
+  -- Populate buffer with formatted content
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+
+  -- Configure buffer options
+  vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
+  vim.api.nvim_set_option_value('buftype', 'acwrite', { buf = bufnr })
+  vim.api.nvim_set_option_value('bufhidden', 'hide', { buf = bufnr })
+
+  -- Display buffer in current window
+  vim.api.nvim_set_current_buf(bufnr)
+
+  -- Position cursor on the title field (line 3 in the YAML frontmatter)
+  -- Line 1: ---, Line 2: id: (new), Line 3: title: ...
+  vim.api.nvim_win_set_cursor(0, {3, 7})  -- Position after "title: "
+
+  return true
+end
+
 return M
