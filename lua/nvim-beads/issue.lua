@@ -106,4 +106,80 @@ function M.format_issue_to_markdown(issue)
   return lines
 end
 
+---Open an issue in a beads:// buffer
+---Fetches issue data via 'bd show --json', formats it, and displays in a buffer
+---@param issue_id string The issue ID (e.g., "bd-1" or "nvim-beads-p69")
+---@return boolean success True if buffer was opened successfully
+function M.open_issue_buffer(issue_id)
+  -- Validate issue_id
+  if not issue_id or type(issue_id) ~= 'string' or issue_id == '' then
+    vim.notify('Invalid issue ID', vim.log.levels.ERROR)
+    return false
+  end
+
+  -- Get the core module for executing bd commands
+  local core = require('nvim-beads.core')
+
+  -- Execute bd show command
+  local result, err = core.execute_bd({ 'show', issue_id })
+
+  if err then
+    vim.notify(
+      string.format('Failed to fetch issue %s: %s', issue_id, err),
+      vim.log.levels.ERROR
+    )
+    return false
+  end
+
+  -- bd show returns an array with a single issue object
+  local issue = nil
+  if type(result) == 'table' and #result > 0 then
+    issue = result[1]
+  end
+
+  if not issue or not issue.id then
+    vim.notify(
+      string.format('Invalid issue data for %s', issue_id),
+      vim.log.levels.ERROR
+    )
+    return false
+  end
+
+  -- Format the issue to markdown
+  local lines = M.format_issue_to_markdown(issue)
+
+  -- Split any lines that contain newlines (since nvim_buf_set_lines requires single-line strings)
+  local final_lines = {}
+  for _, line in ipairs(lines) do
+    if line:find('\n') then
+      -- Split on newlines
+      for subline in line:gmatch('[^\n]+') do
+        table.insert(final_lines, subline)
+      end
+    else
+      table.insert(final_lines, line)
+    end
+  end
+
+  -- Create a new buffer
+  local bufnr = vim.api.nvim_create_buf(false, false)
+
+  -- Set buffer name using beads:// URI scheme
+  local buffer_name = string.format('beads://issue/%s', issue_id)
+  vim.api.nvim_buf_set_name(bufnr, buffer_name)
+
+  -- Populate buffer with formatted content
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
+
+  -- Configure buffer options
+  vim.api.nvim_set_option_value('filetype', 'markdown', { buf = bufnr })
+  vim.api.nvim_set_option_value('buftype', 'acwrite', { buf = bufnr })
+  vim.api.nvim_set_option_value('bufhidden', 'hide', { buf = bufnr })
+
+  -- Display buffer in current window
+  vim.api.nvim_set_current_buf(bufnr)
+
+  return true
+end
+
 return M

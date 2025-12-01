@@ -460,4 +460,337 @@ describe('nvim-beads.issue', function()
             assert.matches('Additional information', content)
         end)
     end)
+
+    describe('open_issue_buffer', function()
+        local original_vim_api_create_buf
+        local original_vim_api_set_name
+        local original_vim_api_set_lines
+        local original_vim_api_set_option_value
+        local original_vim_api_set_current_buf
+        local original_vim_notify
+
+        -- Mock state
+        local created_bufnr
+        local buffer_name
+        local buffer_lines
+        local buffer_options
+        local current_buf
+        local notifications
+
+        before_each(function()
+            -- Clear the module cache
+            package.loaded['nvim-beads.issue'] = nil
+            package.loaded['nvim-beads.core'] = nil
+            issue_module = require('nvim-beads.issue')
+
+            -- Save originals
+            original_vim_api_create_buf = vim.api.nvim_create_buf
+            original_vim_api_set_name = vim.api.nvim_buf_set_name
+            original_vim_api_set_lines = vim.api.nvim_buf_set_lines
+            original_vim_api_set_option_value = vim.api.nvim_set_option_value
+            original_vim_api_set_current_buf = vim.api.nvim_set_current_buf
+            original_vim_notify = vim.notify
+
+            -- Reset mock state
+            created_bufnr = 42
+            buffer_name = nil
+            buffer_lines = nil
+            buffer_options = {}
+            current_buf = nil
+            notifications = {}
+
+            -- Mock vim.api functions
+            vim.api.nvim_create_buf = function(listed, scratch)
+                return created_bufnr
+            end
+
+            vim.api.nvim_buf_set_name = function(bufnr, name)
+                buffer_name = name
+            end
+
+            vim.api.nvim_buf_set_lines = function(bufnr, start, end_line, strict_indexing, lines)
+                buffer_lines = lines
+            end
+
+            vim.api.nvim_set_option_value = function(option, value, opts)
+                if opts and opts.buf then
+                    if not buffer_options[opts.buf] then
+                        buffer_options[opts.buf] = {}
+                    end
+                    buffer_options[opts.buf][option] = value
+                end
+            end
+
+            vim.api.nvim_set_current_buf = function(bufnr)
+                current_buf = bufnr
+            end
+
+            vim.notify = function(msg, level)
+                table.insert(notifications, { message = msg, level = level })
+            end
+        end)
+
+        after_each(function()
+            -- Restore originals
+            vim.api.nvim_create_buf = original_vim_api_create_buf
+            vim.api.nvim_buf_set_name = original_vim_api_set_name
+            vim.api.nvim_buf_set_lines = original_vim_api_set_lines
+            vim.api.nvim_set_option_value = original_vim_api_set_option_value
+            vim.api.nvim_set_current_buf = original_vim_api_set_current_buf
+            vim.notify = original_vim_notify
+        end)
+
+        describe('argument validation', function()
+            it('should return false and notify error when issue_id is nil', function()
+                local success = issue_module.open_issue_buffer(nil)
+
+                assert.is_false(success)
+                assert.equals(1, #notifications)
+                assert.matches('Invalid issue ID', notifications[1].message)
+                assert.equals(vim.log.levels.ERROR, notifications[1].level)
+            end)
+
+            it('should return false and notify error when issue_id is empty string', function()
+                local success = issue_module.open_issue_buffer('')
+
+                assert.is_false(success)
+                assert.equals(1, #notifications)
+                assert.matches('Invalid issue ID', notifications[1].message)
+            end)
+
+            it('should return false and notify error when issue_id is not a string', function()
+                local success = issue_module.open_issue_buffer(123)
+
+                assert.is_false(success)
+                assert.equals(1, #notifications)
+                assert.matches('Invalid issue ID', notifications[1].message)
+            end)
+        end)
+
+        describe('bd command execution', function()
+            it('should execute bd show with the correct issue_id', function()
+                local executed_args = nil
+
+                -- Mock core.execute_bd
+                local core = require('nvim-beads.core')
+                local original_execute_bd = core.execute_bd
+                core.execute_bd = function(args)
+                    executed_args = args
+                    return {{
+                        id = 'bd-1',
+                        title = 'Test',
+                        issue_type = 'task',
+                        status = 'open',
+                        priority = 2,
+                        created_at = '2023-10-27T10:00:00Z',
+                        updated_at = '2023-10-27T12:00:00Z',
+                    }}, nil
+                end
+
+                issue_module.open_issue_buffer('bd-1')
+
+                assert.is_not_nil(executed_args)
+                assert.equals('show', executed_args[1])
+                assert.equals('bd-1', executed_args[2])
+
+                -- Restore
+                core.execute_bd = original_execute_bd
+            end)
+
+            it('should return false and notify error when bd command fails', function()
+                local core = require('nvim-beads.core')
+                local original_execute_bd = core.execute_bd
+                core.execute_bd = function(args)
+                    return nil, 'Command failed: bd not found'
+                end
+
+                local success = issue_module.open_issue_buffer('bd-1')
+
+                assert.is_false(success)
+                assert.equals(1, #notifications)
+                assert.matches('Failed to fetch issue bd%-1', notifications[1].message)
+                assert.matches('Command failed', notifications[1].message)
+                assert.equals(vim.log.levels.ERROR, notifications[1].level)
+
+                -- Restore
+                core.execute_bd = original_execute_bd
+            end)
+
+            it('should return false when issue data is invalid', function()
+                local core = require('nvim-beads.core')
+                local original_execute_bd = core.execute_bd
+                core.execute_bd = function(args)
+                    return {}, nil  -- Empty array
+                end
+
+                local success = issue_module.open_issue_buffer('bd-1')
+
+                assert.is_false(success)
+                assert.equals(1, #notifications)
+                assert.matches('Invalid issue data', notifications[1].message)
+
+                -- Restore
+                core.execute_bd = original_execute_bd
+            end)
+
+            it('should return false when result array contains invalid issue', function()
+                local core = require('nvim-beads.core')
+                local original_execute_bd = core.execute_bd
+                core.execute_bd = function(args)
+                    return {{}}, nil  -- Array with empty object
+                end
+
+                local success = issue_module.open_issue_buffer('bd-1')
+
+                assert.is_false(success)
+                assert.equals(1, #notifications)
+                assert.matches('Invalid issue data', notifications[1].message)
+
+                -- Restore
+                core.execute_bd = original_execute_bd
+            end)
+        end)
+
+        describe('buffer creation and configuration', function()
+            before_each(function()
+                -- Mock successful bd execution
+                local core = require('nvim-beads.core')
+                local original_execute_bd = core.execute_bd
+                core.execute_bd = function(args)
+                    return {{
+                        id = 'bd-1',
+                        title = 'Test Issue',
+                        issue_type = 'task',
+                        status = 'open',
+                        priority = 2,
+                        created_at = '2023-10-27T10:00:00Z',
+                        updated_at = '2023-10-27T12:00:00Z',
+                    }}, nil
+                end
+            end)
+
+            it('should create buffer with correct name', function()
+                issue_module.open_issue_buffer('bd-1')
+
+                assert.equals('beads://issue/bd-1', buffer_name)
+            end)
+
+            it('should create buffer with correct name for longer issue IDs', function()
+                -- Mock bd execution for longer ID
+                local core = require('nvim-beads.core')
+                core.execute_bd = function(args)
+                    return {{
+                        id = 'nvim-beads-p69',
+                        title = 'Test',
+                        issue_type = 'task',
+                        status = 'open',
+                        priority = 2,
+                        created_at = '2023-10-27T10:00:00Z',
+                        updated_at = '2023-10-27T12:00:00Z',
+                    }}, nil
+                end
+
+                issue_module.open_issue_buffer('nvim-beads-p69')
+
+                assert.equals('beads://issue/nvim-beads-p69', buffer_name)
+            end)
+
+            it('should set filetype to markdown', function()
+                issue_module.open_issue_buffer('bd-1')
+
+                assert.is_not_nil(buffer_options[created_bufnr])
+                assert.equals('markdown', buffer_options[created_bufnr].filetype)
+            end)
+
+            it('should set buftype to acwrite', function()
+                issue_module.open_issue_buffer('bd-1')
+
+                assert.equals('acwrite', buffer_options[created_bufnr].buftype)
+            end)
+
+            it('should set bufhidden to hide', function()
+                issue_module.open_issue_buffer('bd-1')
+
+                assert.equals('hide', buffer_options[created_bufnr].bufhidden)
+            end)
+
+            it('should populate buffer with formatted content', function()
+                issue_module.open_issue_buffer('bd-1')
+
+                assert.is_not_nil(buffer_lines)
+                assert.is_table(buffer_lines)
+                assert.is_true(#buffer_lines > 0)
+
+                -- Check for YAML frontmatter
+                local content = table.concat(buffer_lines, '\n')
+                assert.matches('---', content)
+                assert.matches('id: bd%-1', content)
+                assert.matches('title: Test Issue', content)
+            end)
+
+            it('should display buffer in current window', function()
+                issue_module.open_issue_buffer('bd-1')
+
+                assert.equals(created_bufnr, current_buf)
+            end)
+
+            it('should return true on success', function()
+                local success = issue_module.open_issue_buffer('bd-1')
+
+                assert.is_true(success)
+            end)
+        end)
+
+        describe('integration with format_issue_to_markdown', function()
+            it('should format complete issue correctly in buffer', function()
+                local core = require('nvim-beads.core')
+                core.execute_bd = function(args)
+                    return {{
+                        id = 'bd-20',
+                        title = 'Complete Issue',
+                        issue_type = 'feature',
+                        status = 'in_progress',
+                        priority = 1,
+                        created_at = '2023-10-27T10:00:00Z',
+                        updated_at = '2023-10-27T12:00:00Z',
+                        closed_at = nil,
+                        assignee = 'jane.smith',
+                        labels = { 'ui', 'backend' },
+                        dependencies = {
+                            {
+                                id = 'bd-100',
+                                title = 'Parent',
+                                dependency_type = 'parent-child'
+                            },
+                            {
+                                id = 'bd-120',
+                                title = 'Blocker',
+                                dependency_type = 'blocks'
+                            }
+                        },
+                        description = 'A comprehensive description',
+                        acceptance_criteria = 'Must meet all requirements',
+                        design = 'Technical design notes',
+                        notes = 'Additional information'
+                    }}, nil
+                end
+
+                issue_module.open_issue_buffer('bd-20')
+
+                assert.is_not_nil(buffer_lines)
+                local content = table.concat(buffer_lines, '\n')
+
+                -- Verify all sections are included
+                assert.matches('id: bd%-20', content)
+                assert.matches('title: Complete Issue', content)
+                assert.matches('assignee: jane%.smith', content)
+                assert.matches('parent: bd%-100', content)
+                assert.matches('  %- bd%-120', content)
+                assert.matches('# Description', content)
+                assert.matches('# Acceptance Criteria', content)
+                assert.matches('# Design', content)
+                assert.matches('# Notes', content)
+            end)
+        end)
+    end)
 end)
