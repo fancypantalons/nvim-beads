@@ -6,6 +6,8 @@
 
 You **MUST** review all material in the [References](doc/dev/reference/) folder before beginning any development, as those documents contain critical technical details, including development best practices.
 
+Note, in order to run tests you'll need to use `busted`, which has been installed using `luarocks`. Run `luarocks path --lua-version 5.1 --bin` to initialize the environment, at which point `busted` will be available.
+
 ### Requirements
 
 General product requirements are stored in the [Requirements](doc/dev/requirements/) folder and should be consulted when designing new features.
