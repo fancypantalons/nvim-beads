@@ -30,3 +30,11 @@ end, { desc = "List all beads issues" })
 vim.keymap.set("n", "<Plug>(BeadsCreate)", function()
     require("nvim-beads.core").create_issue()
 end, { desc = "Create a new beads issue" })
+
+-- Direct command to open an issue buffer by ID
+vim.api.nvim_create_user_command("BeadsOpenIssue", function(opts)
+    require("nvim-beads.issue").open_issue_buffer(opts.args)
+end, {
+    nargs = 1,
+    desc = "Open a beads issue by ID in a buffer",
+})
