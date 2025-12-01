@@ -1,8 +1,7 @@
 --- Run the is file before you run unittests to download any extra dependencies.
 
 local _PLUGINS = {
-    ["https://github.com/YourUsername/mega.cmdparse"] = os.getenv("MEGA_CMDPARSE_DIR") or "/tmp/mega.cmdparse",
-    ["https://github.com/YourUsername/mega.logging"] = os.getenv("MEGA_LOGGING_DIR") or "/tmp/mega.logging",
+    ["https://github.com/ColinKennedy/mega.logging"] = os.getenv("MEGA_LOGGING_DIR") or "/tmp/mega.logging",
 
     ["https://github.com/nvim-lualine/lualine.nvim"] = os.getenv("LUALINE_DIR") or "/tmp/lualine.nvim",
 

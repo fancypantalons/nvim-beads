@@ -29,7 +29,7 @@ jobs:
           version: ${{ matrix.neovim }}
 
       - name: Run :checkhealth
-        uses: YourUsername/nvim-checkhealth-gh-action@v1.1.1
+        uses: fancypantalons/nvim-checkhealth-gh-action@v1.1.1
         with:
           executable: 'nvim -u "spec/minimal_init.lua"'
           checks: "nvim_beads vim.*"

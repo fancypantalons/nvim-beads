@@ -6,20 +6,20 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Before** reporting an issue, make sure to read the [documentation](https://github.com/YourUsername/nvim-beads.nvim)
-        and search [existing issues](https://github.com/YourUsername/nvim-beads.nvim/issues) (even the [closed issues](https://github.com/ColinKennedy/nvim-beads.nvim/issues?q=is%3Aissue+is%3Aclosed))
+        **Before** reporting an issue, make sure to read the [documentation](https://github.com/fancypantalons/nvim-beads)
+        and search [existing issues](https://github.com/fancypantalons/nvim-beads/issues) (even the [closed issues](https://github.com/ColinKennedy/nvim-beads.nvim/issues?q=is%3Aissue+is%3Aclosed))
 
-        Usage questions such as ***"How do I...?"*** belong in [Discussions](https://github.com/YourUsername/nvim-beads.nvim/discussions) and will be closed.
+        Usage questions such as ***"How do I...?"*** belong in [Discussions](https://github.com/fancypantalons/nvim-beads/discussions) and will be closed.
   - type: checkboxes
     attributes:
       label: Did you read the documentation and check existing issues?
       description: Make sure you checked and all of the below before submitting an issue
       options:
-        - label: I have read all the [`:help nvim-beads`](https://github.com/YourUsername/nvim-beads.nvim/blob/main/doc/my-template-docs.txt) documentation
+        - label: I have read all the [`:help nvim-beads`](https://github.com/fancypantalons/nvim-beads/blob/main/doc/my-template-docs.txt) documentation
           required: true
         - label: I have updated the plugin to the latest version before submitting this issue
           required: true
-        - label: I have searched the [existing issues](https://github.com/YourUsername/nvim-beads.nvim/issues) and [closed issues](https://github.com/ColinKennedy/nvim-beads.nvim/issues?q=is%3Aissue+is%3Aclosed) issues
+        - label: I have searched the [existing issues](https://github.com/fancypantalons/nvim-beads/issues) and [closed issues](https://github.com/ColinKennedy/nvim-beads.nvim/issues?q=is%3Aissue+is%3Aclosed) issues
           required: true
   - type: input
     attributes:
@@ -77,7 +77,7 @@ body:
             spec = {
             {
                 -- Add anything you need here (configuration, other plugins, etc)
-                "YourUsername/nvim-beads.nvim",
+                "fancypantalons/nvim-beads",
             },
         })
       render: lua

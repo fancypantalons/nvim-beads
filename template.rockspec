@@ -14,7 +14,7 @@ rockspec_format = "3.0"
 package = "nvim-beads.nvim"
 version = modrev .. "-" .. specrev
 
-local user = "YourUsername"
+local user = "fancypantalons"
 
 description = {
     homepage = "https://github.com/" .. user .. "/" .. package,
@@ -24,7 +24,6 @@ description = {
 }
 
 dependencies = {
-    "mega.cmdparse >= 1.0.3, < 2.0",
     "mega.logging >= 1.1.4, < 2.0",
 
     -- TODO(you): Remove these dependencies if you don't need them

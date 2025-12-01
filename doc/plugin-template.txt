@@ -96,8 +96,8 @@ A template repository used to create Neovim plugins.
 
 >lua
     {
-        "YourUsername/nvim-beads.nvim",
-        dependencies = { "YourUsername/mega.cmdparse", "ColinKennedy/mega.logging" },
+        "fancypantalons/nvim-beads",
+        dependencies = { "ColinKennedy/mega.cmdparse", "ColinKennedy/mega.logging" },
         version = "v1.0.0",
     }
 <
