@@ -4,10 +4,8 @@
 describe("autocmd save workflow", function()
     local autocmds
     local core_module
-    local original_vim_system
-    local original_notify
-    local original_vim_fn_system
     local original_vim_v
+    local env = require("test_utilities.env")
     local notifications
     local test_bufnr
     local mock_shell_error
@@ -21,17 +19,16 @@ describe("autocmd save workflow", function()
         autocmds = require("nvim-beads.autocmds")
         core_module = require("nvim-beads.core")
 
-        -- Save original functions
-        original_vim_system = vim.system
-        original_notify = vim.notify
-        original_vim_fn_system = vim.fn.system
-        original_vim_v = vim.v
+        env.setup_mock_env()
+        notifications = env.notifications -- Link to env's notifications
 
-        -- Mock vim.notify to capture notifications
-        notifications = {}
-        vim.notify = function(msg, level)
-            table.insert(notifications, { msg = msg, level = level })
-        end
+        -- Create a test buffer
+        test_bufnr = vim.api.nvim_create_buf(false, false)
+
+
+
+        -- Save original functions that are not mocked by env
+        original_vim_v = vim.v
 
         -- Mock vim.v with writable shell_error
         -- mock_shell_error no longer used
@@ -50,16 +47,11 @@ describe("autocmd save workflow", function()
                 end
             end,
         })
-
-        -- Create a test buffer
-        test_bufnr = vim.api.nvim_create_buf(false, false)
     end)
 
     after_each(function()
         -- Restore original functions
-        vim.system = original_vim_system
-        vim.notify = original_notify
-        vim.fn.system = original_vim_fn_system
+        env.teardown_mock_env()
         vim.v = original_vim_v
 
         -- Delete test buffer if it exists
@@ -151,8 +143,8 @@ describe("autocmd save workflow", function()
 
             -- Verify success notification
             local found_success = false
-            for _, notif in ipairs(notifications) do
-                if notif.msg:match("bd%-42 created successfully") then
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("bd%-42 created successfully") then
                     found_success = true
                     break
                 end
@@ -282,8 +274,8 @@ describe("autocmd save workflow", function()
 
             -- Verify error notification
             local found_error = false
-            for _, notif in ipairs(notifications) do
-                if notif.msg:match("Title is required") and notif.level == vim.log.levels.ERROR then
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("Title is required") and notif.level == vim.log.levels.ERROR then
                     found_error = true
                     break
                 end
@@ -317,8 +309,8 @@ describe("autocmd save workflow", function()
 
             -- Verify error notification
             local found_error = false
-            for _, notif in ipairs(notifications) do
-                if notif.msg:match("Title is required") and notif.level == vim.log.levels.ERROR then
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("Title is required") and notif.level == vim.log.levels.ERROR then
                     found_error = true
                     break
                 end
@@ -360,8 +352,8 @@ describe("autocmd save workflow", function()
 
             -- Verify error notification
             local found_error = false
-            for _, notif in ipairs(notifications) do
-                if notif.msg:match("Failed to create issue") and notif.level == vim.log.levels.ERROR then
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("Failed to create issue") and notif.level == vim.log.levels.ERROR then
                     found_error = true
                     break
                 end

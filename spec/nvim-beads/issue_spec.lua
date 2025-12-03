@@ -473,20 +473,7 @@ describe("nvim-beads.issue.formatter", function()
 
     describe("open_issue_buffer", function()
         local buffer_module
-        local original_vim_api_create_buf
-        local original_vim_api_set_name
-        local original_vim_api_set_lines
-        local original_vim_api_set_option_value
-        local original_vim_api_set_current_buf
-        local original_vim_notify
-
-        -- Mock state
-        local created_bufnr
-        local buffer_name
-        local buffer_lines
-        local buffer_options
-        local current_buf
-        local notifications
+        local env = require("test_utilities.env")
 
         before_each(function()
             -- Clear the module cache
@@ -495,61 +482,11 @@ describe("nvim-beads.issue.formatter", function()
             package.loaded["nvim-beads.core"] = nil
             buffer_module = require("nvim-beads.buffer")
 
-            -- Save originals
-            original_vim_api_create_buf = vim.api.nvim_create_buf
-            original_vim_api_set_name = vim.api.nvim_buf_set_name
-            original_vim_api_set_lines = vim.api.nvim_buf_set_lines
-            original_vim_api_set_option_value = vim.api.nvim_set_option_value
-            original_vim_api_set_current_buf = vim.api.nvim_set_current_buf
-            original_vim_notify = vim.notify
-
-            -- Reset mock state
-            created_bufnr = 42
-            buffer_name = nil
-            buffer_lines = nil
-            buffer_options = {}
-            current_buf = nil
-            notifications = {}
-
-            -- Mock vim.api functions
-            vim.api.nvim_create_buf = function(_, _)
-                return created_bufnr
-            end
-
-            vim.api.nvim_buf_set_name = function(_, name)
-                buffer_name = name
-            end
-
-            vim.api.nvim_buf_set_lines = function(_, _, _, _, lines)
-                buffer_lines = lines
-            end
-
-            vim.api.nvim_set_option_value = function(option, value, opts)
-                if opts and opts.buf then
-                    if not buffer_options[opts.buf] then
-                        buffer_options[opts.buf] = {}
-                    end
-                    buffer_options[opts.buf][option] = value
-                end
-            end
-
-            vim.api.nvim_set_current_buf = function(bufnr)
-                current_buf = bufnr
-            end
-
-            vim.notify = function(msg, level)
-                table.insert(notifications, { message = msg, level = level })
-            end
+            env.setup_mock_env()
         end)
 
         after_each(function()
-            -- Restore originals
-            vim.api.nvim_create_buf = original_vim_api_create_buf
-            vim.api.nvim_buf_set_name = original_vim_api_set_name
-            vim.api.nvim_buf_set_lines = original_vim_api_set_lines
-            vim.api.nvim_set_option_value = original_vim_api_set_option_value
-            vim.api.nvim_set_current_buf = original_vim_api_set_current_buf
-            vim.notify = original_vim_notify
+            env.teardown_mock_env()
         end)
 
         describe("argument validation", function()
@@ -557,25 +494,25 @@ describe("nvim-beads.issue.formatter", function()
                 local success = buffer_module.open_issue_buffer(nil)
 
                 assert.is_false(success)
-                assert.equals(1, #notifications)
-                assert.matches("Invalid issue ID", notifications[1].message)
-                assert.equals(vim.log.levels.ERROR, notifications[1].level)
+                assert.equals(1, #env.notifications)
+                assert.matches("Invalid issue ID", env.notifications[1].message)
+                assert.equals(vim.log.levels.ERROR, env.notifications[1].level)
             end)
 
             it("should return false and notify error when issue_id is empty string", function()
                 local success = buffer_module.open_issue_buffer("")
 
                 assert.is_false(success)
-                assert.equals(1, #notifications)
-                assert.matches("Invalid issue ID", notifications[1].message)
+                assert.equals(1, #env.notifications)
+                assert.matches("Invalid issue ID", env.notifications[1].message)
             end)
 
             it("should return false and notify error when issue_id is not a string", function()
                 local success = buffer_module.open_issue_buffer(123)
 
                 assert.is_false(success)
-                assert.equals(1, #notifications)
-                assert.matches("Invalid issue ID", notifications[1].message)
+                assert.equals(1, #env.notifications)
+                assert.matches("Invalid issue ID", env.notifications[1].message)
             end)
         end)
 
@@ -622,10 +559,10 @@ describe("nvim-beads.issue.formatter", function()
                 local success = buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_false(success)
-                assert.equals(1, #notifications)
-                assert.matches("Failed to fetch issue bd%-1", notifications[1].message)
-                assert.matches("Command failed", notifications[1].message)
-                assert.equals(vim.log.levels.ERROR, notifications[1].level)
+                assert.equals(1, #env.notifications)
+                assert.matches("Failed to fetch issue bd%-1", env.notifications[1].message)
+                assert.matches("Command failed", env.notifications[1].message)
+                assert.equals(vim.log.levels.ERROR, env.notifications[1].level)
 
                 -- Restore
                 core.execute_bd = original_execute_bd
@@ -641,8 +578,8 @@ describe("nvim-beads.issue.formatter", function()
                 local success = buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_false(success)
-                assert.equals(1, #notifications)
-                assert.matches("Invalid issue data", notifications[1].message)
+                assert.equals(1, #env.notifications)
+                assert.matches("Invalid issue data", env.notifications[1].message)
 
                 -- Restore
                 core.execute_bd = original_execute_bd
@@ -658,8 +595,8 @@ describe("nvim-beads.issue.formatter", function()
                 local success = buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_false(success)
-                assert.equals(1, #notifications)
-                assert.matches("Invalid issue data", notifications[1].message)
+                assert.equals(1, #env.notifications)
+                assert.matches("Invalid issue data", env.notifications[1].message)
 
                 -- Restore
                 core.execute_bd = original_execute_bd
@@ -689,7 +626,7 @@ describe("nvim-beads.issue.formatter", function()
             it("should create buffer with correct name", function()
                 buffer_module.open_issue_buffer("bd-1")
 
-                assert.equals("beads://issue/bd-1", buffer_name)
+                assert.equals("beads://issue/bd-1", env.buffer_name)
             end)
 
             it("should create buffer with correct name for longer issue IDs", function()
@@ -712,37 +649,37 @@ describe("nvim-beads.issue.formatter", function()
 
                 buffer_module.open_issue_buffer("nvim-beads-p69")
 
-                assert.equals("beads://issue/nvim-beads-p69", buffer_name)
+                assert.equals("beads://issue/nvim-beads-p69", env.buffer_name)
             end)
 
             it("should set filetype to markdown", function()
                 buffer_module.open_issue_buffer("bd-1")
 
-                assert.is_not_nil(buffer_options[created_bufnr])
-                assert.equals("markdown", buffer_options[created_bufnr].filetype)
+                assert.is_not_nil(env.buffer_options[env.created_bufnr])
+                assert.equals("markdown", env.buffer_options[env.created_bufnr].filetype)
             end)
 
             it("should set buftype to acwrite", function()
                 buffer_module.open_issue_buffer("bd-1")
 
-                assert.equals("acwrite", buffer_options[created_bufnr].buftype)
+                assert.equals("acwrite", env.buffer_options[env.created_bufnr].buftype)
             end)
 
             it("should set bufhidden to hide", function()
                 buffer_module.open_issue_buffer("bd-1")
 
-                assert.equals("hide", buffer_options[created_bufnr].bufhidden)
+                assert.equals("hide", env.buffer_options[env.created_bufnr].bufhidden)
             end)
 
             it("should populate buffer with formatted content", function()
                 buffer_module.open_issue_buffer("bd-1")
 
-                assert.is_not_nil(buffer_lines)
-                assert.is_table(buffer_lines)
-                assert.is_true(#buffer_lines > 0)
+                assert.is_not_nil(env.buffer_lines)
+                assert.is_table(env.buffer_lines)
+                assert.is_true(#env.buffer_lines > 0)
 
                 -- Check for YAML frontmatter
-                local content = table.concat(buffer_lines, "\n")
+                local content = table.concat(env.buffer_lines, "\n")
                 assert.matches("---", content)
                 assert.matches("id: bd%-1", content)
                 assert.matches("title: Test Issue", content)
@@ -751,7 +688,7 @@ describe("nvim-beads.issue.formatter", function()
             it("should display buffer in current window", function()
                 buffer_module.open_issue_buffer("bd-1")
 
-                assert.equals(created_bufnr, current_buf)
+                assert.equals(env.created_bufnr, env.current_buf)
             end)
 
             it("should return true on success", function()
@@ -800,8 +737,8 @@ describe("nvim-beads.issue.formatter", function()
 
                 buffer_module.open_issue_buffer("bd-20")
 
-                assert.is_not_nil(buffer_lines)
-                local content = table.concat(buffer_lines, "\n")
+                assert.is_not_nil(env.buffer_lines)
+                local content = table.concat(env.buffer_lines, "\n")
 
                 -- Verify all sections are included
                 assert.matches("id: bd%-20", content)
