@@ -115,6 +115,8 @@ local function list(call_opts)
     local cmd
     if filters.state == "ready" then
         cmd = { "bd", "ready", "--json" }
+    elseif filters.state == "stale" then
+        cmd = { "bd", "stale", "--json" }
     else
         cmd = { "bd", "list", "--json" }
     end

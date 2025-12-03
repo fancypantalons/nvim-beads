@@ -53,6 +53,11 @@ local subcommands = {
             require("nvim-beads.buffer").open_issue_buffer(args[1])
         end,
     },
+    show = {
+        impl = function(args)
+            require("nvim-beads.buffer").open_issue_buffer(args[1])
+        end,
+    },
 }
 
 --- Execute a :Beads subcommand

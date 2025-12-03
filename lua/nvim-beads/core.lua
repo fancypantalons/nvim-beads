@@ -139,6 +139,7 @@ function M.parse_list_filters(fargs)
         blocked = true,
         closed = true,
         ready = true,
+        stale = true,
         all = true,
     }
     local valid_types = {
