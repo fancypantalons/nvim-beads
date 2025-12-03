@@ -63,7 +63,12 @@ end
 --- Show list of all beads issues
 ---@param args table|nil Optional filter arguments [state, type]
 function M.show_list(args)
-    args = args or {}
+    local filters, err = M.parse_list_filters(args)
+    if err then
+        vim.notify("Beads list: " .. err, vim.log.levels.ERROR)
+        return
+    end
+
     local has_telescope, telescope = pcall(require, "telescope")
     if not has_telescope then
         vim.notify(
@@ -79,8 +84,7 @@ function M.show_list(args)
     end
 
     -- Call the default telescope picker
-    telescope.extensions.nvim_beads.nvim_beads()
-    return
+    telescope.extensions.nvim_beads.nvim_beads(filters)
 end
 
 --- Fetch template for a given issue type
@@ -122,10 +126,11 @@ end
 
 --- Parse list filter arguments from the command
 ---@param fargs table|nil The filter arguments from the command
----@return table filters A table with parsed state and type
+---@return table? filters A table with parsed state and type, or nil on error
+---@return string? err An error message if validation fails
 function M.parse_list_filters(fargs)
     if not fargs or #fargs == 0 then
-        return { state = nil, type = nil }
+        return { state = nil, type = nil }, nil
     end
 
     local valid_states = {
@@ -153,26 +158,36 @@ function M.parse_list_filters(fargs)
     }
 
     local filters = { state = nil, type = nil }
-    local arg1 = fargs[1]
-    local arg2 = fargs[2]
 
-    if arg1 then
-        local term1 = plural_map[string.lower(arg1)] or string.lower(arg1)
-        if valid_states[term1] then
-            filters.state = term1
-        elseif valid_types[term1] then
-            filters.type = term1
+    for _, arg in ipairs(fargs) do
+        local term = plural_map[string.lower(arg)] or string.lower(arg)
+
+        local is_state = valid_states[term]
+        local is_type = valid_types[term]
+
+        if not is_state and not is_type then
+            return nil, string.format("Invalid issue state or type '%s'", arg)
+        end
+
+        -- Prefer assigning to state if it's not taken yet
+        if is_state and not filters.state then
+            filters.state = term
+        -- Then try assigning to type if it's not taken
+        elseif is_type and not filters.type then
+            filters.type = term
+        else
+            -- If we are here, it means both slots that the arg could fill are taken.
+            if is_state and is_type then
+                return nil, string.format("Duplicate or ambiguous state and type for '%s'", arg)
+            elseif is_state then
+                return nil, string.format("Duplicate issue state '%s'", arg)
+            else -- is_type
+                return nil, string.format("Duplicate issue type '%s'", arg)
+            end
         end
     end
 
-    if arg2 and not filters.type then
-        local term2 = plural_map[string.lower(arg2)] or string.lower(arg2)
-        if valid_types[term2] then
-            filters.type = term2
-        end
-    end
-
-    return filters
+    return filters, nil
 end
 
 return M

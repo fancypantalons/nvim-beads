@@ -95,24 +95,63 @@ end
 
 --- Run the `:Telescope nvim_beads list` command to show all issues
 ---
----@param opts telescope.CommandOptions The Telescope UI / layout options
----
-local function list(opts)
-    opts = opts or {}
+---@param call_opts table|nil Either Telescope options or a filter table {state?: string, type?: string}
+local function list(call_opts)
+    local opts, filters
+    if call_opts then
+        if call_opts.state or call_opts.type then
+            filters = call_opts
+            opts = {}
+        else
+            opts = call_opts
+            filters = {}
+        end
+    else
+        opts = {}
+        filters = {}
+    end
 
-    -- Run bd list --json and parse the output
-    local result = vim.system({ "bd", "list", "--json" }, { text = true }):wait()
+    -- Choose the bd command based on filters
+    local cmd
+    if filters.state == "ready" then
+        cmd = { "bd", "ready", "--json" }
+    else
+        cmd = { "bd", "list", "--json" }
+    end
+
+    -- Run bd command and parse the output
+    local result = vim.system(cmd, { text = true }):wait()
 
     if result.code ~= 0 then
-        vim.notify("Failed to run 'bd list --json': " .. (result.stderr or ""), vim.log.levels.ERROR)
+        vim.notify("Failed to run '" .. table.concat(cmd, " ") .. "': " .. (result.stderr or ""), vim.log.levels.ERROR)
         return
     end
 
     -- Parse JSON array
-    local ok, issues = pcall(vim.json.decode, result.stdout)
-    if not ok or not issues then
-        vim.notify("Failed to parse JSON output from 'bd list --json'", vim.log.levels.ERROR)
+    local ok, all_issues = pcall(vim.json.decode, result.stdout)
+    if not ok or not all_issues then
+        vim.notify("Failed to parse JSON output from '" .. table.concat(cmd, " ") .. "'", vim.log.levels.ERROR)
         return
+    end
+
+    -- Filter issues in Lua
+    local filtered_issues = {}
+    for _, issue in ipairs(all_issues) do
+        -- 'ready' is a special state that uses `bd ready`. We don't need to re-filter by status
+        -- if the user asked for 'ready' issues.
+        local state_match = true
+        if filters.state and filters.state ~= "all" and filters.state ~= "ready" then
+            state_match = issue.status == filters.state
+        end
+
+        local type_match = true
+        if filters.type and filters.type ~= "all" then
+            type_match = issue.issue_type == filters.type
+        end
+
+        if state_match and type_match then
+            table.insert(filtered_issues, issue)
+        end
     end
 
     -- Entry maker function
@@ -128,7 +167,7 @@ local function list(opts)
         .new(opts, {
             prompt_title = "Beads Issues",
             finder = finders.new_table({
-                results = issues,
+                results = filtered_issues,
                 entry_maker = entry_maker,
             }),
             sorter = conf.generic_sorter(opts),
