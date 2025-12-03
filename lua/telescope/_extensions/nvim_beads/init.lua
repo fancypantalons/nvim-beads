@@ -15,6 +15,7 @@ local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 local formatter = require("nvim-beads.issue.formatter")
+local buffer = require("nvim-beads.buffer")
 
 --- Create a previewer for beads issues
 ---
@@ -136,7 +137,7 @@ local function list(opts)
                 actions.select_default:replace(function()
                     local selection = action_state.get_selected_entry()
                     actions.close(prompt_bufnr)
-                    issue_module.open_issue_buffer(selection.value.id)
+                    buffer.open_issue_buffer(selection.value.id)
                 end)
                 return true
             end,
