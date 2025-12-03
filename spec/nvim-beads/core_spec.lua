@@ -580,7 +580,7 @@ describe("nvim-beads.core", function()
         end)
 
         describe("error handling", function()
-            it("should return error when bd command fails", function()
+            it("should return default template when bd command fails (no template found)", function()
                 vim.system = function(_, _)
                     return {
                         wait = function()
@@ -594,9 +594,52 @@ describe("nvim-beads.core", function()
                 end
 
                 local result, err = core.fetch_template("task")
-                assert.is_nil(result)
-                assert.is_not_nil(err)
-                assert.matches("bd command failed", err)
+                assert.is_nil(err)
+                assert.is_not_nil(result)
+                assert.equals("", result.title)
+                assert.equals("task", result.type)
+                assert.equals(2, result.priority)
+                assert.equals("", result.description)
+                assert.equals("", result.acceptance_criteria)
+                assert.equals("", result.design)
+            end)
+
+            it("should return default template with correct type for bug", function()
+                vim.system = function(_, _)
+                    return {
+                        wait = function()
+                            return {
+                                code = 1,
+                                stdout = "",
+                                stderr = "Template not found",
+                            }
+                        end,
+                    }
+                end
+
+                local result, err = core.fetch_template("bug")
+                assert.is_nil(err)
+                assert.is_not_nil(result)
+                assert.equals("bug", result.type)
+            end)
+
+            it("should return default template with correct type for feature", function()
+                vim.system = function(_, _)
+                    return {
+                        wait = function()
+                            return {
+                                code = 1,
+                                stdout = "",
+                                stderr = "Template not found",
+                            }
+                        end,
+                    }
+                end
+
+                local result, err = core.fetch_template("feature")
+                assert.is_nil(err)
+                assert.is_not_nil(result)
+                assert.equals("feature", result.type)
             end)
 
             it("should return error when JSON parsing fails", function()

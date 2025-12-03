@@ -364,10 +364,11 @@ describe("nvim-beads.issue", function()
                 issue_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
-                -- Empty sections should not appear in the output
-                assert.is_nil(content:match("# Description"))
-                assert.is_nil(content:match("# Acceptance Criteria"))
-                assert.is_nil(content:match("# Design"))
+                -- Main sections (Description, Acceptance Criteria, Design) should always show headers
+                assert.is_not_nil(content:match("# Description"))
+                assert.is_not_nil(content:match("# Acceptance Criteria"))
+                assert.is_not_nil(content:match("# Design"))
+                -- Notes should not appear when empty
                 assert.is_nil(content:match("# Notes"))
             end)
 
@@ -382,10 +383,11 @@ describe("nvim-beads.issue", function()
                 issue_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
-                -- Missing sections should not appear in the output
-                assert.is_nil(content:match("# Description"))
-                assert.is_nil(content:match("# Acceptance Criteria"))
-                assert.is_nil(content:match("# Design"))
+                -- Main sections (Description, Acceptance Criteria, Design) should always show headers
+                assert.is_not_nil(content:match("# Description"))
+                assert.is_not_nil(content:match("# Acceptance Criteria"))
+                assert.is_not_nil(content:match("# Design"))
+                -- Notes should not appear when missing
                 assert.is_nil(content:match("# Notes"))
             end)
         end)

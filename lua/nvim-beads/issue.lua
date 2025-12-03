@@ -73,29 +73,35 @@ function M.format_issue_to_markdown(issue)
     add_line("---")
     add_line("")
 
-    -- Markdown body sections (only include non-empty/non-null sections)
+    -- Markdown body sections
+    -- Always show Description, Acceptance Criteria, and Design headers (even if empty)
+    -- Only show Notes header if it has content
 
+    -- Description (always shown)
+    add_line("# Description")
+    add_line("")
     if issue.description and issue.description ~= "" then
-        add_line("# Description")
-        add_line("")
         add_line(issue.description)
         add_line("")
     end
 
+    -- Acceptance Criteria (always shown)
+    add_line("# Acceptance Criteria")
+    add_line("")
     if issue.acceptance_criteria and issue.acceptance_criteria ~= "" then
-        add_line("# Acceptance Criteria")
-        add_line("")
         add_line(issue.acceptance_criteria)
         add_line("")
     end
 
+    -- Design (always shown)
+    add_line("# Design")
+    add_line("")
     if issue.design and issue.design ~= "" then
-        add_line("# Design")
-        add_line("")
         add_line(issue.design)
         add_line("")
     end
 
+    -- Notes (only shown if non-empty)
     if issue.notes and issue.notes ~= "" then
         add_line("# Notes")
         add_line("")

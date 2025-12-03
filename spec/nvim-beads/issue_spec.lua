@@ -37,6 +37,13 @@ describe("nvim-beads.issue", function()
             assert.equals("closed_at: null", lines[9])
             assert.equals("---", lines[10])
             assert.equals("", lines[11])
+            -- Main sections should be shown (even though empty)
+            assert.equals("# Description", lines[12])
+            assert.equals("", lines[13])
+            assert.equals("# Acceptance Criteria", lines[14])
+            assert.equals("", lines[15])
+            assert.equals("# Design", lines[16])
+            assert.equals("", lines[17])
         end)
 
         it("should map issue_type to type in frontmatter", function()
@@ -336,7 +343,7 @@ describe("nvim-beads.issue", function()
             assert.matches("Remember to update documentation", content)
         end)
 
-        it("should omit empty description section", function()
+        it("should show description header even when empty", function()
             local issue = {
                 id = "bd-17",
                 title = "Issue without Description",
@@ -351,10 +358,11 @@ describe("nvim-beads.issue", function()
             local lines = issue_module.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
-            assert.is_nil(content:match("# Description"))
+            -- Description header should be shown even when empty
+            assert.is_not_nil(content:match("# Description"))
         end)
 
-        it("should omit nil sections", function()
+        it("should show main section headers even when sections are nil or empty", function()
             local issue = {
                 id = "bd-18",
                 title = "Issue with nil sections",
@@ -372,9 +380,11 @@ describe("nvim-beads.issue", function()
             local lines = issue_module.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
-            assert.is_nil(content:match("# Description"))
-            assert.is_nil(content:match("# Acceptance Criteria"))
-            assert.is_nil(content:match("# Design"))
+            -- Main sections (Description, Acceptance Criteria, Design) should always show headers
+            assert.is_not_nil(content:match("# Description"))
+            assert.is_not_nil(content:match("# Acceptance Criteria"))
+            assert.is_not_nil(content:match("# Design"))
+            -- Notes section should only show when it has content
             assert.is_nil(content:match("# Notes"))
         end)
 
