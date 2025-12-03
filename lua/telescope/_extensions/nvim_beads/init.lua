@@ -179,7 +179,7 @@ local function list(call_opts)
                     buffer.open_issue_buffer(selection.value.id)
                 end)
 
-                map("n", "d", function(p_prompt_bufnr)
+                local function delete_issue(p_prompt_bufnr)
                     local selection = action_state.get_selected_entry()
                     if not selection then
                         vim.notify("No issue selected", vim.log.levels.WARN)
@@ -205,9 +205,9 @@ local function list(call_opts)
                             end)
                         end)
                     end
-                end)
+                end
 
-                map("n", "c", function(p_prompt_bufnr)
+                local function close_issue(p_prompt_bufnr)
                     local selection = action_state.get_selected_entry()
                     if not selection then
                         vim.notify("No issue selected", vim.log.levels.WARN)
@@ -233,9 +233,9 @@ local function list(call_opts)
                             end)
                         end)
                     end
-                end)
+                end
 
-                map("n", "o", function(p_prompt_bufnr)
+                local function open_issue(p_prompt_bufnr)
                     local selection = action_state.get_selected_entry()
                     if not selection then
                         vim.notify("No issue selected", vim.log.levels.WARN)
@@ -261,7 +261,40 @@ local function list(call_opts)
                             end)
                         end)
                     end
-                end)
+                end
+
+                local function mark_as_in_progress(p_prompt_bufnr)
+                    local selection = action_state.get_selected_entry()
+                    if not selection then
+                        vim.notify("No issue selected", vim.log.levels.WARN)
+                        return
+                    end
+
+                    local issue_id = selection.value.id
+                    if vim.fn.confirm("Mark issue " .. issue_id .. " as in-progress?", "&Yes\n&No", 2) == 1 then
+                        local cmd = { "bd", "update", issue_id, "--status", "in_progress", "--json" }
+                        vim.system(cmd, { text = true }, function(result)
+                            vim.schedule(function()
+                                if result.code == 0 then
+                                    vim.notify("Issue " .. issue_id .. " marked as in-progress")
+                                    actions.close(p_prompt_bufnr)
+                                    list(call_opts)
+                                else
+                                    local msg = "Failed to mark issue " .. issue_id .. " as in-progress"
+                                    if result.stderr and result.stderr ~= "" then
+                                        msg = msg .. ": " .. result.stderr
+                                    end
+                                    vim.notify(msg, vim.log.levels.ERROR)
+                                end
+                            end)
+                        end)
+                    end
+                end
+
+                map("n", "d", delete_issue)
+                map("n", "c", close_issue)
+                map("n", "o", open_issue)
+                map("n", "i", mark_as_in_progress)
 
                 return true
             end,
