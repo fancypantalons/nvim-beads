@@ -120,4 +120,59 @@ function M.fetch_template(issue_type)
     return result, nil
 end
 
+--- Parse list filter arguments from the command
+---@param fargs table|nil The filter arguments from the command
+---@return table filters A table with parsed state and type
+function M.parse_list_filters(fargs)
+    if not fargs or #fargs == 0 then
+        return { state = nil, type = nil }
+    end
+
+    local valid_states = {
+        open = true,
+        in_progress = true,
+        blocked = true,
+        closed = true,
+        ready = true,
+        all = true,
+    }
+    local valid_types = {
+        bug = true,
+        feature = true,
+        task = true,
+        epic = true,
+        chore = true,
+        all = true,
+    }
+    local plural_map = {
+        bugs = "bug",
+        features = "feature",
+        tasks = "task",
+        epics = "epic",
+        chores = "chore",
+    }
+
+    local filters = { state = nil, type = nil }
+    local arg1 = fargs[1]
+    local arg2 = fargs[2]
+
+    if arg1 then
+        local term1 = plural_map[string.lower(arg1)] or string.lower(arg1)
+        if valid_states[term1] then
+            filters.state = term1
+        elseif valid_types[term1] then
+            filters.type = term1
+        end
+    end
+
+    if arg2 and not filters.type then
+        local term2 = plural_map[string.lower(arg2)] or string.lower(arg2)
+        if valid_types[term2] then
+            filters.type = term2
+        end
+    end
+
+    return filters
+end
+
 return M
