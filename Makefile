@@ -33,7 +33,7 @@ stylua:
 	stylua lua plugin scripts spec
 
 test: download-dependencies
-	busted .
+	@eval $$(luarocks path --lua-version 5.1) && busted .
 
 check-mdformat:
 	python -m mdformat --check README.md markdown/manual/docs/index.md
