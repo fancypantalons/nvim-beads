@@ -64,8 +64,17 @@ local function create_issue_previewer()
                     local flattened_lines = {}
                     for _, line in ipairs(lines) do
                         if line:find("\n") then
-                            for subline in line:gmatch("[^\n]+") do
-                                table.insert(flattened_lines, subline)
+                            -- Split on newlines, preserving blank lines
+                            local pos = 1
+                            while pos <= #line do
+                                local next_newline = line:find("\n", pos, true)
+                                if next_newline then
+                                    table.insert(flattened_lines, line:sub(pos, next_newline - 1))
+                                    pos = next_newline + 1
+                                else
+                                    table.insert(flattened_lines, line:sub(pos))
+                                    break
+                                end
                             end
                         else
                             table.insert(flattened_lines, line)
