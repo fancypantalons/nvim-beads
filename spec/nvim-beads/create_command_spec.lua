@@ -4,6 +4,20 @@
 describe("nvim-beads.issue.diff", function()
     local diff
 
+    -- Helper function to check if a command table contains a flag with value
+    local function cmd_has_flag(cmd, flag, value)
+        for i = 1, #cmd do
+            if cmd[i] == flag then
+                if value == nil then
+                    return true
+                elseif i + 1 <= #cmd and cmd[i + 1] == tostring(value) then
+                    return true
+                end
+            end
+        end
+        return false
+    end
+
     before_each(function()
         -- Clear the module cache to get fresh instance
         package.loaded["nvim-beads.issue.diff"] = nil
@@ -69,7 +83,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.equals("bd create 'Fix bug in parser' --type bug", command)
+                assert.same({ "bd", "create", "Fix bug in parser", "--type", "bug" }, command)
             end)
 
             it("should work with task type", function()
@@ -81,7 +95,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.equals("bd create 'Update documentation' --type task", command)
+                assert.same({ "bd", "create", "Update documentation", "--type", "task" }, command)
             end)
 
             it("should work with feature type", function()
@@ -93,7 +107,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.equals("bd create 'Add dark mode' --type feature", command)
+                assert.same({ "bd", "create", "Add dark mode", "--type", "feature" }, command)
             end)
 
             it("should work with epic type", function()
@@ -105,7 +119,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.equals("bd create 'User authentication system' --type epic", command)
+                assert.same({ "bd", "create", "User authentication system", "--type", "epic" }, command)
             end)
 
             it("should work with chore type", function()
@@ -117,7 +131,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.equals("bd create 'Update dependencies' --type chore", command)
+                assert.same({ "bd", "create", "Update dependencies", "--type", "chore" }, command)
             end)
         end)
 
@@ -132,7 +146,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("bd create 'Critical bug' %-%-type bug %-%-priority 0") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--priority", 0))
             end)
 
             it("should include description when provided", function()
@@ -145,7 +159,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-description 'The parser fails on edge cases'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--description", "The parser fails on edge cases"))
             end)
 
             it("should include acceptance criteria when provided", function()
@@ -158,7 +172,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-acceptance 'Must pass all tests'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--acceptance", "Must pass all tests"))
             end)
 
             it("should include design when provided", function()
@@ -171,7 +185,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-design 'Use MVC pattern'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--design", "Use MVC pattern"))
             end)
 
             it("should include labels when provided", function()
@@ -184,7 +198,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-labels 'ui,frontend,critical'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--labels", "ui,frontend,critical"))
             end)
 
             it("should include parent when provided", function()
@@ -197,7 +211,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-parent bd%-50") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--parent", "bd-50"))
             end)
 
             it("should include dependencies when provided", function()
@@ -210,7 +224,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-deps 'blocks:bd%-10,blocks:bd%-20'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--deps", "blocks:bd-10,blocks:bd-20"))
             end)
         end)
 
@@ -225,7 +239,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_false(command:match("%-%-description") ~= nil)
+                assert.is_false(cmd_has_flag(command, "--description"))
             end)
 
             it("should omit acceptance criteria when empty string", function()
@@ -238,7 +252,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_false(command:match("%-%-acceptance") ~= nil)
+                assert.is_false(cmd_has_flag(command, "--acceptance"))
             end)
 
             it("should omit design when empty string", function()
@@ -251,7 +265,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_false(command:match("%-%-design") ~= nil)
+                assert.is_false(cmd_has_flag(command, "--design"))
             end)
 
             it("should omit labels when empty array", function()
@@ -264,7 +278,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_false(command:match("%-%-labels") ~= nil)
+                assert.is_false(cmd_has_flag(command, "--labels"))
             end)
 
             it("should omit parent when empty string", function()
@@ -277,7 +291,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_false(command:match("%-%-parent") ~= nil)
+                assert.is_false(cmd_has_flag(command, "--parent"))
             end)
 
             it("should omit dependencies when empty array", function()
@@ -290,12 +304,12 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_false(command:match("%-%-deps") ~= nil)
+                assert.is_false(cmd_has_flag(command, "--deps"))
             end)
         end)
 
-        describe("special character escaping", function()
-            it("should escape single quotes in title", function()
+        describe("special character handling (no escaping needed)", function()
+            it("should handle single quotes in title", function()
                 local parsed_issue = {
                     title = "Fix user's authentication",
                     issue_type = "bug",
@@ -304,7 +318,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.equals("bd create 'Fix user'\\''s authentication' --type bug", command)
+                assert.same({ "bd", "create", "Fix user's authentication", "--type", "bug" }, command)
             end)
 
             it("should handle double quotes in title", function()
@@ -316,10 +330,10 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.equals("bd create 'Add \"advanced\" search' --type feature", command)
+                assert.same({ "bd", "create", 'Add "advanced" search', "--type", "feature" }, command)
             end)
 
-            it("should escape single quotes in description", function()
+            it("should handle single quotes in description", function()
                 local parsed_issue = {
                     title = "Fix bug",
                     issue_type = "bug",
@@ -329,7 +343,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-description 'The user'\\''s session wasn'\\''t saved'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--description", "The user's session wasn't saved"))
             end)
 
             it("should handle newlines in description", function()
@@ -342,10 +356,10 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-description 'Line 1\nLine 2\nLine 3'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--description", "Line 1\nLine 2\nLine 3"))
             end)
 
-            it("should handle special shell characters", function()
+            it("should handle special shell characters in arguments", function()
                 local parsed_issue = {
                     title = "Fix: $var & pipe | redirect >",
                     issue_type = "bug",
@@ -354,10 +368,10 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("'Fix: %$var & pipe | redirect >'") ~= nil)
+                assert.same({ "bd", "create", "Fix: $var & pipe | redirect >", "--type", "bug" }, command)
             end)
 
-            it("should escape single quotes in acceptance criteria", function()
+            it("should handle single quotes in acceptance criteria", function()
                 local parsed_issue = {
                     title = "Task",
                     issue_type = "task",
@@ -367,10 +381,10 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-acceptance 'User'\\''s can login successfully'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--acceptance", "User's can login successfully"))
             end)
 
-            it("should escape single quotes in design", function()
+            it("should handle single quotes in design", function()
                 local parsed_issue = {
                     title = "Task",
                     issue_type = "task",
@@ -380,10 +394,10 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-design 'Use the system'\\''s default config'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--design", "Use the system's default config"))
             end)
 
-            it("should escape single quotes in labels", function()
+            it("should handle single quotes in labels", function()
                 local parsed_issue = {
                     title = "Task",
                     issue_type = "task",
@@ -393,7 +407,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-labels 'user'\\''s%-bug,frontend'") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--labels", "user's-bug,frontend"))
             end)
         end)
 
@@ -417,15 +431,17 @@ describe("nvim-beads.issue.diff", function()
                 assert.is_not_nil(command)
 
                 -- Verify all components are present
-                assert.is_true(command:match("bd create 'Comprehensive issue'") ~= nil)
-                assert.is_true(command:match("%-%-type feature") ~= nil)
-                assert.is_true(command:match("%-%-priority 1") ~= nil)
-                assert.is_true(command:match("%-%-description 'This is a detailed description'") ~= nil)
-                assert.is_true(command:match("%-%-acceptance 'Must meet all criteria'") ~= nil)
-                assert.is_true(command:match("%-%-design 'Follow MVC pattern'") ~= nil)
-                assert.is_true(command:match("%-%-labels 'backend,api,critical'") ~= nil)
-                assert.is_true(command:match("%-%-parent bd%-100") ~= nil)
-                assert.is_true(command:match("%-%-deps 'blocks:bd%-50,blocks:bd%-60'") ~= nil)
+                assert.same("bd", command[1])
+                assert.same("create", command[2])
+                assert.same("Comprehensive issue", command[3])
+                assert.is_true(cmd_has_flag(command, "--type", "feature"))
+                assert.is_true(cmd_has_flag(command, "--priority", 1))
+                assert.is_true(cmd_has_flag(command, "--description", "This is a detailed description"))
+                assert.is_true(cmd_has_flag(command, "--acceptance", "Must meet all criteria"))
+                assert.is_true(cmd_has_flag(command, "--design", "Follow MVC pattern"))
+                assert.is_true(cmd_has_flag(command, "--labels", "backend,api,critical"))
+                assert.is_true(cmd_has_flag(command, "--parent", "bd-100"))
+                assert.is_true(cmd_has_flag(command, "--deps", "blocks:bd-50,blocks:bd-60"))
             end)
         end)
 
@@ -440,7 +456,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-priority 0") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--priority", 0))
             end)
 
             it("should handle priority 1 (high)", function()
@@ -453,7 +469,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-priority 1") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--priority", 1))
             end)
 
             it("should handle priority 2 (medium/default)", function()
@@ -466,7 +482,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-priority 2") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--priority", 2))
             end)
 
             it("should handle priority 3 (low)", function()
@@ -479,7 +495,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-priority 3") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--priority", 3))
             end)
 
             it("should handle priority 4 (backlog)", function()
@@ -492,7 +508,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(command:match("%-%-priority 4") ~= nil)
+                assert.is_true(cmd_has_flag(command, "--priority", 4))
             end)
         end)
     end)

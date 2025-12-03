@@ -34,7 +34,7 @@ describe("autocmd save workflow", function()
         end
 
         -- Mock vim.v with writable shell_error
-        mock_shell_error = 0
+        -- mock_shell_error no longer used
         vim.v = setmetatable({}, {
             __index = function(_, k)
                 if k == "shell_error" then
@@ -92,17 +92,25 @@ describe("autocmd save workflow", function()
             vim.api.nvim_buf_set_lines(test_bufnr, 0, -1, false, buffer_content)
             vim.api.nvim_buf_set_name(test_bufnr, "beads://issue/new?type=bug")
 
-            -- Mock vim.fn.system for create command
+            -- Mock vim.system for create command
             local create_output = '{"id":"bd-42","title":"Fix parsing bug","issue_type":"bug"}'
             local system_calls = {}
 
-            vim.fn.system = function(cmd)
-                table.insert(system_calls, cmd)
-                if cmd:match("bd create") then
-                    mock_shell_error = 0
-                    return create_output
+            vim.system = function(cmd_table, opts)
+                table.insert(system_calls, cmd_table)
+                local result = {
+                    code = 0,
+                    stdout = "",
+                    stderr = "",
+                }
+                if cmd_table[1] == "bd" and cmd_table[2] == "create" then
+                    result.stdout = create_output
                 end
-                return ""
+                return {
+                    wait = function()
+                        return result
+                    end,
+                }
             end
 
             -- Mock core.execute_bd for show command
@@ -133,8 +141,9 @@ describe("autocmd save workflow", function()
 
             -- Verify create command was called
             assert.equals(1, #system_calls)
-            assert.is_true(system_calls[1]:match("bd create") ~= nil)
-            assert.is_true(system_calls[1]:match("--json") ~= nil)
+            assert.equals("bd", system_calls[1][1])
+            assert.equals("create", system_calls[1][2])
+            assert.is_true(vim.tbl_contains(system_calls[1], "--json"))
 
             -- Verify buffer was renamed
             local new_name = vim.api.nvim_buf_get_name(test_bufnr)
@@ -192,13 +201,12 @@ describe("autocmd save workflow", function()
             local create_output = '{"id":"bd-200","title":"Add dark mode","issue_type":"feature"}'
             local system_calls = {}
 
-            vim.fn.system = function(cmd)
-                table.insert(system_calls, cmd)
-                if cmd:match("bd create") then
-                    mock_shell_error = 0
-                    return create_output
+            vim.system = function(cmd_table, opts)
+                table.insert(system_calls, cmd_table)
+                if cmd_table[1] == "bd" and cmd_table[2] == "create" then
+                    return { wait = function() return { code = 0, stdout = create_output, stderr = "" } end }
                 end
-                return ""
+                return { wait = function() return { code = 0, stdout = "", stderr = "" } end }
             end
 
             core_module.execute_bd = function(args)
@@ -235,13 +243,17 @@ describe("autocmd save workflow", function()
             -- Verify create command was called with all fields
             assert.equals(1, #system_calls)
             local cmd = system_calls[1]
-            assert.is_true(cmd:match("bd create") ~= nil)
-            assert.is_true(cmd:match("Add dark mode") ~= nil)
-            assert.is_true(cmd:match("--type feature") ~= nil)
-            assert.is_true(cmd:match("--priority 1") ~= nil)
-            assert.is_true(cmd:match("--parent bd%-100") ~= nil)
-            assert.is_true(cmd:match("--deps") ~= nil)
-            assert.is_true(cmd:match("--labels") ~= nil)
+            assert.equals("bd", cmd[1])
+            assert.equals("create", cmd[2])
+            assert.equals("Add dark mode", cmd[3])
+            assert.is_true(vim.tbl_contains(cmd, "--type"))
+            assert.is_true(vim.tbl_contains(cmd, "feature"))
+            assert.is_true(vim.tbl_contains(cmd, "--priority"))
+            assert.is_true(vim.tbl_contains(cmd, "1"))
+            assert.is_true(vim.tbl_contains(cmd, "--parent"))
+            assert.is_true(vim.tbl_contains(cmd, "bd-100"))
+            assert.is_true(vim.tbl_contains(cmd, "--deps"))
+            assert.is_true(vim.tbl_contains(cmd, "--labels"))
 
             -- Verify buffer was renamed
             local new_name = vim.api.nvim_buf_get_name(test_bufnr)
@@ -332,12 +344,15 @@ describe("autocmd save workflow", function()
             vim.api.nvim_buf_set_name(test_bufnr, "beads://issue/new?type=bug")
 
             -- Mock failing system call
-            vim.fn.system = function(cmd)
-                if cmd:match("bd create") then
-                    mock_shell_error = 1
-                    return "Error: Database connection failed"
+            vim.system = function(cmd_table, opts)
+                if cmd_table[1] == "bd" and cmd_table[2] == "create" then
+                    return {
+                        wait = function()
+                            return { code = 1, stdout = "", stderr = "Error: Database connection failed" }
+                        end,
+                    }
                 end
-                return ""
+                return { wait = function() return { code = 0, stdout = "", stderr = "" } end }
             end
 
             -- Call the handler
@@ -377,10 +392,10 @@ describe("autocmd save workflow", function()
 
             local create_output = '{"id":"bd-999","title":"New feature","issue_type":"feature"}'
 
-            vim.fn.system = function(cmd)
-                if cmd:match("bd create") then
-                    mock_shell_error = 0
-                    return create_output
+            vim.system = function(cmd_table, opts)
+                if cmd_table[1] == "bd" and cmd_table[2] == "create" then
+                    -- mock_shell_error no longer used
+                    return { wait = function() return { code = 0, stdout = create_output, stderr = "" } end }
                 end
                 return ""
             end

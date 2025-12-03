@@ -68,20 +68,21 @@ function M.handle_new_issue_save(bufnr)
     end
 
     -- Add --json flag for programmatic output
-    -- Discard stderr as bd emits additional messages there
-    create_cmd = create_cmd .. " --json 2>/dev/null"
+    table.insert(create_cmd, "--json")
 
-    -- Execute create command
-    local output = vim.fn.system(create_cmd)
-    local exit_code = vim.v.shell_error
+    -- Execute create command using vim.system
+    local result = vim.system(create_cmd, { text = true }):wait()
 
-    if exit_code ~= 0 then
+    if result.code ~= 0 then
+        local stderr = result.stderr or "no error output"
         vim.notify(
-            string.format("nvim-beads: Failed to create issue (exit %d): %s", exit_code, output),
+            string.format("nvim-beads: Failed to create issue (exit %d): %s", result.code, stderr),
             vim.log.levels.ERROR
         )
         return
     end
+
+    local output = result.stdout
 
     -- Extract new issue ID from output
     local new_id, extract_err = diff.extract_id_from_create_output(output)
@@ -194,10 +195,14 @@ function M.handle_existing_issue_save(bufnr, issue_id)
 
         if original_parent_id then
             -- Execute parent removal first
-            local remove_cmd = "bd dep remove " .. issue_id .. " " .. original_parent_id
-            local remove_ok = pcall(vim.fn.system, remove_cmd)
-            if not remove_ok then
-                vim.notify(string.format("nvim-beads: Failed to remove parent: %s", remove_cmd), vim.log.levels.ERROR)
+            local remove_cmd = { "bd", "dep", "remove", issue_id, original_parent_id }
+            local result = vim.system(remove_cmd, { text = true }):wait()
+            if result.code ~= 0 then
+                local stderr = result.stderr or "no error output"
+                vim.notify(
+                    string.format("nvim-beads: Failed to remove parent: %s", stderr),
+                    vim.log.levels.ERROR
+                )
                 return
             end
         end
@@ -217,14 +222,15 @@ function M.handle_existing_issue_save(bufnr, issue_id)
 
     -- Execute commands sequentially
     local all_success = true
-    for _, cmd in ipairs(commands) do
-        -- Execute command via shell
-        local cmd_result = vim.fn.system(cmd)
-        local exit_code = vim.v.shell_error
+    for _, cmd_table in ipairs(commands) do
+        -- Execute command via vim.system
+        local result = vim.system(cmd_table, { text = true }):wait()
 
-        if exit_code ~= 0 then
+        if result.code ~= 0 then
+            local stderr = result.stderr or "no error output"
+            local cmd_str = table.concat(cmd_table, " ")
             vim.notify(
-                string.format("nvim-beads: Command failed (exit %d): %s\nOutput: %s", exit_code, cmd, cmd_result),
+                string.format("nvim-beads: Command failed (exit %d): %s\nError: %s", result.code, cmd_str, stderr),
                 vim.log.levels.ERROR
             )
             all_success = false

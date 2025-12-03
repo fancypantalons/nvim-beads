@@ -1,19 +1,6 @@
 ---@class nvim-beads.issue.diff
 local M = {}
 
----Escape a string for safe use in shell commands
----@param str string The string to escape
----@return string escaped The escaped string suitable for shell command arguments
-local function shell_escape(str)
-    if not str then
-        return '""'
-    end
-
-    -- Use single quotes to avoid most shell interpretation
-    -- Escape any single quotes by replacing ' with '\''
-    local escaped = str:gsub("'", "'\\''")
-    return "'" .. escaped .. "'"
-end
 
 ---Compare two issue states and return structured changes
 ---@param original table The original issue state (from bd show --json)
@@ -180,13 +167,13 @@ end
 ---Generate bd CLI commands to apply changes from diff_issues
 ---@param issue_id string The issue ID (e.g., "bd-1")
 ---@param changes table The changes table from diff_issues()
----@return string[] commands List of bd command strings to execute in order
+---@return table[] commands List of bd command tables
 function M.generate_update_commands(issue_id, changes)
     local commands = {}
 
     -- Helper to add a command
-    local function add_cmd(cmd)
-        table.insert(commands, cmd)
+    local function add_cmd(cmd_table)
+        table.insert(commands, cmd_table)
     end
 
     -- Process in order: parent/deps first, then labels, then status, then metadata/text
@@ -196,14 +183,13 @@ function M.generate_update_commands(issue_id, changes)
         if changes.parent == "" then
             -- Parent removed - need to find and remove the old parent-child dependency
             -- Note: The caller will need to know the old parent ID to remove it
-            -- For now, we'll just note this in comments - actual removal would require
-            -- knowing the original parent ID from the original issue state
+            -- For now, we'll use a placeholder that the caller must replace
             -- This is handled by the caller checking the original.dependencies array
             -- and removing any parent-child type dependencies first
-            add_cmd("bd dep remove " .. issue_id .. " <parent-id>")
+            add_cmd({ "bd", "dep", "remove", issue_id, "<parent-id>" })
         else
             -- Parent added or changed
-            add_cmd("bd dep add " .. issue_id .. " " .. changes.parent .. " --type parent-child")
+            add_cmd({ "bd", "dep", "add", issue_id, changes.parent, "--type", "parent-child" })
         end
     end
 
@@ -212,13 +198,13 @@ function M.generate_update_commands(issue_id, changes)
         -- Remove dependencies first
         if changes.dependencies.remove then
             for _, dep_id in ipairs(changes.dependencies.remove) do
-                add_cmd("bd dep remove " .. issue_id .. " " .. dep_id)
+                add_cmd({ "bd", "dep", "remove", issue_id, dep_id })
             end
         end
         -- Then add new dependencies
         if changes.dependencies.add then
             for _, dep_id in ipairs(changes.dependencies.add) do
-                add_cmd("bd dep add " .. issue_id .. " " .. dep_id .. " --type blocks")
+                add_cmd({ "bd", "dep", "add", issue_id, dep_id, "--type", "blocks" })
             end
         end
     end
@@ -228,13 +214,13 @@ function M.generate_update_commands(issue_id, changes)
         -- Remove labels first
         if changes.labels.remove then
             for _, label in ipairs(changes.labels.remove) do
-                add_cmd("bd label remove " .. issue_id .. " " .. label)
+                add_cmd({ "bd", "label", "remove", issue_id, label })
             end
         end
         -- Then add new labels
         if changes.labels.add then
             for _, label in ipairs(changes.labels.add) do
-                add_cmd("bd label add " .. issue_id .. " " .. label)
+                add_cmd({ "bd", "label", "add", issue_id, label })
             end
         end
     end
@@ -242,54 +228,65 @@ function M.generate_update_commands(issue_id, changes)
     -- 4. Handle status changes
     if changes.status then
         if changes.status == "closed" then
-            add_cmd("bd close " .. issue_id)
+            add_cmd({ "bd", "close", issue_id })
         elseif changes.status == "open" then
-            add_cmd("bd reopen " .. issue_id)
+            add_cmd({ "bd", "reopen", issue_id })
         else
             -- in_progress or blocked
-            add_cmd("bd update " .. issue_id .. " --status " .. changes.status)
+            add_cmd({ "bd", "update", issue_id, "--status", changes.status })
         end
     end
 
     -- 5. Handle metadata and text section changes
     -- We can combine these into a single bd update command with multiple flags
-    local update_parts = { "bd update " .. issue_id }
+    local update_cmd = { "bd", "update", issue_id }
+    local has_updates = false
 
     if changes.metadata then
         if changes.metadata.title then
-            table.insert(update_parts, "--title " .. shell_escape(changes.metadata.title))
+            table.insert(update_cmd, "--title")
+            table.insert(update_cmd, changes.metadata.title)
+            has_updates = true
         end
         if changes.metadata.priority then
-            table.insert(update_parts, "--priority " .. tostring(changes.metadata.priority))
+            table.insert(update_cmd, "--priority")
+            table.insert(update_cmd, tostring(changes.metadata.priority))
+            has_updates = true
         end
         if changes.metadata.assignee ~= nil then
-            if changes.metadata.assignee == "" then
-                -- Empty string means removal
-                table.insert(update_parts, '--assignee ""')
-            else
-                table.insert(update_parts, "--assignee " .. shell_escape(changes.metadata.assignee))
-            end
+            table.insert(update_cmd, "--assignee")
+            -- Empty string means removal
+            table.insert(update_cmd, changes.metadata.assignee)
+            has_updates = true
         end
     end
 
     if changes.sections then
         if changes.sections.description ~= nil then
-            table.insert(update_parts, "--description " .. shell_escape(changes.sections.description))
+            table.insert(update_cmd, "--description")
+            table.insert(update_cmd, changes.sections.description)
+            has_updates = true
         end
         if changes.sections.acceptance_criteria ~= nil then
-            table.insert(update_parts, "--acceptance " .. shell_escape(changes.sections.acceptance_criteria))
+            table.insert(update_cmd, "--acceptance")
+            table.insert(update_cmd, changes.sections.acceptance_criteria)
+            has_updates = true
         end
         if changes.sections.design ~= nil then
-            table.insert(update_parts, "--design " .. shell_escape(changes.sections.design))
+            table.insert(update_cmd, "--design")
+            table.insert(update_cmd, changes.sections.design)
+            has_updates = true
         end
         if changes.sections.notes ~= nil then
-            table.insert(update_parts, "--notes " .. shell_escape(changes.sections.notes))
+            table.insert(update_cmd, "--notes")
+            table.insert(update_cmd, changes.sections.notes)
+            has_updates = true
         end
     end
 
     -- Only add the update command if there are actual updates
-    if #update_parts > 1 then
-        add_cmd(table.concat(update_parts, " "))
+    if has_updates then
+        add_cmd(update_cmd)
     end
 
     return commands
@@ -297,7 +294,7 @@ end
 
 ---Build bd create command from parsed issue data
 ---@param parsed_issue table The parsed issue from parse_markdown_to_issue
----@return string|nil command The bd create command string or nil if validation fails
+---@return table|nil command The bd create command table or nil if validation fails
 ---@return string|nil error Error message if validation fails
 function M.build_create_command(parsed_issue)
     -- Validate required fields
@@ -310,45 +307,52 @@ function M.build_create_command(parsed_issue)
     end
 
     -- Start building the command
-    local parts = { "bd create" }
+    local cmd = { "bd", "create" }
 
     -- Add title (required, positional argument)
-    table.insert(parts, shell_escape(parsed_issue.title))
+    table.insert(cmd, parsed_issue.title)
 
     -- Add type (required flag)
-    table.insert(parts, "--type " .. parsed_issue.issue_type)
+    table.insert(cmd, "--type")
+    table.insert(cmd, parsed_issue.issue_type)
 
     -- Add optional fields only if populated
 
     -- Priority
     if parsed_issue.priority then
-        table.insert(parts, "--priority " .. tostring(parsed_issue.priority))
+        table.insert(cmd, "--priority")
+        table.insert(cmd, tostring(parsed_issue.priority))
     end
 
     -- Description
     if parsed_issue.description and parsed_issue.description ~= "" then
-        table.insert(parts, "--description " .. shell_escape(parsed_issue.description))
+        table.insert(cmd, "--description")
+        table.insert(cmd, parsed_issue.description)
     end
 
     -- Acceptance criteria
     if parsed_issue.acceptance_criteria and parsed_issue.acceptance_criteria ~= "" then
-        table.insert(parts, "--acceptance " .. shell_escape(parsed_issue.acceptance_criteria))
+        table.insert(cmd, "--acceptance")
+        table.insert(cmd, parsed_issue.acceptance_criteria)
     end
 
     -- Design
     if parsed_issue.design and parsed_issue.design ~= "" then
-        table.insert(parts, "--design " .. shell_escape(parsed_issue.design))
+        table.insert(cmd, "--design")
+        table.insert(cmd, parsed_issue.design)
     end
 
     -- Labels (comma-separated)
     if parsed_issue.labels and #parsed_issue.labels > 0 then
         local labels_str = table.concat(parsed_issue.labels, ",")
-        table.insert(parts, "--labels " .. shell_escape(labels_str))
+        table.insert(cmd, "--labels")
+        table.insert(cmd, labels_str)
     end
 
     -- Parent
     if parsed_issue.parent and parsed_issue.parent ~= "" then
-        table.insert(parts, "--parent " .. parsed_issue.parent)
+        table.insert(cmd, "--parent")
+        table.insert(cmd, parsed_issue.parent)
     end
 
     -- Dependencies (comma-separated with type prefix)
@@ -359,10 +363,11 @@ function M.build_create_command(parsed_issue)
             table.insert(deps, "blocks:" .. dep_id)
         end
         local deps_str = table.concat(deps, ",")
-        table.insert(parts, "--deps " .. shell_escape(deps_str))
+        table.insert(cmd, "--deps")
+        table.insert(cmd, deps_str)
     end
 
-    return table.concat(parts, " "), nil
+    return cmd, nil
 end
 
 ---Extract issue ID from bd create command JSON output

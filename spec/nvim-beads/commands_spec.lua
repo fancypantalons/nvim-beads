@@ -22,7 +22,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --title 'New Title'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--title", "New Title"}, commands[1])
             end)
 
             it("should generate command for priority change", function()
@@ -35,7 +35,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --priority 1", commands[1])
+                assert.same({"bd", "update", "bd-1", "--priority", "1"}, commands[1])
             end)
 
             it("should generate command for assignee change", function()
@@ -48,7 +48,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --assignee 'jane.smith'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--assignee", "jane.smith"}, commands[1])
             end)
 
             it("should generate command for assignee removal", function()
@@ -62,7 +62,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals('bd update bd-1 --assignee ""', commands[1])
+                assert.same({"bd", "update", "bd-1", "--assignee", ""}, commands[1])
             end)
 
             it("should combine multiple metadata changes into single command", function()
@@ -76,9 +76,23 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.is_true(commands[1]:match("bd update bd%-1") ~= nil)
-                assert.is_true(commands[1]:match("%-%-title 'Updated Title'") ~= nil)
-                assert.is_true(commands[1]:match("%-%-priority 0") ~= nil)
+                local cmd = commands[1]
+                -- Check that the command has all expected elements
+                assert.equals("bd", cmd[1])
+                assert.equals("update", cmd[2])
+                assert.equals("bd-1", cmd[3])
+                -- Find positions of --title and --priority flags
+                local has_title = false
+                local has_priority = false
+                for i = 4, #cmd, 2 do
+                    if cmd[i] == "--title" and cmd[i+1] == "Updated Title" then
+                        has_title = true
+                    elseif cmd[i] == "--priority" and cmd[i+1] == "0" then
+                        has_priority = true
+                    end
+                end
+                assert.is_true(has_title)
+                assert.is_true(has_priority)
             end)
         end)
 
@@ -93,7 +107,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --description 'New description text'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--description", "New description text"}, commands[1])
             end)
 
             it("should generate command for acceptance_criteria change", function()
@@ -106,7 +120,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --acceptance 'Must pass all tests'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--acceptance", "Must pass all tests"}, commands[1])
             end)
 
             it("should generate command for design change", function()
@@ -119,7 +133,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --design 'Use MVVM pattern'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--design", "Use MVVM pattern"}, commands[1])
             end)
 
             it("should generate command for notes change", function()
@@ -132,7 +146,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --notes 'Additional implementation notes'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--notes", "Additional implementation notes"}, commands[1])
             end)
 
             it("should handle empty string for text sections", function()
@@ -145,7 +159,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --description ''", commands[1])
+                assert.same({"bd", "update", "bd-1", "--description", ""}, commands[1])
             end)
 
             it("should combine multiple section changes into single command", function()
@@ -159,9 +173,23 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.is_true(commands[1]:match("bd update bd%-1") ~= nil)
-                assert.is_true(commands[1]:match("%-%-description 'New desc'") ~= nil)
-                assert.is_true(commands[1]:match("%-%-design 'New design'") ~= nil)
+                local cmd = commands[1]
+                -- Check command structure
+                assert.equals("bd", cmd[1])
+                assert.equals("update", cmd[2])
+                assert.equals("bd-1", cmd[3])
+                -- Find --description and --design flags
+                local has_description = false
+                local has_design = false
+                for i = 4, #cmd, 2 do
+                    if cmd[i] == "--description" and cmd[i+1] == "New desc" then
+                        has_description = true
+                    elseif cmd[i] == "--design" and cmd[i+1] == "New design" then
+                        has_design = true
+                    end
+                end
+                assert.is_true(has_description)
+                assert.is_true(has_design)
             end)
         end)
 
@@ -174,7 +202,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --status in_progress", commands[1])
+                assert.same({"bd", "update", "bd-1", "--status", "in_progress"}, commands[1])
             end)
 
             it("should generate update command for blocked status", function()
@@ -185,7 +213,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --status blocked", commands[1])
+                assert.same({"bd", "update", "bd-1", "--status", "blocked"}, commands[1])
             end)
 
             it("should generate close command for closed status", function()
@@ -196,7 +224,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd close bd-1", commands[1])
+                assert.same({"bd", "close", "bd-1"}, commands[1])
             end)
 
             it("should generate reopen command for open status", function()
@@ -207,7 +235,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd reopen bd-1", commands[1])
+                assert.same({"bd", "reopen", "bd-1"}, commands[1])
             end)
         end)
 
@@ -222,8 +250,8 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
-                assert.is_true(vim.tbl_contains(commands, "bd label add bd-1 ui"))
-                assert.is_true(vim.tbl_contains(commands, "bd label add bd-1 backend"))
+                assert.same({"bd", "label", "add", "bd-1", "ui"}, commands[1])
+                assert.same({"bd", "label", "add", "bd-1", "backend"}, commands[2])
             end)
 
             it("should generate commands for label removals", function()
@@ -236,8 +264,8 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
-                assert.is_true(vim.tbl_contains(commands, "bd label remove bd-1 old-label"))
-                assert.is_true(vim.tbl_contains(commands, "bd label remove bd-1 deprecated"))
+                assert.same({"bd", "label", "remove", "bd-1", "old-label"}, commands[1])
+                assert.same({"bd", "label", "remove", "bd-1", "deprecated"}, commands[2])
             end)
 
             it("should generate commands for both label additions and removals", function()
@@ -252,8 +280,8 @@ describe("nvim-beads.issue.diff", function()
 
                 assert.equals(2, #commands)
                 -- Removals should come before additions
-                assert.equals("bd label remove bd-1 old-label", commands[1])
-                assert.equals("bd label add bd-1 new-label", commands[2])
+                assert.same({"bd", "label", "remove", "bd-1", "old-label"}, commands[1])
+                assert.same({"bd", "label", "add", "bd-1", "new-label"}, commands[2])
             end)
         end)
 
@@ -268,8 +296,8 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
-                assert.is_true(vim.tbl_contains(commands, "bd dep add bd-1 bd-120 --type blocks"))
-                assert.is_true(vim.tbl_contains(commands, "bd dep add bd-1 bd-121 --type blocks"))
+                assert.same({"bd", "dep", "add", "bd-1", "bd-120", "--type", "blocks"}, commands[1])
+                assert.same({"bd", "dep", "add", "bd-1", "bd-121", "--type", "blocks"}, commands[2])
             end)
 
             it("should generate commands for dependency removals", function()
@@ -282,8 +310,8 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
-                assert.is_true(vim.tbl_contains(commands, "bd dep remove bd-1 bd-100"))
-                assert.is_true(vim.tbl_contains(commands, "bd dep remove bd-1 bd-101"))
+                assert.same({"bd", "dep", "remove", "bd-1", "bd-100"}, commands[1])
+                assert.same({"bd", "dep", "remove", "bd-1", "bd-101"}, commands[2])
             end)
 
             it("should generate commands for both dependency additions and removals", function()
@@ -298,8 +326,8 @@ describe("nvim-beads.issue.diff", function()
 
                 assert.equals(2, #commands)
                 -- Removals should come before additions
-                assert.equals("bd dep remove bd-1 bd-100", commands[1])
-                assert.equals("bd dep add bd-1 bd-120 --type blocks", commands[2])
+                assert.same({"bd", "dep", "remove", "bd-1", "bd-100"}, commands[1])
+                assert.same({"bd", "dep", "add", "bd-1", "bd-120", "--type", "blocks"}, commands[2])
             end)
         end)
 
@@ -312,7 +340,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd dep add bd-1 bd-50 --type parent-child", commands[1])
+                assert.same({"bd", "dep", "add", "bd-1", "bd-50", "--type", "parent-child"}, commands[1])
             end)
 
             it("should generate placeholder command for parent removal", function()
@@ -325,7 +353,7 @@ describe("nvim-beads.issue.diff", function()
                 assert.equals(1, #commands)
                 -- Note: This is a placeholder - actual implementation would need
                 -- the original parent ID from the caller
-                assert.equals("bd dep remove bd-1 <parent-id>", commands[1])
+                assert.same({"bd", "dep", "remove", "bd-1", "<parent-id>"}, commands[1])
             end)
 
             it("should generate command for parent change", function()
@@ -337,12 +365,12 @@ describe("nvim-beads.issue.diff", function()
 
                 assert.equals(1, #commands)
                 -- New parent is added (removal of old parent would be handled separately)
-                assert.equals("bd dep add bd-1 bd-60 --type parent-child", commands[1])
+                assert.same({"bd", "dep", "add", "bd-1", "bd-60", "--type", "parent-child"}, commands[1])
             end)
         end)
 
         describe("special character escaping", function()
-            it("should escape single quotes in title", function()
+            it("should pass single quotes as-is (no escaping needed with tables)", function()
                 local changes = {
                     metadata = {
                         title = "Fix user's authentication bug",
@@ -352,10 +380,11 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --title 'Fix user'\\''s authentication bug'", commands[1])
+                -- With command tables, single quotes don't need escaping
+                assert.same({"bd", "update", "bd-1", "--title", "Fix user's authentication bug"}, commands[1])
             end)
 
-            it("should escape single quotes in description", function()
+            it("should pass single quotes in description as-is", function()
                 local changes = {
                     sections = {
                         description = "The user's session wasn't persisted",
@@ -365,7 +394,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --description 'The user'\\''s session wasn'\\''t persisted'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--description", "The user's session wasn't persisted"}, commands[1])
             end)
 
             it("should handle double quotes safely", function()
@@ -378,8 +407,8 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                -- Double quotes are safe inside single quotes
-                assert.equals("bd update bd-1 --title 'Add \"advanced\" search feature'", commands[1])
+                -- Double quotes are passed as-is in command tables
+                assert.same({"bd", "update", "bd-1", "--title", 'Add "advanced" search feature'}, commands[1])
             end)
 
             it("should handle newlines in text sections", function()
@@ -392,8 +421,8 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                -- Newlines should be preserved within single quotes
-                assert.equals("bd update bd-1 --description 'Line 1\nLine 2\nLine 3'", commands[1])
+                -- Newlines are preserved as literal \n characters in the string
+                assert.same({"bd", "update", "bd-1", "--description", "Line 1\nLine 2\nLine 3"}, commands[1])
             end)
 
             it("should handle special shell characters", function()
@@ -407,7 +436,7 @@ describe("nvim-beads.issue.diff", function()
 
                 assert.equals(1, #commands)
                 -- Special chars should be safe inside single quotes
-                assert.equals("bd update bd-1 --title 'Fix: $variable expansion & pipe | redirect >'", commands[1])
+                assert.same({"bd", "update", "bd-1", "--title", "Fix: $variable expansion & pipe | redirect >"}, commands[1])
             end)
         end)
 
@@ -443,17 +472,31 @@ describe("nvim-beads.issue.diff", function()
                 -- Metadata + sections: 1 combined command
                 assert.equals(7, #commands)
 
-                -- Verify order
-                assert.is_true(commands[1]:match("bd dep add bd%-1 bd%-60 %-%-type parent%-child") ~= nil)
-                assert.is_true(commands[2]:match("bd dep remove bd%-1 bd%-100") ~= nil)
-                assert.is_true(commands[3]:match("bd dep add bd%-1 bd%-120 %-%-type blocks") ~= nil)
-                assert.is_true(commands[4]:match("bd label remove bd%-1 old%-label") ~= nil)
-                assert.is_true(commands[5]:match("bd label add bd%-1 backend") ~= nil)
-                assert.is_true(commands[6]:match("bd update bd%-1 %-%-status in_progress") ~= nil)
-                assert.is_true(commands[7]:match("bd update bd%-1") ~= nil)
-                assert.is_true(commands[7]:match("%-%-title") ~= nil)
-                assert.is_true(commands[7]:match("%-%-priority") ~= nil)
-                assert.is_true(commands[7]:match("%-%-description") ~= nil)
+                -- Verify order using table assertions
+                assert.same({"bd", "dep", "add", "bd-1", "bd-60", "--type", "parent-child"}, commands[1])
+                assert.same({"bd", "dep", "remove", "bd-1", "bd-100"}, commands[2])
+                assert.same({"bd", "dep", "add", "bd-1", "bd-120", "--type", "blocks"}, commands[3])
+                assert.same({"bd", "label", "remove", "bd-1", "old-label"}, commands[4])
+                assert.same({"bd", "label", "add", "bd-1", "backend"}, commands[5])
+                assert.same({"bd", "update", "bd-1", "--status", "in_progress"}, commands[6])
+
+                -- Command 7 is a combined update with multiple flags - check structure
+                local cmd7 = commands[7]
+                assert.equals("bd", cmd7[1])
+                assert.equals("update", cmd7[2])
+                assert.equals("bd-1", cmd7[3])
+                -- Check for presence of all expected flags
+                local has_title = false
+                local has_priority = false
+                local has_description = false
+                for i = 4, #cmd7, 2 do
+                    if cmd7[i] == "--title" then has_title = true end
+                    if cmd7[i] == "--priority" then has_priority = true end
+                    if cmd7[i] == "--description" then has_description = true end
+                end
+                assert.is_true(has_title)
+                assert.is_true(has_priority)
+                assert.is_true(has_description)
             end)
         end)
 
@@ -475,7 +518,7 @@ describe("nvim-beads.issue.diff", function()
                 local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
-                assert.equals("bd update bd-1 --status in_progress", commands[1])
+                assert.same({"bd", "update", "bd-1", "--status", "in_progress"}, commands[1])
             end)
         end)
     end)
