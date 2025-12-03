@@ -118,24 +118,8 @@ function M.handle_new_issue_save(bufnr)
     local updated_lines = formatter.format_issue_to_markdown(created_issue)
 
     -- Split any lines that contain newlines
-    local final_lines = {}
-    for _, line in ipairs(updated_lines) do
-        if line:find("\n") then
-            local pos = 1
-            while pos <= #line do
-                local next_newline = line:find("\n", pos, true)
-                if next_newline then
-                    table.insert(final_lines, line:sub(pos, next_newline - 1))
-                    pos = next_newline + 1
-                else
-                    table.insert(final_lines, line:sub(pos))
-                    break
-                end
-            end
-        else
-            table.insert(final_lines, line)
-        end
-    end
+    local util = require("nvim-beads.util")
+    local final_lines = util.split_lines_with_newlines(updated_lines)
 
     -- Update buffer with authoritative content
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
@@ -272,28 +256,12 @@ function M.handle_existing_issue_save(bufnr, issue_id)
         end
 
         -- Format the updated issue
-        local updated_lines = issue_module.format_issue_to_markdown(updated_issue)
+        local formatter = require("nvim-beads.issue.formatter")
+        local updated_lines = formatter.format_issue_to_markdown(updated_issue)
 
-        -- Split any lines that contain newlines, preserving blank lines
-        local final_lines = {}
-        for _, line in ipairs(updated_lines) do
-            if line:find("\n") then
-                -- Split on newlines, preserving blank lines
-                local pos = 1
-                while pos <= #line do
-                    local next_newline = line:find("\n", pos, true)
-                    if next_newline then
-                        table.insert(final_lines, line:sub(pos, next_newline - 1))
-                        pos = next_newline + 1
-                    else
-                        table.insert(final_lines, line:sub(pos))
-                        break
-                    end
-                end
-            else
-                table.insert(final_lines, line)
-            end
-        end
+        -- Split any lines that contain newlines
+        local util = require("nvim-beads.util")
+        local final_lines = util.split_lines_with_newlines(updated_lines)
 
         -- Update buffer with new content
         vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
