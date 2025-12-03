@@ -61,7 +61,9 @@ function M.show_ready()
 end
 
 --- Show list of all beads issues
-function M.show_list()
+---@param args table|nil Optional filter arguments [state, type]
+function M.show_list(args)
+    args = args or {}
     local has_telescope, telescope = pcall(require, "telescope")
     if not has_telescope then
         vim.notify(
@@ -96,7 +98,23 @@ function M.fetch_template(issue_type)
     -- Execute bd template show command
     local result, err = M.execute_bd({ "template", "show", issue_type })
     if err then
-        return nil, err
+        -- Only provide default template if the error is from bd command failure
+        -- (template not found), not from JSON parsing errors
+        if err:match("bd command failed") then
+            -- If no template exists for this type, return a default template
+            -- with empty sections for Description, Acceptance Criteria, and Design
+            return {
+                title = "",
+                type = issue_type,
+                priority = 2,
+                description = "",
+                acceptance_criteria = "",
+                design = "",
+            }, nil
+        else
+            -- For other errors (like JSON parsing), propagate the error
+            return nil, err
+        end
     end
 
     return result, nil
@@ -128,8 +146,8 @@ function M.create_issue(args)
     end
 
     -- Open new issue buffer with template
-    local issue = require("nvim-beads.issue")
-    local success = issue.open_new_issue_buffer(issue_type, template)
+    local buffer = require("nvim-beads.buffer")
+    local success = buffer.open_new_issue_buffer(issue_type, template)
 
     if not success then
         vim.notify("BeadsCreateIssue: Failed to create issue buffer", vim.log.levels.ERROR)

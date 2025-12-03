@@ -1,13 +1,13 @@
---- Unit tests for nvim-beads.issue build_create_command function
+--- Unit tests for nvim-beads.issue.diff build_create_command function
 --- Tests command generation for creating new issues
 
-describe("nvim-beads.issue", function()
-    local issue_module
+describe("nvim-beads.issue.diff", function()
+    local diff
 
     before_each(function()
         -- Clear the module cache to get fresh instance
-        package.loaded["nvim-beads.issue"] = nil
-        issue_module = require("nvim-beads.issue")
+        package.loaded["nvim-beads.issue.diff"] = nil
+        diff = require("nvim-beads.issue.diff")
     end)
 
     describe("build_create_command", function()
@@ -17,7 +17,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "task",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(command)
                 assert.equals("Title is required", err)
@@ -29,7 +29,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "task",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(command)
                 assert.equals("Title is required", err)
@@ -40,7 +40,7 @@ describe("nvim-beads.issue", function()
                     title = "Test Issue",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(command)
                 assert.equals("Issue type is required", err)
@@ -52,7 +52,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(command)
                 assert.equals("Issue type is required", err)
@@ -66,7 +66,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "bug",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.equals("bd create 'Fix bug in parser' --type bug", command)
@@ -78,7 +78,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "task",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.equals("bd create 'Update documentation' --type task", command)
@@ -90,7 +90,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "feature",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.equals("bd create 'Add dark mode' --type feature", command)
@@ -102,7 +102,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "epic",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.equals("bd create 'User authentication system' --type epic", command)
@@ -114,7 +114,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "chore",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.equals("bd create 'Update dependencies' --type chore", command)
@@ -129,7 +129,7 @@ describe("nvim-beads.issue", function()
                     priority = 0,
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("bd create 'Critical bug' %-%-type bug %-%-priority 0") ~= nil)
@@ -142,7 +142,7 @@ describe("nvim-beads.issue", function()
                     description = "The parser fails on edge cases",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-description 'The parser fails on edge cases'") ~= nil)
@@ -155,7 +155,7 @@ describe("nvim-beads.issue", function()
                     acceptance_criteria = "Must pass all tests",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-acceptance 'Must pass all tests'") ~= nil)
@@ -168,7 +168,7 @@ describe("nvim-beads.issue", function()
                     design = "Use MVC pattern",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-design 'Use MVC pattern'") ~= nil)
@@ -181,7 +181,7 @@ describe("nvim-beads.issue", function()
                     labels = { "ui", "frontend", "critical" },
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-labels 'ui,frontend,critical'") ~= nil)
@@ -194,7 +194,7 @@ describe("nvim-beads.issue", function()
                     parent = "bd-50",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-parent bd%-50") ~= nil)
@@ -207,7 +207,7 @@ describe("nvim-beads.issue", function()
                     dependencies = { "bd-10", "bd-20" },
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-deps 'blocks:bd%-10,blocks:bd%-20'") ~= nil)
@@ -222,7 +222,7 @@ describe("nvim-beads.issue", function()
                     description = "",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_false(command:match("%-%-description") ~= nil)
@@ -235,7 +235,7 @@ describe("nvim-beads.issue", function()
                     acceptance_criteria = "",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_false(command:match("%-%-acceptance") ~= nil)
@@ -248,7 +248,7 @@ describe("nvim-beads.issue", function()
                     design = "",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_false(command:match("%-%-design") ~= nil)
@@ -261,7 +261,7 @@ describe("nvim-beads.issue", function()
                     labels = {},
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_false(command:match("%-%-labels") ~= nil)
@@ -274,7 +274,7 @@ describe("nvim-beads.issue", function()
                     parent = "",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_false(command:match("%-%-parent") ~= nil)
@@ -287,7 +287,7 @@ describe("nvim-beads.issue", function()
                     dependencies = {},
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_false(command:match("%-%-deps") ~= nil)
@@ -301,7 +301,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "bug",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.equals("bd create 'Fix user'\\''s authentication' --type bug", command)
@@ -313,7 +313,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "feature",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.equals("bd create 'Add \"advanced\" search' --type feature", command)
@@ -326,7 +326,7 @@ describe("nvim-beads.issue", function()
                     description = "The user's session wasn't saved",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-description 'The user'\\''s session wasn'\\''t saved'") ~= nil)
@@ -339,7 +339,7 @@ describe("nvim-beads.issue", function()
                     description = "Line 1\nLine 2\nLine 3",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-description 'Line 1\nLine 2\nLine 3'") ~= nil)
@@ -351,7 +351,7 @@ describe("nvim-beads.issue", function()
                     issue_type = "bug",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("'Fix: %$var & pipe | redirect >'") ~= nil)
@@ -364,7 +364,7 @@ describe("nvim-beads.issue", function()
                     acceptance_criteria = "User's can login successfully",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-acceptance 'User'\\''s can login successfully'") ~= nil)
@@ -377,7 +377,7 @@ describe("nvim-beads.issue", function()
                     design = "Use the system's default config",
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-design 'Use the system'\\''s default config'") ~= nil)
@@ -390,7 +390,7 @@ describe("nvim-beads.issue", function()
                     labels = { "user's-bug", "frontend" },
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-labels 'user'\\''s%-bug,frontend'") ~= nil)
@@ -411,7 +411,7 @@ describe("nvim-beads.issue", function()
                     dependencies = { "bd-50", "bd-60" },
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_not_nil(command)
@@ -437,7 +437,7 @@ describe("nvim-beads.issue", function()
                     priority = 0,
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-priority 0") ~= nil)
@@ -450,7 +450,7 @@ describe("nvim-beads.issue", function()
                     priority = 1,
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-priority 1") ~= nil)
@@ -463,7 +463,7 @@ describe("nvim-beads.issue", function()
                     priority = 2,
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-priority 2") ~= nil)
@@ -476,7 +476,7 @@ describe("nvim-beads.issue", function()
                     priority = 3,
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-priority 3") ~= nil)
@@ -489,7 +489,7 @@ describe("nvim-beads.issue", function()
                     priority = 4,
                 }
 
-                local command, err = issue_module.build_create_command(parsed_issue)
+                local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
                 assert.is_true(command:match("%-%-priority 4") ~= nil)

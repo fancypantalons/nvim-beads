@@ -10,8 +10,8 @@ local M = {}
 ---@type table<string, Subcommand>
 local subcommands = {
     list = {
-        impl = function()
-            require("nvim-beads.core").show_list()
+        impl = function(args)
+            require("nvim-beads.core").show_list(args)
         end,
     },
     create = {
@@ -21,7 +21,7 @@ local subcommands = {
     },
     open = {
         impl = function(args)
-            require("nvim-beads.issue").open_issue_buffer(args[1])
+            require("nvim-beads.buffer").open_issue_buffer(args[1])
         end,
     },
 }

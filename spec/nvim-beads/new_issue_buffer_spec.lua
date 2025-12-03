@@ -1,13 +1,14 @@
---- Unit tests for nvim-beads.issue module - open_new_issue_buffer function
+--- Unit tests for nvim-beads.buffer module - open_new_issue_buffer function
 --- Tests the buffer creation and population for new issues
 
-describe("nvim-beads.issue", function()
-    local issue_module
+describe("nvim-beads.buffer", function()
+    local buffer_module
 
     before_each(function()
         -- Clear the module cache to get fresh instance
-        package.loaded["nvim-beads.issue"] = nil
-        issue_module = require("nvim-beads.issue")
+        package.loaded["nvim-beads.buffer"] = nil
+        package.loaded["nvim-beads.issue.formatter"] = nil
+        buffer_module = require("nvim-beads.buffer")
     end)
 
     describe("open_new_issue_buffer", function()
@@ -96,7 +97,7 @@ describe("nvim-beads.issue", function()
         describe("argument validation", function()
             it("should return false and notify error when issue_type is nil", function()
                 local template_data = { title = "", type = "task" }
-                local success = issue_module.open_new_issue_buffer(nil, template_data)
+                local success = buffer_module.open_new_issue_buffer(nil, template_data)
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -106,7 +107,7 @@ describe("nvim-beads.issue", function()
 
             it("should return false and notify error when issue_type is invalid", function()
                 local template_data = { title = "", type = "invalid" }
-                local success = issue_module.open_new_issue_buffer("invalid", template_data)
+                local success = buffer_module.open_new_issue_buffer("invalid", template_data)
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -114,7 +115,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should return false and notify error when template_data is nil", function()
-                local success = issue_module.open_new_issue_buffer("task", nil)
+                local success = buffer_module.open_new_issue_buffer("task", nil)
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -123,7 +124,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should return false and notify error when template_data is not a table", function()
-                local success = issue_module.open_new_issue_buffer("task", "not a table")
+                local success = buffer_module.open_new_issue_buffer("task", "not a table")
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -143,52 +144,52 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should create buffer with correct name for task", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.equals("beads://issue/new?type=task", buffer_name)
             end)
 
             it("should create buffer with correct name for bug", function()
                 template_data.type = "bug"
-                issue_module.open_new_issue_buffer("bug", template_data)
+                buffer_module.open_new_issue_buffer("bug", template_data)
 
                 assert.equals("beads://issue/new?type=bug", buffer_name)
             end)
 
             it("should create buffer with correct name for feature", function()
                 template_data.type = "feature"
-                issue_module.open_new_issue_buffer("feature", template_data)
+                buffer_module.open_new_issue_buffer("feature", template_data)
 
                 assert.equals("beads://issue/new?type=feature", buffer_name)
             end)
 
             it("should set filetype to markdown", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.is_not_nil(buffer_options[created_bufnr])
                 assert.equals("markdown", buffer_options[created_bufnr].filetype)
             end)
 
             it("should set buftype to acwrite", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.equals("acwrite", buffer_options[created_bufnr].buftype)
             end)
 
             it("should set bufhidden to hide", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.equals("hide", buffer_options[created_bufnr].bufhidden)
             end)
 
             it("should display buffer in current window", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.equals(created_bufnr, current_buf)
             end)
 
             it("should position cursor on title field", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.is_not_nil(cursor_position)
                 assert.equals(3, cursor_position[1]) -- Line 3 (title line)
@@ -196,7 +197,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should return true on success", function()
-                local success = issue_module.open_new_issue_buffer("task", template_data)
+                local success = buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.is_true(success)
             end)
@@ -214,7 +215,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should contain correct fields with template defaults", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 assert.is_not_nil(buffer_lines)
                 local content = table.concat(buffer_lines, "\n")
@@ -232,7 +233,7 @@ describe("nvim-beads.issue", function()
 
             it("should use priority from template if provided", function()
                 template_data.priority = 1
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("priority: 1", content)
@@ -240,7 +241,7 @@ describe("nvim-beads.issue", function()
 
             it("should default to priority 2 if not in template", function()
                 template_data.priority = nil
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("priority: 2", content)
@@ -248,7 +249,7 @@ describe("nvim-beads.issue", function()
 
             it("should include assignee if provided in template", function()
                 template_data.assignee = "john.doe"
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("assignee: john%.doe", content)
@@ -256,7 +257,7 @@ describe("nvim-beads.issue", function()
 
             it("should include labels if provided in template", function()
                 template_data.labels = { "ui", "backend" }
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("labels:", content)
@@ -265,7 +266,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should have empty title ready for user input", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 -- Find the title line
                 local title_line = nil
@@ -281,7 +282,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should set status to open", function()
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("status: open", content)
@@ -297,7 +298,7 @@ describe("nvim-beads.issue", function()
                     description = "Template description text",
                 }
 
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("# Description", content)
@@ -312,7 +313,7 @@ describe("nvim-beads.issue", function()
                     acceptance_criteria = "- [ ] Criterion 1\n- [ ] Criterion 2",
                 }
 
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("# Acceptance Criteria", content)
@@ -328,7 +329,7 @@ describe("nvim-beads.issue", function()
                     design = "Design approach here",
                 }
 
-                issue_module.open_new_issue_buffer("feature", template_data)
+                buffer_module.open_new_issue_buffer("feature", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("# Design", content)
@@ -343,7 +344,7 @@ describe("nvim-beads.issue", function()
                     notes = "Important notes",
                 }
 
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 assert.matches("# Notes", content)
@@ -361,7 +362,7 @@ describe("nvim-beads.issue", function()
                     notes = "",
                 }
 
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 -- Main sections (Description, Acceptance Criteria, Design) should always show headers
@@ -380,7 +381,7 @@ describe("nvim-beads.issue", function()
                     -- No description, acceptance_criteria, design, or notes
                 }
 
-                issue_module.open_new_issue_buffer("task", template_data)
+                buffer_module.open_new_issue_buffer("task", template_data)
 
                 local content = table.concat(buffer_lines, "\n")
                 -- Main sections (Description, Acceptance Criteria, Design) should always show headers
@@ -406,7 +407,7 @@ describe("nvim-beads.issue", function()
                     notes = "Additional notes here",
                 }
 
-                issue_module.open_new_issue_buffer("feature", template_data)
+                buffer_module.open_new_issue_buffer("feature", template_data)
 
                 assert.is_not_nil(buffer_lines)
                 local content = table.concat(buffer_lines, "\n")

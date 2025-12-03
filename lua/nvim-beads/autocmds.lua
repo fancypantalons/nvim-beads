@@ -46,8 +46,9 @@ function M.handle_new_issue_save(bufnr)
     local buffer_content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
     -- Parse buffer content
-    local issue_module = require("nvim-beads.issue")
-    local ok, parsed_issue = pcall(issue_module.parse_markdown_to_issue, buffer_content)
+    local parser = require("nvim-beads.issue.parser")
+    local diff = require("nvim-beads.issue.diff")
+    local ok, parsed_issue = pcall(parser.parse_markdown_to_issue, buffer_content)
     if not ok then
         vim.notify(string.format("nvim-beads: Failed to parse buffer: %s", parsed_issue), vim.log.levels.ERROR)
         return
@@ -60,7 +61,7 @@ function M.handle_new_issue_save(bufnr)
     end
 
     -- Build create command
-    local create_cmd, build_err = issue_module.build_create_command(parsed_issue)
+    local create_cmd, build_err = diff.build_create_command(parsed_issue)
     if build_err then
         vim.notify(string.format("nvim-beads: Failed to build create command: %s", build_err), vim.log.levels.ERROR)
         return
@@ -83,7 +84,7 @@ function M.handle_new_issue_save(bufnr)
     end
 
     -- Extract new issue ID from output
-    local new_id, extract_err = issue_module.extract_id_from_create_output(output)
+    local new_id, extract_err = diff.extract_id_from_create_output(output)
     if extract_err then
         vim.notify(string.format("nvim-beads: Failed to extract issue ID: %s", extract_err), vim.log.levels.ERROR)
         return
@@ -113,7 +114,8 @@ function M.handle_new_issue_save(bufnr)
     end
 
     -- Format the created issue
-    local updated_lines = issue_module.format_issue_to_markdown(created_issue)
+    local formatter = require("nvim-beads.issue.formatter")
+    local updated_lines = formatter.format_issue_to_markdown(created_issue)
 
     -- Split any lines that contain newlines
     local final_lines = {}
@@ -155,8 +157,9 @@ function M.handle_existing_issue_save(bufnr, issue_id)
     local buffer_content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 
     -- Parse buffer content
-    local issue_module = require("nvim-beads.issue")
-    local ok, parsed_issue = pcall(issue_module.parse_markdown_to_issue, buffer_content)
+    local parser = require("nvim-beads.issue.parser")
+    local diff = require("nvim-beads.issue.diff")
+    local ok, parsed_issue = pcall(parser.parse_markdown_to_issue, buffer_content)
     if not ok then
         vim.notify(string.format("nvim-beads: Failed to parse buffer: %s", parsed_issue), vim.log.levels.ERROR)
         return
@@ -182,7 +185,7 @@ function M.handle_existing_issue_save(bufnr, issue_id)
     end
 
     -- Diff the states
-    local changes = issue_module.diff_issues(original_issue, parsed_issue)
+    local changes = diff.diff_issues(original_issue, parsed_issue)
 
     -- Check if there are any changes
     if not next(changes) then
@@ -220,7 +223,7 @@ function M.handle_existing_issue_save(bufnr, issue_id)
     end
 
     -- Generate update commands
-    local commands = issue_module.generate_update_commands(issue_id, changes)
+    local commands = diff.generate_update_commands(issue_id, changes)
 
     if #commands == 0 then
         vim.notify("nvim-beads: No changes to apply", vim.log.levels.INFO)

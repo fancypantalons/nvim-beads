@@ -1,13 +1,13 @@
 --- Unit tests for nvim-beads.issue diff_issues function
 --- Tests the comparison logic to detect changes between original and modified issue states
 
-describe("nvim-beads.issue", function()
-    local issue_module
+describe("nvim-beads.issue.diff", function()
+    local diff_module
 
     before_each(function()
         -- Clear the module cache to get fresh instance
-        package.loaded["nvim-beads.issue"] = nil
-        issue_module = require("nvim-beads.issue")
+        package.loaded["nvim-beads.issue.diff"] = nil
+        diff_module = require("nvim-beads.issue.diff")
     end)
 
     describe("diff_issues", function()
@@ -38,7 +38,7 @@ describe("nvim-beads.issue", function()
                 updated_at = "2023-10-27T12:00:00Z",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes)
             assert.is_nil(changes.metadata)
@@ -62,7 +62,7 @@ describe("nvim-beads.issue", function()
                 priority = 2,
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.metadata)
             assert.equals("Modified Title", changes.metadata.title)
@@ -82,7 +82,7 @@ describe("nvim-beads.issue", function()
                 priority = 1,
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.metadata)
             assert.equals(1, changes.metadata.priority)
@@ -100,7 +100,7 @@ describe("nvim-beads.issue", function()
                 assignee = "jane.smith",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.metadata)
             assert.equals("jane.smith", changes.metadata.assignee)
@@ -116,7 +116,7 @@ describe("nvim-beads.issue", function()
                 assignee = "john.doe",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.metadata)
             assert.equals("john.doe", changes.metadata.assignee)
@@ -132,7 +132,7 @@ describe("nvim-beads.issue", function()
                 id = "bd-1",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.metadata)
             assert.equals("", changes.metadata.assignee)
@@ -149,7 +149,7 @@ describe("nvim-beads.issue", function()
                 status = "in_progress",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.equals("in_progress", changes.status)
         end)
@@ -165,7 +165,7 @@ describe("nvim-beads.issue", function()
                 labels = { "ui", "backend" },
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.labels)
             assert.is_table(changes.labels.add)
@@ -186,7 +186,7 @@ describe("nvim-beads.issue", function()
                 labels = { "ui" },
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.labels)
             assert.is_table(changes.labels.remove)
@@ -207,7 +207,7 @@ describe("nvim-beads.issue", function()
                 labels = { "ui", "backend", "new-label" },
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.labels)
             assert.is_table(changes.labels.add)
@@ -230,7 +230,7 @@ describe("nvim-beads.issue", function()
                 dependencies = { "bd-120", "bd-121" },
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.dependencies)
             assert.is_table(changes.dependencies.add)
@@ -251,7 +251,7 @@ describe("nvim-beads.issue", function()
                 dependencies = { "bd-100" },
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.dependencies)
             assert.is_table(changes.dependencies.remove)
@@ -272,7 +272,7 @@ describe("nvim-beads.issue", function()
                 dependencies = { "bd-100", "bd-120", "bd-121" },
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.dependencies)
             assert.is_table(changes.dependencies.add)
@@ -294,7 +294,7 @@ describe("nvim-beads.issue", function()
                 parent = "bd-50",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.equals("bd-50", changes.parent)
         end)
@@ -309,7 +309,7 @@ describe("nvim-beads.issue", function()
                 id = "bd-1",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             -- Special marker for removal
             assert.equals("", changes.parent)
@@ -326,7 +326,7 @@ describe("nvim-beads.issue", function()
                 parent = "bd-60",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.equals("bd-60", changes.parent)
         end)
@@ -342,7 +342,7 @@ describe("nvim-beads.issue", function()
                 description = "Modified description",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.sections)
             assert.equals("Modified description", changes.sections.description)
@@ -358,7 +358,7 @@ describe("nvim-beads.issue", function()
                 description = "New description",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.sections)
             assert.equals("New description", changes.sections.description)
@@ -375,7 +375,7 @@ describe("nvim-beads.issue", function()
                 description = "",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.sections)
             assert.equals("", changes.sections.description)
@@ -392,7 +392,7 @@ describe("nvim-beads.issue", function()
                 acceptance_criteria = "Must pass all tests and linting",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.sections)
             assert.equals("Must pass all tests and linting", changes.sections.acceptance_criteria)
@@ -409,7 +409,7 @@ describe("nvim-beads.issue", function()
                 design = "Use MVVM",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.sections)
             assert.equals("Use MVVM", changes.sections.design)
@@ -426,7 +426,7 @@ describe("nvim-beads.issue", function()
                 notes = "Updated notes",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.sections)
             assert.equals("Updated notes", changes.sections.notes)
@@ -457,7 +457,7 @@ describe("nvim-beads.issue", function()
                 design = "New design notes",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             -- Metadata changes
             assert.is_table(changes.metadata)
@@ -505,7 +505,7 @@ describe("nvim-beads.issue", function()
                 updated_at = "2023-10-27T13:00:00Z", -- Changed timestamp (should be ignored)
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             -- No changes should be detected
             assert.is_nil(changes.metadata)
@@ -533,7 +533,7 @@ describe("nvim-beads.issue", function()
                 dependencies = {},
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             -- No changes should be detected
             assert.is_nil(changes.sections)
@@ -550,7 +550,7 @@ describe("nvim-beads.issue", function()
                 description = "",
             }
 
-            local changes = issue_module.diff_issues(original, modified)
+            local changes = diff_module.diff_issues(original, modified)
 
             assert.is_table(changes.sections)
             assert.equals("", changes.sections.description)

@@ -1,13 +1,13 @@
---- Unit tests for nvim-beads.issue module
+--- Unit tests for nvim-beads.issue.formatter module
 --- Tests the format_issue_to_markdown function
 
-describe("nvim-beads.issue", function()
-    local issue_module
+describe("nvim-beads.issue.formatter", function()
+    local formatter
 
     before_each(function()
         -- Clear the module cache to get fresh instance
-        package.loaded["nvim-beads.issue"] = nil
-        issue_module = require("nvim-beads.issue")
+        package.loaded["nvim-beads.issue.formatter"] = nil
+        formatter = require("nvim-beads.issue.formatter")
     end)
 
     describe("format_issue_to_markdown", function()
@@ -23,7 +23,7 @@ describe("nvim-beads.issue", function()
                 closed_at = nil,
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
 
             assert.is_table(lines)
             assert.equals("---", lines[1])
@@ -57,7 +57,7 @@ describe("nvim-beads.issue", function()
                 updated_at = "2023-10-27T12:00:00Z",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
 
             -- Find the type line
             local found_type = false
@@ -89,7 +89,7 @@ describe("nvim-beads.issue", function()
                 },
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
 
             -- Find the parent line
             local found_parent = false
@@ -126,7 +126,7 @@ describe("nvim-beads.issue", function()
                 },
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
 
             -- Convert to string for easier searching
             local content = table.concat(lines, "\n")
@@ -159,7 +159,7 @@ describe("nvim-beads.issue", function()
                 },
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             -- Should have parent field
@@ -187,7 +187,7 @@ describe("nvim-beads.issue", function()
                 labels = { "ui", "backend", "urgent" },
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.matches("labels:", content)
@@ -208,7 +208,7 @@ describe("nvim-beads.issue", function()
                 labels = {},
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.is_nil(content:match("labels:"))
@@ -226,7 +226,7 @@ describe("nvim-beads.issue", function()
                 assignee = "john.doe",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.matches("assignee: john%.doe", content)
@@ -244,7 +244,7 @@ describe("nvim-beads.issue", function()
                 description = "This is a detailed description of the issue.",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.matches("# Description", content)
@@ -266,7 +266,7 @@ describe("nvim-beads.issue", function()
                 notes = "Test notes",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
 
             -- Find all heading lines
             local headings = {}
@@ -298,7 +298,7 @@ describe("nvim-beads.issue", function()
                 acceptance_criteria = "Must pass all tests\nMust work on all browsers",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.matches("# Acceptance Criteria", content)
@@ -317,7 +317,7 @@ describe("nvim-beads.issue", function()
                 design = "Use MVC pattern\nImplement with React",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.matches("# Design", content)
@@ -336,7 +336,7 @@ describe("nvim-beads.issue", function()
                 notes = "Remember to update documentation",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.matches("# Notes", content)
@@ -355,7 +355,7 @@ describe("nvim-beads.issue", function()
                 description = "",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             -- Description header should be shown even when empty
@@ -377,7 +377,7 @@ describe("nvim-beads.issue", function()
                 notes = nil,
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             -- Main sections (Description, Acceptance Criteria, Design) should always show headers
@@ -400,7 +400,7 @@ describe("nvim-beads.issue", function()
                 closed_at = "2023-10-27T14:00:00Z",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             assert.matches("closed_at: 2023%-10%-27T14:00:00Z", content)
@@ -441,7 +441,7 @@ describe("nvim-beads.issue", function()
                 notes = "Additional information",
             }
 
-            local lines = issue_module.format_issue_to_markdown(issue)
+            local lines = formatter.format_issue_to_markdown(issue)
             local content = table.concat(lines, "\n")
 
             -- Check frontmatter fields
@@ -472,6 +472,7 @@ describe("nvim-beads.issue", function()
     end)
 
     describe("open_issue_buffer", function()
+        local buffer_module
         local original_vim_api_create_buf
         local original_vim_api_set_name
         local original_vim_api_set_lines
@@ -489,9 +490,10 @@ describe("nvim-beads.issue", function()
 
         before_each(function()
             -- Clear the module cache
-            package.loaded["nvim-beads.issue"] = nil
+            package.loaded["nvim-beads.buffer"] = nil
+            package.loaded["nvim-beads.issue.formatter"] = nil
             package.loaded["nvim-beads.core"] = nil
-            issue_module = require("nvim-beads.issue")
+            buffer_module = require("nvim-beads.buffer")
 
             -- Save originals
             original_vim_api_create_buf = vim.api.nvim_create_buf
@@ -552,7 +554,7 @@ describe("nvim-beads.issue", function()
 
         describe("argument validation", function()
             it("should return false and notify error when issue_id is nil", function()
-                local success = issue_module.open_issue_buffer(nil)
+                local success = buffer_module.open_issue_buffer(nil)
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -561,7 +563,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should return false and notify error when issue_id is empty string", function()
-                local success = issue_module.open_issue_buffer("")
+                local success = buffer_module.open_issue_buffer("")
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -569,7 +571,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should return false and notify error when issue_id is not a string", function()
-                local success = issue_module.open_issue_buffer(123)
+                local success = buffer_module.open_issue_buffer(123)
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -600,7 +602,7 @@ describe("nvim-beads.issue", function()
                         nil
                 end
 
-                issue_module.open_issue_buffer("bd-1")
+                buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_not_nil(executed_args)
                 assert.equals("show", executed_args[1])
@@ -617,7 +619,7 @@ describe("nvim-beads.issue", function()
                     return nil, "Command failed: bd not found"
                 end
 
-                local success = issue_module.open_issue_buffer("bd-1")
+                local success = buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -636,7 +638,7 @@ describe("nvim-beads.issue", function()
                     return {}, nil -- Empty array
                 end
 
-                local success = issue_module.open_issue_buffer("bd-1")
+                local success = buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -653,7 +655,7 @@ describe("nvim-beads.issue", function()
                     return { {} }, nil -- Array with empty object
                 end
 
-                local success = issue_module.open_issue_buffer("bd-1")
+                local success = buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_false(success)
                 assert.equals(1, #notifications)
@@ -685,7 +687,7 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should create buffer with correct name", function()
-                issue_module.open_issue_buffer("bd-1")
+                buffer_module.open_issue_buffer("bd-1")
 
                 assert.equals("beads://issue/bd-1", buffer_name)
             end)
@@ -708,32 +710,32 @@ describe("nvim-beads.issue", function()
                         nil
                 end
 
-                issue_module.open_issue_buffer("nvim-beads-p69")
+                buffer_module.open_issue_buffer("nvim-beads-p69")
 
                 assert.equals("beads://issue/nvim-beads-p69", buffer_name)
             end)
 
             it("should set filetype to markdown", function()
-                issue_module.open_issue_buffer("bd-1")
+                buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_not_nil(buffer_options[created_bufnr])
                 assert.equals("markdown", buffer_options[created_bufnr].filetype)
             end)
 
             it("should set buftype to acwrite", function()
-                issue_module.open_issue_buffer("bd-1")
+                buffer_module.open_issue_buffer("bd-1")
 
                 assert.equals("acwrite", buffer_options[created_bufnr].buftype)
             end)
 
             it("should set bufhidden to hide", function()
-                issue_module.open_issue_buffer("bd-1")
+                buffer_module.open_issue_buffer("bd-1")
 
                 assert.equals("hide", buffer_options[created_bufnr].bufhidden)
             end)
 
             it("should populate buffer with formatted content", function()
-                issue_module.open_issue_buffer("bd-1")
+                buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_not_nil(buffer_lines)
                 assert.is_table(buffer_lines)
@@ -747,13 +749,13 @@ describe("nvim-beads.issue", function()
             end)
 
             it("should display buffer in current window", function()
-                issue_module.open_issue_buffer("bd-1")
+                buffer_module.open_issue_buffer("bd-1")
 
                 assert.equals(created_bufnr, current_buf)
             end)
 
             it("should return true on success", function()
-                local success = issue_module.open_issue_buffer("bd-1")
+                local success = buffer_module.open_issue_buffer("bd-1")
 
                 assert.is_true(success)
             end)
@@ -796,7 +798,7 @@ describe("nvim-beads.issue", function()
                         nil
                 end
 
-                issue_module.open_issue_buffer("bd-20")
+                buffer_module.open_issue_buffer("bd-20")
 
                 assert.is_not_nil(buffer_lines)
                 local content = table.concat(buffer_lines, "\n")

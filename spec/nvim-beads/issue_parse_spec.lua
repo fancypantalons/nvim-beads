@@ -1,13 +1,13 @@
---- Unit tests for nvim-beads.issue parse_markdown_to_issue function
+--- Unit tests for nvim-beads.issue.parser parse_markdown_to_issue function
 --- Tests the reverse operation of format_issue_to_markdown
 
-describe("nvim-beads.issue", function()
-    local issue_module
+describe("nvim-beads.issue.parser", function()
+    local parser
 
     before_each(function()
         -- Clear the module cache to get fresh instance
-        package.loaded["nvim-beads.issue"] = nil
-        issue_module = require("nvim-beads.issue")
+        package.loaded["nvim-beads.issue.parser"] = nil
+        parser = require("nvim-beads.issue.parser")
     end)
 
     describe("parse_markdown_to_issue", function()
@@ -26,7 +26,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.is_table(issue)
             assert.equals("bd-1", issue.id)
@@ -54,7 +54,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("bug", issue.issue_type)
         end)
@@ -75,7 +75,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("bd-100", issue.parent)
         end)
@@ -98,7 +98,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.is_table(issue.dependencies)
             assert.equals(2, #issue.dependencies)
@@ -125,7 +125,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.is_table(issue.labels)
             assert.equals(3, #issue.labels)
@@ -149,7 +149,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.is_table(issue.labels)
             assert.equals(0, #issue.labels)
@@ -171,7 +171,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("john.doe", issue.assignee)
         end)
@@ -195,7 +195,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("This is a detailed description of the issue.", issue.description)
         end)
@@ -221,7 +221,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("Line 1 of description\nLine 2 of description\nLine 3 of description", issue.description)
         end)
@@ -246,7 +246,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("Must pass all tests\nMust work on all browsers", issue.acceptance_criteria)
         end)
@@ -271,7 +271,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("Use MVC pattern\nImplement with React", issue.design)
         end)
@@ -295,7 +295,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("Remember to update documentation", issue.notes)
         end)
@@ -321,7 +321,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("", issue.description)
             assert.equals("", issue.acceptance_criteria)
@@ -342,7 +342,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.is_nil(issue.description)
             assert.is_nil(issue.acceptance_criteria)
@@ -365,7 +365,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.equals("2023-10-27T14:00:00Z", issue.closed_at)
         end)
@@ -409,7 +409,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             -- Check frontmatter fields
             assert.equals("bd-20", issue.id)
@@ -465,7 +465,7 @@ describe("nvim-beads.issue", function()
                 "",
             }
 
-            local issue = issue_module.parse_markdown_to_issue(buffer_lines)
+            local issue = parser.parse_markdown_to_issue(buffer_lines)
 
             assert.is_not_nil(issue.description)
             assert.matches("First paragraph", issue.description)

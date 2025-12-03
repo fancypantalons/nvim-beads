@@ -1,13 +1,13 @@
---- Unit tests for nvim-beads.issue generate_update_commands function
+--- Unit tests for nvim-beads.issue.diff generate_update_commands function
 --- Tests command generation from diff changes to bd CLI commands
 
-describe("nvim-beads.issue", function()
-    local issue_module
+describe("nvim-beads.issue.diff", function()
+    local diff
 
     before_each(function()
         -- Clear the module cache to get fresh instance
-        package.loaded["nvim-beads.issue"] = nil
-        issue_module = require("nvim-beads.issue")
+        package.loaded["nvim-beads.issue.diff"] = nil
+        diff = require("nvim-beads.issue.diff")
     end)
 
     describe("generate_update_commands", function()
@@ -19,7 +19,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --title 'New Title'", commands[1])
@@ -32,7 +32,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --priority 1", commands[1])
@@ -45,7 +45,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --assignee 'jane.smith'", commands[1])
@@ -59,7 +59,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals('bd update bd-1 --assignee ""', commands[1])
@@ -73,7 +73,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.is_true(commands[1]:match("bd update bd%-1") ~= nil)
@@ -90,7 +90,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --description 'New description text'", commands[1])
@@ -103,7 +103,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --acceptance 'Must pass all tests'", commands[1])
@@ -116,7 +116,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --design 'Use MVVM pattern'", commands[1])
@@ -129,7 +129,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --notes 'Additional implementation notes'", commands[1])
@@ -142,7 +142,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --description ''", commands[1])
@@ -156,7 +156,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.is_true(commands[1]:match("bd update bd%-1") ~= nil)
@@ -171,7 +171,7 @@ describe("nvim-beads.issue", function()
                     status = "in_progress",
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --status in_progress", commands[1])
@@ -182,7 +182,7 @@ describe("nvim-beads.issue", function()
                     status = "blocked",
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --status blocked", commands[1])
@@ -193,7 +193,7 @@ describe("nvim-beads.issue", function()
                     status = "closed",
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd close bd-1", commands[1])
@@ -204,7 +204,7 @@ describe("nvim-beads.issue", function()
                     status = "open",
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd reopen bd-1", commands[1])
@@ -219,7 +219,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
                 assert.is_true(vim.tbl_contains(commands, "bd label add bd-1 ui"))
@@ -233,7 +233,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
                 assert.is_true(vim.tbl_contains(commands, "bd label remove bd-1 old-label"))
@@ -248,7 +248,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
                 -- Removals should come before additions
@@ -265,7 +265,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
                 assert.is_true(vim.tbl_contains(commands, "bd dep add bd-1 bd-120 --type blocks"))
@@ -279,7 +279,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
                 assert.is_true(vim.tbl_contains(commands, "bd dep remove bd-1 bd-100"))
@@ -294,7 +294,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(2, #commands)
                 -- Removals should come before additions
@@ -309,7 +309,7 @@ describe("nvim-beads.issue", function()
                     parent = "bd-50",
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd dep add bd-1 bd-50 --type parent-child", commands[1])
@@ -320,7 +320,7 @@ describe("nvim-beads.issue", function()
                     parent = "", -- Empty string indicates removal
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 -- Note: This is a placeholder - actual implementation would need
@@ -333,7 +333,7 @@ describe("nvim-beads.issue", function()
                     parent = "bd-60", -- Changed from bd-50 to bd-60
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 -- New parent is added (removal of old parent would be handled separately)
@@ -349,7 +349,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --title 'Fix user'\\''s authentication bug'", commands[1])
@@ -362,7 +362,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --description 'The user'\\''s session wasn'\\''t persisted'", commands[1])
@@ -375,7 +375,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 -- Double quotes are safe inside single quotes
@@ -389,7 +389,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 -- Newlines should be preserved within single quotes
@@ -403,7 +403,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 -- Special chars should be safe inside single quotes
@@ -433,7 +433,7 @@ describe("nvim-beads.issue", function()
                     },
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 -- Expected order: parent, deps, labels, status, metadata/sections
                 -- Parent: 1 command
@@ -461,7 +461,7 @@ describe("nvim-beads.issue", function()
             it("should return empty array for no changes", function()
                 local changes = {}
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.is_table(commands)
                 assert.equals(0, #commands)
@@ -472,7 +472,7 @@ describe("nvim-beads.issue", function()
                     status = "in_progress",
                 }
 
-                local commands = issue_module.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes)
 
                 assert.equals(1, #commands)
                 assert.equals("bd update bd-1 --status in_progress", commands[1])

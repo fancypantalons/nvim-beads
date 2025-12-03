@@ -14,7 +14,7 @@ local previewers = require("telescope.previewers")
 local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
-local issue_module = require("nvim-beads.issue")
+local formatter = require("nvim-beads.issue.formatter")
 
 --- Create a previewer for beads issues
 ---
@@ -58,7 +58,7 @@ local function create_issue_previewer()
                     local issue = issues[1]
 
                     -- Format issue to markdown
-                    local lines = issue_module.format_issue_to_markdown(issue)
+                    local lines = formatter.format_issue_to_markdown(issue)
 
                     -- Split any lines that contain newlines (nvim_buf_set_lines doesn't accept embedded newlines)
                     local flattened_lines = {}
