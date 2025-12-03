@@ -172,12 +172,46 @@ local function list(call_opts)
             }),
             sorter = conf.generic_sorter(opts),
             previewer = create_issue_previewer(),
-            attach_mappings = function(prompt_bufnr)
+            attach_mappings = function(prompt_bufnr, map)
                 actions.select_default:replace(function()
                     local selection = action_state.get_selected_entry()
                     actions.close(prompt_bufnr)
                     buffer.open_issue_buffer(selection.value.id)
                 end)
+
+                map("n", "d", function(p_prompt_bufnr)
+                    local selection = action_state.get_selected_entry()
+                    if not selection then
+                        vim.notify("No issue selected", vim.log.levels.WARN)
+                        return
+                    end
+
+                    local issue_id = selection.value.id
+                    if vim.fn.confirm("Delete issue " .. issue_id .. "?", "&Yes\n&No", 2) == 1 then
+                        local cmd = { "bd", "delete", issue_id, "--force" }
+                        vim.system(cmd, { text = true }, function(result)
+                            vim.schedule(function()
+                                if result.code == 0 then
+                                    vim.notify("Issue " .. issue_id .. " deleted")
+                                    -- HACK: Repopulating the picker doesn't work as expected, so we just
+                                    --       re-run the command.
+                                    --
+                                    -- local picker = action_state.get_current_picker(p_prompt_bufnr)
+                                    -- picker:refresh()
+                                    actions.close(p_prompt_bufnr)
+                                    list(call_opts)
+                                else
+                                    local msg = "Failed to delete issue " .. issue_id
+                                    if result.stderr and result.stderr ~= "" then
+                                        msg = msg .. ": " .. result.stderr
+                                    end
+                                    vim.notify(msg, vim.log.levels.ERROR)
+                                end
+                            end)
+                        end)
+                    end
+                end)
+
                 return true
             end,
         })
