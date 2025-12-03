@@ -49,94 +49,59 @@ describe("nvim-beads.issue.diff", function()
             assert.is_nil(changes.sections)
         end)
 
-        it("should detect title change in metadata", function()
-            local original = {
-                id = "bd-1",
-                title = "Original Title",
-                priority = 2,
-            }
+        local metadata_diff_test_cases = {
+            {
+                name = "title change",
+                original = { id = "bd-1", title = "Original Title", priority = 2 },
+                modified = { id = "bd-1", title = "Modified Title", priority = 2 },
+                expected_changes = { metadata = { title = "Modified Title" } },
+            },
+            {
+                name = "priority change",
+                original = { id = "bd-1", title = "Test", priority = 2 },
+                modified = { id = "bd-1", title = "Test", priority = 1 },
+                expected_changes = { metadata = { priority = 1 } },
+            },
+            {
+                name = "assignee change",
+                original = { id = "bd-1", assignee = "john.doe" },
+                modified = { id = "bd-1", assignee = "jane.smith" },
+                expected_changes = { metadata = { assignee = "jane.smith" } },
+            },
+            {
+                name = "assignee being added",
+                original = { id = "bd-1" },
+                modified = { id = "bd-1", assignee = "john.doe" },
+                expected_changes = { metadata = { assignee = "john.doe" } },
+            },
+            {
+                name = "assignee being removed",
+                original = { id = "bd-1", assignee = "john.doe" },
+                modified = { id = "bd-1" },
+                expected_changes = { metadata = { assignee = "" } },
+            },
+        }
 
-            local modified = {
-                id = "bd-1",
-                title = "Modified Title",
-                priority = 2,
-            }
+        for _, test_case in ipairs(metadata_diff_test_cases) do
+            it("should detect " .. test_case.name, function()
+                local changes = diff_module.diff_issues(test_case.original, test_case.modified)
 
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.metadata)
-            assert.equals("Modified Title", changes.metadata.title)
-            assert.is_nil(changes.metadata.priority)
-        end)
-
-        it("should detect priority change in metadata", function()
-            local original = {
-                id = "bd-1",
-                title = "Test",
-                priority = 2,
-            }
-
-            local modified = {
-                id = "bd-1",
-                title = "Test",
-                priority = 1,
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.metadata)
-            assert.equals(1, changes.metadata.priority)
-            assert.is_nil(changes.metadata.title)
-        end)
-
-        it("should detect assignee change in metadata", function()
-            local original = {
-                id = "bd-1",
-                assignee = "john.doe",
-            }
-
-            local modified = {
-                id = "bd-1",
-                assignee = "jane.smith",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.metadata)
-            assert.equals("jane.smith", changes.metadata.assignee)
-        end)
-
-        it("should detect assignee being added", function()
-            local original = {
-                id = "bd-1",
-            }
-
-            local modified = {
-                id = "bd-1",
-                assignee = "john.doe",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.metadata)
-            assert.equals("john.doe", changes.metadata.assignee)
-        end)
-
-        it("should detect assignee being removed", function()
-            local original = {
-                id = "bd-1",
-                assignee = "john.doe",
-            }
-
-            local modified = {
-                id = "bd-1",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.metadata)
-            assert.equals("", changes.metadata.assignee)
-        end)
+                if test_case.expected_changes.metadata then
+                    assert.is_table(changes.metadata)
+                    for key, value in pairs(test_case.expected_changes.metadata) do
+                        assert.equals(value, changes.metadata[key])
+                    end
+                else
+                    assert.is_nil(changes.metadata)
+                end
+                -- Ensure no unexpected metadata changes are present
+                for key, value in pairs(changes.metadata or {}) do
+                    if not test_case.expected_changes.metadata or not test_case.expected_changes.metadata[key] then
+                        assert.is_nil(value, "Unexpected metadata change for: " .. key)
+                    end
+                end
+            end)
+        end
 
         it("should detect status change", function()
             local original = {
@@ -154,283 +119,192 @@ describe("nvim-beads.issue.diff", function()
             assert.equals("in_progress", changes.status)
         end)
 
-        it("should detect label additions", function()
-            local original = {
-                id = "bd-1",
-                labels = {},
-            }
+        local label_diff_test_cases = {
+            {
+                name = "label additions",
+                original = { id = "bd-1", labels = {} },
+                modified = { id = "bd-1", labels = { "ui", "backend" } },
+                expected_add = { "ui", "backend" },
+                expected_remove = nil,
+            },
+            {
+                name = "label removals",
+                original = { id = "bd-1", labels = { "ui", "backend", "urgent" } },
+                modified = { id = "bd-1", labels = { "ui" } },
+                expected_add = nil,
+                expected_remove = { "backend", "urgent" },
+            },
+            {
+                name = "both label additions and removals",
+                original = { id = "bd-1", labels = { "ui", "old-label" } },
+                modified = { id = "bd-1", labels = { "ui", "backend", "new-label" } },
+                expected_add = { "backend", "new-label" },
+                expected_remove = { "old-label" },
+            },
+        }
 
-            local modified = {
-                id = "bd-1",
-                labels = { "ui", "backend" },
-            }
+        for _, test_case in ipairs(label_diff_test_cases) do
+            it("should detect " .. test_case.name, function()
+                local changes = diff_module.diff_issues(test_case.original, test_case.modified)
 
-            local changes = diff_module.diff_issues(original, modified)
+                assert.is_table(changes.labels)
 
-            assert.is_table(changes.labels)
-            assert.is_table(changes.labels.add)
-            assert.equals(2, #changes.labels.add)
-            assert.True(vim.tbl_contains(changes.labels.add, "ui"))
-            assert.True(vim.tbl_contains(changes.labels.add, "backend"))
-            assert.is_nil(changes.labels.remove)
-        end)
+                if test_case.expected_add then
+                    assert.is_table(changes.labels.add)
+                    assert.equals(#test_case.expected_add, #changes.labels.add)
+                    for _, label in ipairs(test_case.expected_add) do
+                        assert.True(vim.tbl_contains(changes.labels.add, label))
+                    end
+                else
+                    assert.is_nil(changes.labels.add)
+                end
 
-        it("should detect label removals", function()
-            local original = {
-                id = "bd-1",
-                labels = { "ui", "backend", "urgent" },
-            }
+                if test_case.expected_remove then
+                    assert.is_table(changes.labels.remove)
+                    assert.equals(#test_case.expected_remove, #changes.labels.remove)
+                    for _, label in ipairs(test_case.expected_remove) do
+                        assert.True(vim.tbl_contains(changes.labels.remove, label))
+                    end
+                else
+                    assert.is_nil(changes.labels.remove)
+                end
+            end)
+        end
 
-            local modified = {
-                id = "bd-1",
-                labels = { "ui" },
-            }
+        local dependency_diff_test_cases = {
+            {
+                name = "dependency additions",
+                original = { id = "bd-1", dependencies = {} },
+                modified = { id = "bd-1", dependencies = { "bd-120", "bd-121" } },
+                expected_add = { "bd-120", "bd-121" },
+                expected_remove = nil,
+            },
+            {
+                name = "dependency removals",
+                original = { id = "bd-1", dependencies = { "bd-100", "bd-101", "bd-102" } },
+                modified = { id = "bd-1", dependencies = { "bd-100" } },
+                expected_add = nil,
+                expected_remove = { "bd-101", "bd-102" },
+            },
+            {
+                name = "both dependency additions and removals",
+                original = { id = "bd-1", dependencies = { "bd-100", "bd-101" } },
+                modified = { id = "bd-1", dependencies = { "bd-100", "bd-120", "bd-121" } },
+                expected_add = { "bd-120", "bd-121" },
+                expected_remove = { "bd-101" },
+            },
+        }
 
-            local changes = diff_module.diff_issues(original, modified)
+        for _, test_case in ipairs(dependency_diff_test_cases) do
+            it("should detect " .. test_case.name, function()
+                local changes = diff_module.diff_issues(test_case.original, test_case.modified)
 
-            assert.is_table(changes.labels)
-            assert.is_table(changes.labels.remove)
-            assert.equals(2, #changes.labels.remove)
-            assert.True(vim.tbl_contains(changes.labels.remove, "backend"))
-            assert.True(vim.tbl_contains(changes.labels.remove, "urgent"))
-            assert.is_nil(changes.labels.add)
-        end)
+                assert.is_table(changes.dependencies)
 
-        it("should detect both label additions and removals", function()
-            local original = {
-                id = "bd-1",
-                labels = { "ui", "old-label" },
-            }
+                if test_case.expected_add then
+                    assert.is_table(changes.dependencies.add)
+                    assert.equals(#test_case.expected_add, #changes.dependencies.add)
+                    for _, dep in ipairs(test_case.expected_add) do
+                        assert.True(vim.tbl_contains(changes.dependencies.add, dep))
+                    end
+                else
+                    assert.is_nil(changes.dependencies.add)
+                end
 
-            local modified = {
-                id = "bd-1",
-                labels = { "ui", "backend", "new-label" },
-            }
+                if test_case.expected_remove then
+                    assert.is_table(changes.dependencies.remove)
+                    assert.equals(#test_case.expected_remove, #changes.dependencies.remove)
+                    for _, dep in ipairs(test_case.expected_remove) do
+                        assert.True(vim.tbl_contains(changes.dependencies.remove, dep))
+                    end
+                else
+                    assert.is_nil(changes.dependencies.remove)
+                end
+            end)
+        end
 
-            local changes = diff_module.diff_issues(original, modified)
+        local parent_diff_test_cases = {
+            {
+                name = "parent being added",
+                original = { id = "bd-1" },
+                modified = { id = "bd-1", parent = "bd-50" },
+                expected_parent_change = "bd-50",
+            },
+            {
+                name = "parent being removed",
+                original = { id = "bd-1", parent = "bd-50" },
+                modified = { id = "bd-1" },
+                expected_parent_change = "",
+            },
+            {
+                name = "parent being changed",
+                original = { id = "bd-1", parent = "bd-50" },
+                modified = { id = "bd-1", parent = "bd-60" },
+                expected_parent_change = "bd-60",
+            },
+        }
 
-            assert.is_table(changes.labels)
-            assert.is_table(changes.labels.add)
-            assert.equals(2, #changes.labels.add)
-            assert.True(vim.tbl_contains(changes.labels.add, "backend"))
-            assert.True(vim.tbl_contains(changes.labels.add, "new-label"))
-            assert.is_table(changes.labels.remove)
-            assert.equals(1, #changes.labels.remove)
-            assert.True(vim.tbl_contains(changes.labels.remove, "old-label"))
-        end)
+        for _, test_case in ipairs(parent_diff_test_cases) do
+            it("should detect " .. test_case.name, function()
+                local changes = diff_module.diff_issues(test_case.original, test_case.modified)
 
-        it("should detect dependency additions", function()
-            local original = {
-                id = "bd-1",
-                dependencies = {},
-            }
+                assert.equals(test_case.expected_parent_change, changes.parent)
+            end)
+        end
 
-            local modified = {
-                id = "bd-1",
-                dependencies = { "bd-120", "bd-121" },
-            }
+        local section_diff_test_cases = {
+            {
+                name = "description change",
+                original = { id = "bd-1", description = "Original description" },
+                modified = { id = "bd-1", description = "Modified description" },
+                expected_field = "description",
+                expected_value = "Modified description",
+            },
+            {
+                name = "description being added",
+                original = { id = "bd-1" },
+                modified = { id = "bd-1", description = "New description" },
+                expected_field = "description",
+                expected_value = "New description",
+            },
+            {
+                name = "description being removed",
+                original = { id = "bd-1", description = "Original description" },
+                modified = { id = "bd-1", description = "" },
+                expected_field = "description",
+                expected_value = "",
+            },
+            {
+                name = "acceptance_criteria change",
+                original = { id = "bd-1", acceptance_criteria = "Must pass tests" },
+                modified = { id = "bd-1", acceptance_criteria = "Must pass all tests and linting" },
+                expected_field = "acceptance_criteria",
+                expected_value = "Must pass all tests and linting",
+            },
+            {
+                name = "design change",
+                original = { id = "bd-1", design = "Use MVC" },
+                modified = { id = "bd-1", design = "Use MVVM" },
+                expected_field = "design",
+                expected_value = "Use MVVM",
+            },
+            {
+                name = "notes change",
+                original = { id = "bd-1", notes = "Original notes" },
+                modified = { id = "bd-1", notes = "Updated notes" },
+                expected_field = "notes",
+                expected_value = "Updated notes",
+            },
+        }
 
-            local changes = diff_module.diff_issues(original, modified)
+        for _, test_case in ipairs(section_diff_test_cases) do
+            it("should detect " .. test_case.name, function()
+                local changes = diff_module.diff_issues(test_case.original, test_case.modified)
 
-            assert.is_table(changes.dependencies)
-            assert.is_table(changes.dependencies.add)
-            assert.equals(2, #changes.dependencies.add)
-            assert.True(vim.tbl_contains(changes.dependencies.add, "bd-120"))
-            assert.True(vim.tbl_contains(changes.dependencies.add, "bd-121"))
-            assert.is_nil(changes.dependencies.remove)
-        end)
-
-        it("should detect dependency removals", function()
-            local original = {
-                id = "bd-1",
-                dependencies = { "bd-100", "bd-101", "bd-102" },
-            }
-
-            local modified = {
-                id = "bd-1",
-                dependencies = { "bd-100" },
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.dependencies)
-            assert.is_table(changes.dependencies.remove)
-            assert.equals(2, #changes.dependencies.remove)
-            assert.True(vim.tbl_contains(changes.dependencies.remove, "bd-101"))
-            assert.True(vim.tbl_contains(changes.dependencies.remove, "bd-102"))
-            assert.is_nil(changes.dependencies.add)
-        end)
-
-        it("should detect both dependency additions and removals", function()
-            local original = {
-                id = "bd-1",
-                dependencies = { "bd-100", "bd-101" },
-            }
-
-            local modified = {
-                id = "bd-1",
-                dependencies = { "bd-100", "bd-120", "bd-121" },
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.dependencies)
-            assert.is_table(changes.dependencies.add)
-            assert.equals(2, #changes.dependencies.add)
-            assert.True(vim.tbl_contains(changes.dependencies.add, "bd-120"))
-            assert.True(vim.tbl_contains(changes.dependencies.add, "bd-121"))
-            assert.is_table(changes.dependencies.remove)
-            assert.equals(1, #changes.dependencies.remove)
-            assert.True(vim.tbl_contains(changes.dependencies.remove, "bd-101"))
-        end)
-
-        it("should detect parent being added", function()
-            local original = {
-                id = "bd-1",
-            }
-
-            local modified = {
-                id = "bd-1",
-                parent = "bd-50",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.equals("bd-50", changes.parent)
-        end)
-
-        it("should detect parent being removed", function()
-            local original = {
-                id = "bd-1",
-                parent = "bd-50",
-            }
-
-            local modified = {
-                id = "bd-1",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            -- Special marker for removal
-            assert.equals("", changes.parent)
-        end)
-
-        it("should detect parent being changed", function()
-            local original = {
-                id = "bd-1",
-                parent = "bd-50",
-            }
-
-            local modified = {
-                id = "bd-1",
-                parent = "bd-60",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.equals("bd-60", changes.parent)
-        end)
-
-        it("should detect description change", function()
-            local original = {
-                id = "bd-1",
-                description = "Original description",
-            }
-
-            local modified = {
-                id = "bd-1",
-                description = "Modified description",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.sections)
-            assert.equals("Modified description", changes.sections.description)
-        end)
-
-        it("should detect description being added", function()
-            local original = {
-                id = "bd-1",
-            }
-
-            local modified = {
-                id = "bd-1",
-                description = "New description",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.sections)
-            assert.equals("New description", changes.sections.description)
-        end)
-
-        it("should detect description being removed", function()
-            local original = {
-                id = "bd-1",
-                description = "Original description",
-            }
-
-            local modified = {
-                id = "bd-1",
-                description = "",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.sections)
-            assert.equals("", changes.sections.description)
-        end)
-
-        it("should detect acceptance_criteria change", function()
-            local original = {
-                id = "bd-1",
-                acceptance_criteria = "Must pass tests",
-            }
-
-            local modified = {
-                id = "bd-1",
-                acceptance_criteria = "Must pass all tests and linting",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.sections)
-            assert.equals("Must pass all tests and linting", changes.sections.acceptance_criteria)
-        end)
-
-        it("should detect design change", function()
-            local original = {
-                id = "bd-1",
-                design = "Use MVC",
-            }
-
-            local modified = {
-                id = "bd-1",
-                design = "Use MVVM",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.sections)
-            assert.equals("Use MVVM", changes.sections.design)
-        end)
-
-        it("should detect notes change", function()
-            local original = {
-                id = "bd-1",
-                notes = "Original notes",
-            }
-
-            local modified = {
-                id = "bd-1",
-                notes = "Updated notes",
-            }
-
-            local changes = diff_module.diff_issues(original, modified)
-
-            assert.is_table(changes.sections)
-            assert.equals("Updated notes", changes.sections.notes)
-        end)
+                assert.is_table(changes.sections)
+                assert.equals(test_case.expected_value, changes.sections[test_case.expected_field])
+            end)
+        end
 
         it("should detect multiple simultaneous changes", function()
             local original = {

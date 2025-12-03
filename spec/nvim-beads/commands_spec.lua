@@ -12,58 +12,45 @@ describe("nvim-beads.issue.diff", function()
 
     describe("generate_update_commands", function()
         describe("metadata field updates", function()
-            it("should generate command for title change", function()
-                local changes = {
-                    metadata = {
-                        title = "New Title",
+            local metadata_test_cases = {
+                {
+                    name = "title change",
+                    changes = {
+                        metadata = { title = "New Title" },
                     },
-                }
-
-                local commands = diff.generate_update_commands("bd-1", changes)
-
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--title", "New Title"}, commands[1])
-            end)
-
-            it("should generate command for priority change", function()
-                local changes = {
-                    metadata = {
-                        priority = 1,
+                    expected_command = { "bd", "update", "bd-1", "--title", "New Title" },
+                },
+                {
+                    name = "priority change",
+                    changes = {
+                        metadata = { priority = 1 },
                     },
-                }
-
-                local commands = diff.generate_update_commands("bd-1", changes)
-
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--priority", "1"}, commands[1])
-            end)
-
-            it("should generate command for assignee change", function()
-                local changes = {
-                    metadata = {
-                        assignee = "jane.smith",
+                    expected_command = { "bd", "update", "bd-1", "--priority", "1" },
+                },
+                {
+                    name = "assignee change",
+                    changes = {
+                        metadata = { assignee = "jane.smith" },
                     },
-                }
-
-                local commands = diff.generate_update_commands("bd-1", changes)
-
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--assignee", "jane.smith"}, commands[1])
-            end)
-
-            it("should generate command for assignee removal", function()
-                -- When assignee is removed, diff_issues uses empty string as sentinel
-                local changes = {
-                    metadata = {
-                        assignee = "", -- Empty string indicates removal
+                    expected_command = { "bd", "update", "bd-1", "--assignee", "jane.smith" },
+                },
+                {
+                    name = "assignee removal",
+                    changes = {
+                        metadata = { assignee = "" },
                     },
-                }
+                    expected_command = { "bd", "update", "bd-1", "--assignee", "" },
+                },
+            }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+            for _, test_case in ipairs(metadata_test_cases) do
+                it("should generate command for " .. test_case.name, function()
+                    local commands = diff.generate_update_commands("bd-1", test_case.changes)
 
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--assignee", ""}, commands[1])
-            end)
+                    assert.equals(1, #commands)
+                    assert.same(test_case.expected_command, commands[1])
+                end)
+            end
 
             it("should combine multiple metadata changes into single command", function()
                 local changes = {
@@ -97,70 +84,42 @@ describe("nvim-beads.issue.diff", function()
         end)
 
         describe("text section updates", function()
-            it("should generate command for description change", function()
-                local changes = {
-                    sections = {
-                        description = "New description text",
-                    },
-                }
+            local section_test_cases = {
+                {
+                    name = "description change",
+                    changes = { sections = { description = "New description text" } },
+                    expected_command = { "bd", "update", "bd-1", "--description", "New description text" },
+                },
+                {
+                    name = "acceptance_criteria change",
+                    changes = { sections = { acceptance_criteria = "Must pass all tests" } },
+                    expected_command = { "bd", "update", "bd-1", "--acceptance", "Must pass all tests" },
+                },
+                {
+                    name = "design change",
+                    changes = { sections = { design = "Use MVVM pattern" } },
+                    expected_command = { "bd", "update", "bd-1", "--design", "Use MVVM pattern" },
+                },
+                {
+                    name = "notes change",
+                    changes = { sections = { notes = "Additional implementation notes" } },
+                    expected_command = { "bd", "update", "bd-1", "--notes", "Additional implementation notes" },
+                },
+                {
+                    name = "empty string for text sections",
+                    changes = { sections = { description = "" } },
+                    expected_command = { "bd", "update", "bd-1", "--description", "" },
+                },
+            }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+            for _, test_case in ipairs(section_test_cases) do
+                it("should generate command for " .. test_case.name, function()
+                    local commands = diff.generate_update_commands("bd-1", test_case.changes)
 
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--description", "New description text"}, commands[1])
-            end)
-
-            it("should generate command for acceptance_criteria change", function()
-                local changes = {
-                    sections = {
-                        acceptance_criteria = "Must pass all tests",
-                    },
-                }
-
-                local commands = diff.generate_update_commands("bd-1", changes)
-
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--acceptance", "Must pass all tests"}, commands[1])
-            end)
-
-            it("should generate command for design change", function()
-                local changes = {
-                    sections = {
-                        design = "Use MVVM pattern",
-                    },
-                }
-
-                local commands = diff.generate_update_commands("bd-1", changes)
-
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--design", "Use MVVM pattern"}, commands[1])
-            end)
-
-            it("should generate command for notes change", function()
-                local changes = {
-                    sections = {
-                        notes = "Additional implementation notes",
-                    },
-                }
-
-                local commands = diff.generate_update_commands("bd-1", changes)
-
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--notes", "Additional implementation notes"}, commands[1])
-            end)
-
-            it("should handle empty string for text sections", function()
-                local changes = {
-                    sections = {
-                        description = "",
-                    },
-                }
-
-                local commands = diff.generate_update_commands("bd-1", changes)
-
-                assert.equals(1, #commands)
-                assert.same({"bd", "update", "bd-1", "--description", ""}, commands[1])
-            end)
+                    assert.equals(1, #commands)
+                    assert.same(test_case.expected_command, commands[1])
+                end)
+            end
 
             it("should combine multiple section changes into single command", function()
                 local changes = {
