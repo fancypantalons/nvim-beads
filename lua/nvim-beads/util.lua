@@ -36,4 +36,26 @@ function M.split_lines_with_newlines(lines)
     return final_lines
 end
 
+---Execute a bd command and display the output in a terminal buffer
+---This provides clean output similar to vim-fugitive's :Git command
+---@param command string The bd subcommand to execute (e.g., 'compact', 'sync')
+---@param args string[] Additional arguments to pass to the command
+function M.execute_command_in_scratch_buffer(command, args)
+    -- Build the shell command string
+    local cmd_parts = { "bd", command }
+    vim.list_extend(cmd_parts, args or {})
+
+    -- Use vim.fn.shellescape to properly escape each part
+    local escaped_parts = vim.tbl_map(vim.fn.shellescape, cmd_parts)
+    local shell_cmd = table.concat(escaped_parts, " ")
+
+    -- Open a terminal buffer in a split and run the command
+    vim.cmd("split | terminal " .. shell_cmd)
+
+    -- Enter insert mode so the terminal is interactive (if needed)
+    -- and resize the split to be smaller
+    vim.cmd("resize 10")
+    vim.cmd("startinsert")
+end
+
 return M

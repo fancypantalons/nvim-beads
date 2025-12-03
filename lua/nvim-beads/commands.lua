@@ -2,6 +2,19 @@
 
 local M = {}
 
+--- Create a passthrough command implementation that executes a bd command
+--- and displays the output in a scratch buffer
+---@param command_name string The bd subcommand to execute
+---@return Subcommand
+local function passthrough_command(command_name)
+    return {
+        impl = function(args)
+            local util = require("nvim-beads.util")
+            util.execute_command_in_scratch_buffer(command_name, args)
+        end,
+    }
+end
+
 --- Subcommand definitions
 ---@class Subcommand
 ---@field impl fun(args: string[], opts: table)
@@ -58,6 +71,10 @@ local subcommands = {
             require("nvim-beads.buffer").open_issue_buffer(args[1])
         end,
     },
+    compact = passthrough_command("compact"),
+    cleanup = passthrough_command("cleanup"),
+    sync = passthrough_command("sync"),
+    daemon = passthrough_command("daemon")
 }
 
 --- Execute a :Beads subcommand
