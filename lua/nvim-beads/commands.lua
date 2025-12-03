@@ -16,7 +16,36 @@ local subcommands = {
     },
     create = {
         impl = function(args)
-            require("nvim-beads.core").create_issue(args)
+            -- Validate that we have exactly one argument
+            if #args == 0 then
+                vim.notify("Beads create: missing issue type. Usage: :Beads create <type>", vim.log.levels.ERROR)
+                vim.notify("Valid types: bug, feature, task, epic, chore", vim.log.levels.INFO)
+                return
+            end
+
+            if #args > 1 then
+                vim.notify("Beads create: too many arguments. Usage: :Beads create <type>", vim.log.levels.ERROR)
+                return
+            end
+
+            local issue_type = args[1]
+
+            -- Fetch the template
+            local core = require("nvim-beads.core")
+            local template, err = core.fetch_template(issue_type)
+
+            if err then
+                vim.notify("Beads create: " .. err, vim.log.levels.ERROR)
+                return
+            end
+
+            -- Open new issue buffer with template
+            local buffer = require("nvim-beads.buffer")
+            local success = buffer.open_new_issue_buffer(issue_type, template)
+
+            if not success then
+                vim.notify("Beads create: Failed to create issue buffer", vim.log.levels.ERROR)
+            end
         end,
     },
     open = {

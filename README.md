@@ -34,7 +34,6 @@ A Neovim plugin for integrating with the [beads (bd)](https://github.com/steveye
     keys = {
         { "<leader>br", "<Plug>(BeadsReady)", desc = "Show ready beads issues" },
         { "<leader>bl", "<Plug>(BeadsList)", desc = "List all beads issues" },
-        { "<leader>bc", "<Plug>(BeadsCreate)", desc = "Create beads issue" },
     },
 }
 ```
@@ -187,7 +186,6 @@ The plugin provides `<Plug>` mappings you can bind to your preferred keys:
 ```lua
 vim.keymap.set("n", "<leader>br", "<Plug>(BeadsReady)")
 vim.keymap.set("n", "<leader>bl", "<Plug>(BeadsList)")
-vim.keymap.set("n", "<leader>bc", "<Plug>(BeadsCreate)")
 ```
 
 ## Telescope Integration

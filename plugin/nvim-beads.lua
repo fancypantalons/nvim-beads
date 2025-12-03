@@ -27,9 +27,5 @@ vim.keymap.set("n", "<Plug>(BeadsList)", function()
     require("nvim-beads.core").show_list()
 end, { desc = "List all beads issues" })
 
-vim.keymap.set("n", "<Plug>(BeadsCreate)", function()
-    require("nvim-beads.core").create_issue()
-end, { desc = "Create a new beads issue" })
-
 -- Setup autocommands for beads:// buffers
 require("nvim-beads.autocmds").setup()
