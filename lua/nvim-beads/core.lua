@@ -130,7 +130,7 @@ end
 ---@return string? err An error message if validation fails
 function M.parse_list_filters(fargs)
     if not fargs or #fargs == 0 then
-        return { state = nil, type = nil }, nil
+        return { state = "open", type = nil }, nil
     end
 
     local valid_states = {
