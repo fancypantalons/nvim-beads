@@ -59,20 +59,24 @@ function M.open_issue_buffer(issue_id)
         end
     end
 
-    -- Create a new buffer
-    local bufnr = vim.api.nvim_create_buf(false, false)
-
     -- Set buffer name using beads:// URI scheme
     local buffer_name = string.format("beads://issue/%s", issue_id)
-    vim.api.nvim_buf_set_name(bufnr, buffer_name)
 
-    -- Populate buffer with formatted content
+    -- Check if a buffer with this name already exists
+    local bufnr = vim.fn.bufnr(buffer_name)
+    if bufnr == -1 then
+        -- Buffer doesn't exist, create a new one
+        bufnr = vim.api.nvim_create_buf(false, false)
+        vim.api.nvim_buf_set_name(bufnr, buffer_name)
+
+        -- Configure buffer options (only needed for new buffers)
+        vim.api.nvim_set_option_value("filetype", "markdown", { buf = bufnr })
+        vim.api.nvim_set_option_value("buftype", "acwrite", { buf = bufnr })
+        vim.api.nvim_set_option_value("bufhidden", "hide", { buf = bufnr })
+    end
+
+    -- Populate buffer with formatted content (refresh with latest data)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
-
-    -- Configure buffer options
-    vim.api.nvim_set_option_value("filetype", "markdown", { buf = bufnr })
-    vim.api.nvim_set_option_value("buftype", "acwrite", { buf = bufnr })
-    vim.api.nvim_set_option_value("bufhidden", "hide", { buf = bufnr })
 
     -- Display buffer in current window
     vim.api.nvim_set_current_buf(bufnr)
