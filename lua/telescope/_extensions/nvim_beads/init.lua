@@ -63,6 +63,9 @@ local function create_issue_previewer()
                     -- Split any lines that contain newlines (issue descriptions often have them)
                     local final_lines = util.split_lines_with_newlines(lines)
                     vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, final_lines)
+
+                    -- Set filetype for syntax highlighting
+                    vim.api.nvim_set_option_value("filetype", "markdown", { buf = self.state.bufnr })
                 end,
             })
         end,
