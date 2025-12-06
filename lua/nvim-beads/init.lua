@@ -23,12 +23,10 @@ function M.list(opts)
     core.show_list(opts)
 end
 
---- Show a specific issue by ID
+--- Show a specific issue by ID in an read/write buffer
 ---@param issue_id string The ID of the issue to show
 ---@param opts table|nil Reserved for future options
-function M.show(issue_id, opts)
-    opts = normalize_opts(opts)
-
+function M.show(issue_id)
     -- Validate issue_id
     if not issue_id or type(issue_id) ~= "string" or issue_id == "" then
         vim.notify("nvim-beads.show: issue_id is required and must be a non-empty string", vim.log.levels.ERROR)
@@ -39,7 +37,9 @@ function M.show(issue_id, opts)
     buffer.open_issue_buffer(issue_id)
 end
 
---- Create a new issue (opens buffer)
+--- Open a new buffer for creating an issue of the specified type, using the
+--- given template or, if none is specified, the configured template in 'bd'
+--- for that issue type.
 ---@param opts table|nil Options:
 ---   - type (string): Issue type - "bug", "feature", "task", "epic", "chore" (default: "task")
 ---   - template (table): Pre-populated template data
@@ -81,7 +81,9 @@ function M.create(opts)
     end
 end
 
---- Show ready (unblocked) issues with optional filters
+--- Convenience function to show ready (unblocked) issues with optional
+--- filters. This is equivalent to called 'list' filtering on issues in the
+--- 'ready' pseudo-state.
 ---@param opts table|nil Same filter options as list()
 function M.ready(opts)
     opts = normalize_opts(opts)
@@ -89,7 +91,7 @@ function M.ready(opts)
     core.show_ready(opts)
 end
 
---- Low-level: execute arbitrary bd command
+--- Excute an arbitrary bd command. All arguments are passed straight to 'bd'.
 ---@param args table Array of bd command arguments (e.g., {"show", "bd-123"})
 ---@param opts table|nil Options:
 ---   - async (boolean): If true, execute asynchronously (default: false)

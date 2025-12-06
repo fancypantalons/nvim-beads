@@ -1,0 +1,77 @@
+==============================================================================
+------------------------------------------------------------------------------
+Public Lua API for nvim-beads
+This is the canonical interface for programmatic access to nvim-beads functionality.
+Users should call these functions instead of directly accessing internal modules.
+
+------------------------------------------------------------------------------
+                                                             *nvim-beads.list()*
+
+`list`({opts})
+
+List issues with optional filters
+
+Parameters ~
+    {opts} `(table)`|`(nil)` |Filter| options:
+      - status (string): Filter by status - "open", "in_progress", "blocked", "closed", "ready", "stale", "all"
+      - type (string): Filter by type - "bug", "feature", "task", "epic", "chore", "all"
+      - priority (number): Filter by priority - 0-4
+      - assignee (string): Filter by assignee
+
+------------------------------------------------------------------------------
+                                                             *nvim-beads.show()*
+
+`show`({issue_id})
+
+Show a specific issue by ID in an read/write buffer
+
+Parameters ~
+    {issue_id} `(string)` The ID of the issue to show
+    {opts} `(table)`|`(nil)` |Reserved| for future options
+
+------------------------------------------------------------------------------
+                                                           *nvim-beads.create()*
+
+`create`({opts})
+
+Open a new buffer for creating an issue of the specified type, using the
+given template or, if none is specified, the configured template in 'bd'
+for that issue type.
+
+Parameters ~
+    {opts} `(table)`|`(nil)` Options:
+      - type (string): Issue type - "bug", "feature", "task", "epic", "chore" (default: "task")
+      - template (table): Pre-populated template data
+
+------------------------------------------------------------------------------
+                                                            *nvim-beads.ready()*
+
+`ready`({opts})
+
+Convenience function to show ready (unblocked) issues with optional
+filters. This is equivalent to called 'list' filtering on issues in the
+'ready' pseudo-state.
+
+Parameters ~
+    {opts} `(table)`|`(nil)` |Same| filter options as list()
+
+------------------------------------------------------------------------------
+                                                          *nvim-beads.execute()*
+
+`execute`({args}, {opts})
+
+Excute an arbitrary bd command. All arguments are passed straight to 'bd'.
+
+Parameters ~
+    {args} `(table)` Array of bd command arguments (e.g., {"show", "bd-123"})
+    {opts} `(table)`|`(nil)` Options:
+      - async (boolean): If true, execute asynchronously (default: false)
+      - callback (function): Callback for async execution: function(result, error)
+
+Return ~
+    `(table)`|`(nil)` |result| Parsed JSON |result| (sync) or `(nil)` (async)
+
+
+WARNING: This file is auto-generated. Do not edit it!
+
+ vim:tw=78:ts=8:noet:ft=help:norl:

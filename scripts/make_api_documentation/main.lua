@@ -16,9 +16,9 @@ local function main()
 
     vimdoc.make_documentation_files({
         {
-            source = vim.fs.joinpath(root, "lua", "nvim-beads", "commands.lua"),
-            destination = vim.fs.joinpath(root, "doc", "nvim-beads_commands.txt"),
-        },
+            source = vim.fs.joinpath(root, "lua", "nvim-beads", "init.lua"),
+            destination = vim.fs.joinpath(root, "doc", "nvim-beads_api.txt"),
+        }
     }, { enable_module_in_signature = false })
 end
 

@@ -1,0 +1,335 @@
+*nvim-beads.txt*     For Neovim >= 0.8.0    Last change: 2025 December 06
+
+==============================================================================
+Table of Contents                          *nvim-beads-contents*
+
+1. Introduction                                   |nvim-beads-introduction|
+2. Features                                        |nvim-beads-feature-list|
+3. Requirements                                     |nvim-beads-requirements|
+4. Installation                                          |nvim-beads-install|
+5. Quick Start                                       |nvim-beads-quick-start|
+6. Commands                                            |nvim-beads-commands|
+7. Lua API                                               |nvim-beads-lua-api|
+8. Telescope Integration                       |nvim-beads-telescope-integration|
+9. Configuration                                          |nvim-beads-config|
+10. About                                                  |nvim-beads-about|
+
+==============================================================================
+1. Introduction                                   *nvim-beads-introduction*
+
+nvim-beads is a Neovim plugin that integrates with bd (beads)--a
+lightweight, git-friendly issue tracker. It's particularly useful if you're
+tired of context-switching to your browser just to check your backlog.
+
+bd stores issues in a simple `.beads/issues.jsonl` file that stays in sync
+with your git repo. No external services, no complex databases, just a
+JSONL file you can commit alongside your code.
+
+This plugin provides a Telescope-based interface for browsing and managing
+those issues without leaving Neovim.
+
+Project homepage: https://github.com/steveyegge/beads
+
+==============================================================================
+2. Features                                        *nvim-beads-feature-list*
+
+Here's what you get:
+
+- Browse and filter issues using Telescope (because Telescope makes
+  everything better)
+- View ready/unblocked issues so you know what to work on next
+- Create new issues without leaving your editor
+- Edit issue details in markdown-formatted buffers--just edit and save
+- Filter by status, type, priority, assignee using natural language
+- Fast lazy-loading so it doesn't slow down your startup
+- Clean Lua API if you want to script things yourself
+
+==============================================================================
+3. Requirements                                     *nvim-beads-requirements*
+
+You'll need:
+
+- Neovim >= 0.8.0 (obviously)
+- The bd command-line tool installed and in your PATH
+  Grab it from: https://github.com/steveyegge/beads
+- telescope.nvim (this is NOT optional--the whole UI is built around it)
+  Get it here: https://github.com/nvim-telescope/telescope.nvim
+
+==============================================================================
+4. Installation                                          *nvim-beads-install*
+
+Using lazy.nvim:
+>lua
+    {
+        "brettk/nvim-beads",
+        dependencies = {
+            "nvim-telescope/telescope.nvim", -- Required
+        },
+        cmd = "Beads",
+    }
+<
+
+==============================================================================
+5. Quick Start                                       *nvim-beads-quick-start*
+
+First, you'll need to initialize bd in your project (if you haven't already):
+>bash
+    cd /path/to/your/project
+    bd init
+<
+
+That creates a `.beads/` directory with your issue database. Go ahead and
+commit that--it's meant to be version controlled.
+
+Now, from Neovim:
+>vim
+    " Browse issues (requires telescope.nvim)
+    :Beads list                 " All open issues
+    :Beads list ready           " Ready (unblocked) issues
+    :Beads list bugs            " All bugs
+    :Beads list open features   " Open features
+
+    " View/edit a specific issue
+    :Beads show bd-123
+
+    " Create a new issue
+    :Beads create bug
+<
+
+A quick note: `:Beads list` is really just a convenience wrapper that
+auto-loads the Telescope extension and calls it for you. So this:
+>vim
+    :Beads list ready
+<
+
+Is exactly the same as this:
+>vim
+    :lua require("telescope").load_extension("nvim_beads")
+    :Telescope nvim_beads list status=ready
+<
+
+Use whichever you prefer. Most folks find `:Beads list` easier to remember.
+
+==============================================================================
+6. Commands                                            *nvim-beads-commands*
+
+                                                                    *:Beads*
+:Beads {subcommand} [args]
+                        Execute a beads subcommand. See below for the full
+                        list of what's available.
+
+------------------------------------------------------------------------------
+List Subcommand ~
+                                                              *:Beads-list*
+
+:Beads list [status] [type]
+
+                        Browse and filter issues using a natural language
+                        interface. This is the main command you'll use for
+                        finding and opening issues.
+
+                        It's really just a convenience wrapper around the
+                        Telescope extension (`:Telescope nvim_beads list`),
+                        but it's easier to type and remember.
+
+                        Arguments are positional but flexible--the parser is
+                        smart enough to figure out whether you're specifying
+                        a status or a type, so the order doesn't actually
+                        matter.
+
+                        Valid statuses:
+                          • open - Issues you haven't started yet
+                          • in_progress - What you're working on now
+                          • blocked - Waiting on something else
+                          • closed - Done and dusted
+                          • ready - Unblocked and ready to go
+                          • stale - Been sitting there a while
+                          • all - Everything
+
+                        Valid types:
+                          • bug/bugs - Something's broken
+                          • feature/features - Something new
+                          • task/tasks - Work that needs doing
+                          • epic/epics - Big hairy features
+                          • chore/chores - Maintenance and cleanup
+                          • all - All of 'em
+
+                        Use singular or plural, doesn't matter. The parser
+                        handles both.
+
+Examples:
+>vim
+    :Beads list                " Show all open issues (default)
+    :Beads list ready          " Show ready (unblocked) issues
+    :Beads list bugs           " Show all bugs
+    :Beads list open bugs      " Show open bugs
+    :Beads list ready features " Show ready features
+    :Beads list closed         " Show closed issues
+<
+
+------------------------------------------------------------------------------
+Create Subcommand ~
+                                                            *:Beads-create*
+
+:Beads create {type}
+                        Create a new issue. This opens a buffer with a
+                        template that you fill in, then save to create the
+                        issue. Pretty straightforward.
+
+                        Valid types: bug, feature, task, epic, chore
+
+                        The template's in markdown and has fields for:
+                          • Title
+                          • Description
+                          • Priority (0-4)
+                          • Status
+                          • Dependencies
+
+                        Just fill it in and save. Done.
+
+Examples:
+>vim
+    :Beads create bug
+    :Beads create feature
+    :Beads create task
+<
+
+------------------------------------------------------------------------------
+Show Subcommand ~
+                                                             *:Beads-show*
+
+:Beads show {issue-id}
+                        Open a specific issue by ID. You get a markdown
+                        buffer with all the issue details. Edit it, save it,
+                        and the changes go straight back to the database.
+
+                        Simple as that.
+
+Examples:
+>vim
+    :Beads show bd-123
+    :Beads show bd-abc
+<
+
+------------------------------------------------------------------------------
+Open Subcommand ~
+                                                             *:Beads-open*
+
+:Beads open {issue-id}
+                        Alias for |:Beads-show|. Opens a specific issue
+                        by ID in a buffer.
+
+------------------------------------------------------------------------------
+Passthrough Subcommands ~
+                                                      *:Beads-passthrough*
+
+The following subcommands just pass through to bd directly and show you
+the output in a scratch buffer:
+
+:Beads compact          Compact the issues database
+:Beads cleanup          Clean up orphaned dependencies
+:Beads sync             Sync issues with git
+:Beads daemon           Start the bd daemon
+
+==============================================================================
+7. Lua API                                               *nvim-beads-lua-api*
+
+nvim-beads has a public Lua API if you want to integrate it into your own
+plugins or scripts. It's pretty straightforward.
+
+For the complete API docs, check out:
+- |nvim-beads_api.txt| - Public Lua API reference
+- |nvim-beads_commands.txt| - Command implementation details
+
+Quick example to get you started:
+>lua
+    local beads = require("nvim-beads")
+
+    -- List issues with filters
+    beads.list({ status = "ready", type = "bug" })
+
+    -- Show a specific issue
+    beads.show("bd-123")
+
+    -- Create a new issue
+    beads.create({ type = "feature" })
+
+    -- Execute arbitrary bd command
+    local result = beads.execute({ "list", "--status", "open" })
+<
+
+See |nvim-beads_api.txt| for the full details.
+
+==============================================================================
+8. Telescope Integration                       *nvim-beads-telescope-integration*
+
+Telescope is the heart of this plugin--all issue browsing goes through it.
+The `:Beads list` command is just sugar that auto-loads the extension and
+calls Telescope for you.
+
+If you want to load the extension manually (maybe you like doing things
+the hard way?):
+>lua
+    require("telescope").load_extension("nvim_beads")
+<
+
+You can also call it directly:
+>vim
+    " Browse all issues
+    :Telescope nvim_beads list
+
+    " Browse with filters
+    :Telescope nvim_beads list status=ready
+    :Telescope nvim_beads list type=bug
+    :Telescope nvim_beads list status=open type=feature
+<
+
+Or via Lua:
+>lua
+    local telescope = require("telescope")
+
+    -- Browse all issues
+    telescope.extensions.nvim_beads.list()
+
+    -- With filters
+    telescope.extensions.nvim_beads.list({
+        status = "ready",
+        type = "bug"
+    })
+<
+
+Telescope Keymaps ~
+
+While you're browsing issues in the Telescope picker, you've got these
+keymaps available:
+
+  <CR>    Open the issue (you know, the obvious one)
+  d       Delete it (asks for confirmation first, don't worry)
+  c       Mark it closed
+  o       Reopen it
+  i       Mark as in-progress
+
+==============================================================================
+9. Configuration                                          *nvim-beads-config*
+
+Good news: there's basically no configuration needed. It just works.
+
+All the actual issue tracking behavior is controlled by bd itself, not the
+plugin. So if you want to tweak how bd works, check out its docs:
+https://github.com/steveyegge/beads
+
+==============================================================================
+10. About                                                  *nvim-beads-about*
+
+Project homepage:
+https://github.com/brettk/nvim-beads
+
+Report bugs:
+https://github.com/brettk/nvim-beads/issues
+
+bd (beads) issue tracker:
+https://github.com/steveyegge/beads
+
+License: MIT
+
+vim:tw=78:ts=8:noet:ft=help:norl:
