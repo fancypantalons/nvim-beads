@@ -105,8 +105,8 @@ describe("telescope nvim_beads extension", function()
             assert.equals(#sample_issues, #_G.test_results)
         end)
 
-        it("should filter by state 'open'", function()
-            extension.exports.list({ state = "open" })
+        it("should filter by status 'open'", function()
+            extension.exports.list({ status = "open" })
             assert.equals(3, #_G.test_results) -- bd-1, bd-3, bd-4
             for _, issue in ipairs(_G.test_results) do
                 assert.equals("open", issue.status)
@@ -121,13 +121,13 @@ describe("telescope nvim_beads extension", function()
             end
         end)
 
-        it("should filter by state 'closed' and type 'bug'", function()
-            extension.exports.list({ state = "closed", type = "bug" })
+        it("should filter by status 'closed' and type 'bug'", function()
+            extension.exports.list({ status = "closed", type = "bug" })
             assert.equals(1, #_G.test_results)
             assert.equals("bd-2", _G.test_results[1].id)
         end)
 
-        it("should use 'bd ready' when state is 'ready'", function()
+        it("should use 'bd ready' when status is 'ready'", function()
             local cmd_used
             vim.system = function(cmd, _)
                 cmd_used = cmd
@@ -137,12 +137,12 @@ describe("telescope nvim_beads extension", function()
                     end,
                 }
             end
-            extension.exports.list({ state = "ready" })
+            extension.exports.list({ status = "ready" })
             assert.same({ "bd", "ready", "--json" }, cmd_used)
             assert.equals(#ready_issues, #_G.test_results)
         end)
 
-        it("should filter by type on top of 'ready' state", function()
+        it("should filter by type on top of 'ready' status", function()
             local issues_from_ready = {
                 { id = "bd-4", title = "Ready feature", status = "open", issue_type = "feature" },
                 { id = "bd-6", title = "Ready bug", status = "open", issue_type = "bug" },
@@ -155,18 +155,18 @@ describe("telescope nvim_beads extension", function()
                 }
             end
 
-            extension.exports.list({ state = "ready", type = "feature" })
+            extension.exports.list({ status = "ready", type = "feature" })
             assert.equals(1, #_G.test_results)
             assert.equals("bd-4", _G.test_results[1].id)
         end)
 
-        it("should handle 'all' for state", function()
-            extension.exports.list({ state = "all", type = "feature" })
+        it("should handle 'all' for status", function()
+            extension.exports.list({ status = "all", type = "feature" })
             assert.equals(2, #_G.test_results) -- bd-3, bd-4
         end)
 
         it("should handle 'all' for type", function()
-            extension.exports.list({ state = "open", type = "all" })
+            extension.exports.list({ status = "open", type = "all" })
             assert.equals(3, #_G.test_results) -- bd-1, bd-3, bd-4
         end)
     end)

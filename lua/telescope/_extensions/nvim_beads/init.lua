@@ -52,11 +52,11 @@ end
 
 --- Run the `:Telescope nvim_beads list` command to show all issues
 ---
----@param call_opts table|nil Either Telescope options or a filter table {state?: string, type?: string}
+---@param call_opts table|nil Either Telescope options or a filter table {status?: string, type?: string}
 local function list(call_opts)
     local opts, filters
     if call_opts then
-        if call_opts.state or call_opts.type then
+        if call_opts.status or call_opts.type or call_opts.priority or call_opts.assignee then
             filters = call_opts
             opts = {}
         else
@@ -70,9 +70,9 @@ local function list(call_opts)
 
     -- Choose the bd command based on filters
     local args
-    if filters.state == "ready" then
+    if filters.status == "ready" then
         args = { "ready" }
-    elseif filters.state == "stale" then
+    elseif filters.status == "stale" then
         args = { "stale" }
     else
         args = { "list" }
@@ -88,11 +88,11 @@ local function list(call_opts)
     -- Filter issues in Lua
     local filtered_issues = {}
     for _, issue in ipairs(all_issues) do
-        -- 'ready' is a special state that uses `bd ready`. We don't need to re-filter by status
+        -- 'ready' is a special status that uses `bd ready`. We don't need to re-filter by status
         -- if the user asked for 'ready' issues.
-        local state_match = true
-        if filters.state and filters.state ~= "all" and filters.state ~= "ready" then
-            state_match = issue.status == filters.state
+        local status_match = true
+        if filters.status and filters.status ~= "all" and filters.status ~= "ready" and filters.status ~= "stale" then
+            status_match = issue.status == filters.status
         end
 
         local type_match = true
@@ -100,7 +100,18 @@ local function list(call_opts)
             type_match = issue.issue_type == filters.type
         end
 
-        if state_match and type_match then
+        -- TODO: Add priority and assignee filtering when supported
+        -- local priority_match = true
+        -- if filters.priority then
+        --     priority_match = issue.priority == filters.priority
+        -- end
+        --
+        -- local assignee_match = true
+        -- if filters.assignee then
+        --     assignee_match = issue.assignee == filters.assignee
+        -- end
+
+        if status_match and type_match then
             table.insert(filtered_issues, issue)
         end
     end

@@ -100,18 +100,42 @@ function M.execute_bd_async(args, callback)
 end
 
 --- Show ready (unblocked) beads issues
-function M.show_ready()
-    -- TODO: Implement show_ready functionality
-    vim.notify("nvim-beads: show_ready not yet implemented", vim.log.levels.INFO)
+---@param opts table|nil Optional filter options {status, type, priority, assignee}
+function M.show_ready(opts)
+    opts = opts or {}
+
+    -- Set the status filter to 'ready' to distinguish this from a regular list
+    local filters = vim.tbl_extend("force", opts, { status = "ready" })
+
+    -- Reuse show_list with ready filter
+    M.show_list(filters)
 end
 
 --- Show list of all beads issues
----@param args table|nil Optional filter arguments [state, type]
-function M.show_list(args)
-    local filters, err = M.parse_list_filters(args)
-    if err then
-        vim.notify("Beads list: " .. err, vim.log.levels.ERROR)
-        return
+---@param args_or_opts table|nil Optional filter arguments (fargs array) OR opts table {status, type, priority, assignee}
+function M.show_list(args_or_opts)
+    local filters
+
+    -- Backward compatibility: detect if this is an opts table or fargs array
+    if args_or_opts == nil or #args_or_opts == 0 then
+        -- Empty or nil - could be either, treat as fargs for backward compat
+        local err
+        filters, err = M.parse_list_filters(args_or_opts)
+        if err then
+            vim.notify("Beads list: " .. err, vim.log.levels.ERROR)
+            return
+        end
+    elseif args_or_opts.status or args_or_opts.type or args_or_opts.priority or args_or_opts.assignee then
+        -- This is an opts table with named parameters
+        filters = args_or_opts
+    else
+        -- This is an fargs array (positional arguments)
+        local err
+        filters, err = M.parse_list_filters(args_or_opts)
+        if err then
+            vim.notify("Beads list: " .. err, vim.log.levels.ERROR)
+            return
+        end
     end
 
     local has_telescope, telescope = pcall(require, "telescope")
@@ -171,14 +195,14 @@ end
 
 --- Parse list filter arguments from the command
 ---@param fargs table|nil The filter arguments from the command
----@return table? filters A table with parsed state and type, or nil on error
+---@return table? filters A table with parsed status and type, or nil on error
 ---@return string? err An error message if validation fails
 function M.parse_list_filters(fargs)
     if not fargs or #fargs == 0 then
-        return { state = "open", type = nil }, nil
+        return { status = "open", type = nil }, nil
     end
 
-    local valid_states = {
+    local valid_statuses = {
         open = true,
         in_progress = true,
         blocked = true,
@@ -203,30 +227,30 @@ function M.parse_list_filters(fargs)
         chores = "chore",
     }
 
-    local filters = { state = nil, type = nil }
+    local filters = { status = nil, type = nil }
 
     for _, arg in ipairs(fargs) do
         local term = plural_map[string.lower(arg)] or string.lower(arg)
 
-        local is_state = valid_states[term]
+        local is_status = valid_statuses[term]
         local is_type = valid_types[term]
 
-        if not is_state and not is_type then
-            return nil, string.format("Invalid issue state or type '%s'", arg)
+        if not is_status and not is_type then
+            return nil, string.format("Invalid issue status or type '%s'", arg)
         end
 
-        -- Prefer assigning to state if it's not taken yet
-        if is_state and not filters.state then
-            filters.state = term
+        -- Prefer assigning to status if it's not taken yet
+        if is_status and not filters.status then
+            filters.status = term
         -- Then try assigning to type if it's not taken
         elseif is_type and not filters.type then
             filters.type = term
         else
             -- If we are here, it means both slots that the arg could fill are taken.
-            if is_state and is_type then
-                return nil, string.format("Duplicate or ambiguous state and type for '%s'", arg)
-            elseif is_state then
-                return nil, string.format("Duplicate issue state '%s'", arg)
+            if is_status and is_type then
+                return nil, string.format("Duplicate or ambiguous status and type for '%s'", arg)
+            elseif is_status then
+                return nil, string.format("Duplicate issue status '%s'", arg)
             else -- is_type
                 return nil, string.format("Duplicate issue type '%s'", arg)
             end
