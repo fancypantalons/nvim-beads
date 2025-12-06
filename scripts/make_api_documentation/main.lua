@@ -18,7 +18,7 @@ local function main()
         {
             source = vim.fs.joinpath(root, "lua", "nvim-beads", "init.lua"),
             destination = vim.fs.joinpath(root, "doc", "nvim-beads_api.txt"),
-        }
+        },
     }, { enable_module_in_signature = false })
 end
 

@@ -122,13 +122,21 @@ describe("nvim-beads.issue.diff", function()
                 },
                 {
                     name = "description",
-                    parsed_issue = { title = "Fix parser", issue_type = "bug", description = "The parser fails on edge cases" },
+                    parsed_issue = {
+                        title = "Fix parser",
+                        issue_type = "bug",
+                        description = "The parser fails on edge cases",
+                    },
                     expected_flag = "--description",
                     expected_value = "The parser fails on edge cases",
                 },
                 {
                     name = "acceptance criteria",
-                    parsed_issue = { title = "Add feature", issue_type = "feature", acceptance_criteria = "Must pass all tests" },
+                    parsed_issue = {
+                        title = "Add feature",
+                        issue_type = "feature",
+                        acceptance_criteria = "Must pass all tests",
+                    },
                     expected_flag = "--acceptance",
                     expected_value = "Must pass all tests",
                 },
@@ -140,7 +148,11 @@ describe("nvim-beads.issue.diff", function()
                 },
                 {
                     name = "labels",
-                    parsed_issue = { title = "Fix UI bug", issue_type = "bug", labels = { "ui", "frontend", "critical" } },
+                    parsed_issue = {
+                        title = "Fix UI bug",
+                        issue_type = "bug",
+                        labels = { "ui", "frontend", "critical" },
+                    },
                     expected_flag = "--labels",
                     expected_value = "ui,frontend,critical",
                 },
@@ -152,7 +164,11 @@ describe("nvim-beads.issue.diff", function()
                 },
                 {
                     name = "dependencies",
-                    parsed_issue = { title = "Task with deps", issue_type = "task", dependencies = { "bd-10", "bd-20" } },
+                    parsed_issue = {
+                        title = "Task with deps",
+                        issue_type = "task",
+                        dependencies = { "bd-10", "bd-20" },
+                    },
                     expected_flag = "--deps",
                     expected_value = "blocks:bd-10,blocks:bd-20",
                 },
@@ -165,7 +181,8 @@ describe("nvim-beads.issue.diff", function()
                     assert.is_nil(err)
                     assert.is_true(cmd_has_flag(command, test_case.expected_flag, test_case.expected_value))
                 end)
-            end        end)
+            end
+        end)
 
         describe("empty optional fields omission", function()
             local empty_optional_fields_omission_test_cases = {
@@ -208,7 +225,8 @@ describe("nvim-beads.issue.diff", function()
                     assert.is_nil(err)
                     assert.is_false(cmd_has_flag(command, test_case.omitted_flag))
                 end)
-            end        end)
+            end
+        end)
 
         describe("special character handling (no escaping needed)", function()
             it("should handle single quotes in title", function()
@@ -383,6 +401,7 @@ describe("nvim-beads.issue.diff", function()
                     assert.is_nil(err)
                     assert.is_true(cmd_has_flag(command, "--priority", test_case.expected_value))
                 end)
-            end        end)
+            end
+        end)
     end)
 end)

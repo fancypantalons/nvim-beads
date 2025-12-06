@@ -88,7 +88,7 @@ function M.setup_mock_env()
         return "" -- Or some other default for non-mocked buffers
     end
 
-    vim.api.nvim_buf_get_lines = function(bufnr, start_row, end_row, strict_indexing)
+    vim.api.nvim_buf_get_lines = function(bufnr, _start_row, _end_row, _strict_indexing)
         if bufnr == M.created_bufnr then
             return M.buffer_lines
         end
@@ -115,7 +115,9 @@ function M.setup_mock_env()
             on_exit({ code = 0, signal = 0, stdout = {}, stderr = {} })
         end
         return {
-            wait = function() return { code = 0, signal = 0, stdout = {}, stderr = {} } end
+            wait = function()
+                return { code = 0, signal = 0, stdout = {}, stderr = {} }
+            end,
         }
     end
 end

@@ -6,7 +6,6 @@ describe("autocmd save workflow", function()
     local core_module
     local original_vim_v
     local env = require("test_utilities.env")
-    local notifications
     local test_bufnr
     local mock_shell_error
 
@@ -20,12 +19,9 @@ describe("autocmd save workflow", function()
         core_module = require("nvim-beads.core")
 
         env.setup_mock_env()
-        notifications = env.notifications -- Link to env's notifications
 
         -- Create a test buffer
         test_bufnr = vim.api.nvim_create_buf(false, false)
-
-
 
         -- Save original functions that are not mocked by env
         original_vim_v = vim.v
@@ -88,7 +84,7 @@ describe("autocmd save workflow", function()
             local create_output = '{"id":"bd-42","title":"Fix parsing bug","issue_type":"bug"}'
             local system_calls = {}
 
-            vim.system = function(cmd_table, opts)
+            vim.system = function(cmd_table, _opts)
                 table.insert(system_calls, cmd_table)
                 local result = {
                     code = 0,
@@ -193,12 +189,20 @@ describe("autocmd save workflow", function()
             local create_output = '{"id":"bd-200","title":"Add dark mode","issue_type":"feature"}'
             local system_calls = {}
 
-            vim.system = function(cmd_table, opts)
+            vim.system = function(cmd_table, _opts)
                 table.insert(system_calls, cmd_table)
                 if cmd_table[1] == "bd" and cmd_table[2] == "create" then
-                    return { wait = function() return { code = 0, stdout = create_output, stderr = "" } end }
+                    return {
+                        wait = function()
+                            return { code = 0, stdout = create_output, stderr = "" }
+                        end,
+                    }
                 end
-                return { wait = function() return { code = 0, stdout = "", stderr = "" } end }
+                return {
+                    wait = function()
+                        return { code = 0, stdout = "", stderr = "" }
+                    end,
+                }
             end
 
             core_module.execute_bd = function(args)
@@ -336,7 +340,7 @@ describe("autocmd save workflow", function()
             vim.api.nvim_buf_set_name(test_bufnr, "beads://issue/new?type=bug")
 
             -- Mock failing system call
-            vim.system = function(cmd_table, opts)
+            vim.system = function(cmd_table, _opts)
                 if cmd_table[1] == "bd" and cmd_table[2] == "create" then
                     return {
                         wait = function()
@@ -344,7 +348,11 @@ describe("autocmd save workflow", function()
                         end,
                     }
                 end
-                return { wait = function() return { code = 0, stdout = "", stderr = "" } end }
+                return {
+                    wait = function()
+                        return { code = 0, stdout = "", stderr = "" }
+                    end,
+                }
             end
 
             -- Call the handler
@@ -384,10 +392,14 @@ describe("autocmd save workflow", function()
 
             local create_output = '{"id":"bd-999","title":"New feature","issue_type":"feature"}'
 
-            vim.system = function(cmd_table, opts)
+            vim.system = function(cmd_table, _opts)
                 if cmd_table[1] == "bd" and cmd_table[2] == "create" then
                     -- mock_shell_error no longer used
-                    return { wait = function() return { code = 0, stdout = create_output, stderr = "" } end }
+                    return {
+                        wait = function()
+                            return { code = 0, stdout = create_output, stderr = "" }
+                        end,
+                    }
                 end
                 return ""
             end

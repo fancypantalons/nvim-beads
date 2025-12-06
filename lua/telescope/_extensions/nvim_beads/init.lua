@@ -174,9 +174,12 @@ local function list(call_opts)
                     if vim.fn.confirm("Delete issue " .. issue_id .. "?", "&Yes\n&No", 2) == 1 then
                         beads.execute({ "delete", issue_id, "--force" }, {
                             async = true,
-                            callback = function(_, err)
-                                if err then
-                                    vim.notify("Failed to delete issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
+                            callback = function(_, delete_err)
+                                if delete_err then
+                                    vim.notify(
+                                        "Failed to delete issue " .. issue_id .. ": " .. delete_err,
+                                        vim.log.levels.ERROR
+                                    )
                                 else
                                     vim.notify("Issue " .. issue_id .. " deleted")
                                     actions.close(p_prompt_bufnr)
@@ -198,9 +201,12 @@ local function list(call_opts)
                     if vim.fn.confirm("Close issue " .. issue_id .. "?", "&Yes\n&No", 2) == 1 then
                         beads.execute({ "update", issue_id, "--status", "closed" }, {
                             async = true,
-                            callback = function(_, err)
-                                if err then
-                                    vim.notify("Failed to close issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
+                            callback = function(_, close_err)
+                                if close_err then
+                                    vim.notify(
+                                        "Failed to close issue " .. issue_id .. ": " .. close_err,
+                                        vim.log.levels.ERROR
+                                    )
                                 else
                                     vim.notify("Issue " .. issue_id .. " closed")
                                     actions.close(p_prompt_bufnr)
@@ -222,9 +228,12 @@ local function list(call_opts)
                     if vim.fn.confirm("Open issue " .. issue_id .. "?", "&Yes\n&No", 2) == 1 then
                         beads.execute({ "update", issue_id, "--status", "open" }, {
                             async = true,
-                            callback = function(_, err)
-                                if err then
-                                    vim.notify("Failed to open issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
+                            callback = function(_, open_err)
+                                if open_err then
+                                    vim.notify(
+                                        "Failed to open issue " .. issue_id .. ": " .. open_err,
+                                        vim.log.levels.ERROR
+                                    )
                                 else
                                     vim.notify("Issue " .. issue_id .. " opened")
                                     actions.close(p_prompt_bufnr)
@@ -246,9 +255,15 @@ local function list(call_opts)
                     if vim.fn.confirm("Mark issue " .. issue_id .. " as in-progress?", "&Yes\n&No", 2) == 1 then
                         beads.execute({ "update", issue_id, "--status", "in_progress" }, {
                             async = true,
-                            callback = function(_, err)
-                                if err then
-                                    vim.notify("Failed to mark issue " .. issue_id .. " as in-progress: " .. err, vim.log.levels.ERROR)
+                            callback = function(_, progress_err)
+                                if progress_err then
+                                    vim.notify(
+                                        "Failed to mark issue "
+                                            .. issue_id
+                                            .. " as in-progress: "
+                                            .. progress_err,
+                                        vim.log.levels.ERROR
+                                    )
                                 else
                                     vim.notify("Issue " .. issue_id .. " marked as in-progress")
                                     actions.close(p_prompt_bufnr)

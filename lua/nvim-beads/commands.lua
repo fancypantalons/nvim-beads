@@ -72,7 +72,7 @@ local subcommands = {
     compact = passthrough_command("compact"),
     cleanup = passthrough_command("cleanup"),
     sync = passthrough_command("sync"),
-    daemon = passthrough_command("daemon")
+    daemon = passthrough_command("daemon"),
 }
 
 --- Execute a :Beads subcommand

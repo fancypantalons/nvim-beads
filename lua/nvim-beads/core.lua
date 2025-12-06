@@ -112,7 +112,8 @@ function M.show_ready(opts)
 end
 
 --- Show list of all beads issues
----@param args_or_opts table|nil Optional filter arguments (fargs array) OR opts table {status, type, priority, assignee}
+---@param args_or_opts table|nil Optional filter arguments (fargs array)
+---   OR opts table {status, type, priority, assignee}
 function M.show_list(args_or_opts)
     local filters
 
@@ -183,7 +184,8 @@ function M.fetch_template(issue_type)
                 description = "",
                 acceptance_criteria = "",
                 design = "",
-            }, nil
+            },
+                nil
         else
             -- For other errors (like JSON parsing), propagate the error
             return nil, err

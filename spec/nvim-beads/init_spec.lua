@@ -116,7 +116,7 @@ describe("nvim-beads (public API)", function()
         it("should show error when issue_id is nil", function()
             local notified = false
             local notify_msg = nil
-            vim.notify = function(msg, level)
+            vim.notify = function(msg, _level)
                 notified = true
                 notify_msg = msg
             end
@@ -130,7 +130,7 @@ describe("nvim-beads (public API)", function()
         it("should show error when issue_id is empty string", function()
             local notified = false
             local notify_msg = nil
-            vim.notify = function(msg, level)
+            vim.notify = function(msg, _level)
                 notified = true
                 notify_msg = msg
             end
@@ -144,7 +144,7 @@ describe("nvim-beads (public API)", function()
         it("should show error when issue_id is not a string", function()
             local notified = false
             local notify_msg = nil
-            vim.notify = function(msg, level)
+            vim.notify = function(msg, _level)
                 notified = true
                 notify_msg = msg
             end
@@ -163,7 +163,9 @@ describe("nvim-beads (public API)", function()
                 received_type = issue_type
                 return { type = issue_type }
             end
-            mock_buffer.open_new_issue_buffer = function() return true end
+            mock_buffer.open_new_issue_buffer = function()
+                return true
+            end
 
             nvim_beads.create()
 
@@ -176,7 +178,9 @@ describe("nvim-beads (public API)", function()
                 received_type = issue_type
                 return { type = issue_type }
             end
-            mock_buffer.open_new_issue_buffer = function() return true end
+            mock_buffer.open_new_issue_buffer = function()
+                return true
+            end
 
             nvim_beads.create({ type = "bug" })
 
@@ -189,7 +193,9 @@ describe("nvim-beads (public API)", function()
                 fetched = true
                 return { type = "feature" }
             end
-            mock_buffer.open_new_issue_buffer = function() return true end
+            mock_buffer.open_new_issue_buffer = function()
+                return true
+            end
 
             nvim_beads.create({ type = "feature" })
 
@@ -218,7 +224,7 @@ describe("nvim-beads (public API)", function()
         it("should show error for invalid issue type", function()
             local notified = false
             local notify_msg = nil
-            vim.notify = function(msg, level)
+            vim.notify = function(msg, _level)
                 notified = true
                 notify_msg = msg
             end
@@ -251,13 +257,17 @@ describe("nvim-beads (public API)", function()
         it("should show error when buffer creation fails", function()
             local notified = false
             local notify_msg = nil
-            vim.notify = function(msg, level)
+            vim.notify = function(msg, _level)
                 notified = true
                 notify_msg = msg
             end
 
-            mock_core.fetch_template = function() return { type = "task" } end
-            mock_buffer.open_new_issue_buffer = function() return false end
+            mock_core.fetch_template = function()
+                return { type = "task" }
+            end
+            mock_buffer.open_new_issue_buffer = function()
+                return false
+            end
 
             nvim_beads.create({ type = "task" })
 

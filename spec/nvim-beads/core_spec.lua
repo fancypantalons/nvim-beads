@@ -536,7 +536,7 @@ describe("nvim-beads.core", function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "Test Title", "type": "task", '
-                                       .. '"priority": 2, "description": "Test description"}',
+                                    .. '"priority": 2, "description": "Test description"}',
                                 stderr = "",
                             }
                         end,
@@ -559,9 +559,9 @@ describe("nvim-beads.core", function()
                             return {
                                 code = 0,
                                 stdout = '{"title": "", "type": "feature", '
-                                       .. '"priority": 1, "description": "Desc", '
-                                       .. '"design": "Design", "acceptance_criteria": "AC", '
-                                       .. '"labels": ["label1"], "parent": null, "dependencies": []}',
+                                    .. '"priority": 1, "description": "Desc", '
+                                    .. '"design": "Design", "acceptance_criteria": "AC", '
+                                    .. '"labels": ["label1"], "parent": null, "dependencies": []}',
                                 stderr = "",
                             }
                         end,

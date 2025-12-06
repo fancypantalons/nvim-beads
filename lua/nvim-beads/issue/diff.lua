@@ -1,7 +1,6 @@
 ---@class nvim-beads.issue.diff
 local M = {}
 
-
 ---Compare two issue states and return structured changes
 ---@param original table The original issue state (from bd show --json)
 ---@param modified table The modified issue state (from parse_markdown_to_issue)
