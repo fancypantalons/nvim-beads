@@ -20,9 +20,6 @@ download-dependencies:
 api-documentation:
 	nvim -u scripts/make_api_documentation/minimal_init.lua -l scripts/make_api_documentation/main.lua
 
-llscheck: download-dependencies
-	VIMRUNTIME="`nvim --clean --headless --cmd 'lua io.write(os.getenv("VIMRUNTIME"))' --cmd 'quit'`" llscheck --configpath $(CONFIGURATION) .
-
 luacheck:
 	luacheck --no-color lua plugin scripts spec
 
@@ -33,13 +30,13 @@ stylua:
 	stylua lua plugin scripts spec
 
 test: download-dependencies
-	@eval $$(luarocks path --lua-version 5.1) && busted .
+	busted .
 
 check-mdformat:
-	python -m mdformat --check README.md markdown/manual/docs/index.md
+	python3 -m mdformat --check README.md markdown/manual/docs/index.md
 
 mdformat:
-	python -m mdformat README.md markdown/manual/docs/index.md
+	python3 -m mdformat README.md markdown/manual/docs/index.md
 
 # IMPORTANT: Make sure to run this first
 # ```
