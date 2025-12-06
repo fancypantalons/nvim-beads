@@ -3,15 +3,14 @@
 
 local M = {}
 
---- Execute a bd command asynchronously with JSON output parsing
----@param args table List of command arguments (e.g., {'ready', '--json'})
----@param opts? table Options for vim.system (optional)
----@return table|nil result Parsed JSON result on success, nil on failure
----@return string? error Error message on failure, nil on success
-function M.execute_bd(args, opts)
+--- Prepare bd command arguments by ensuring --json flag is present
+---@param args table List of command arguments
+---@return table|nil cmd The full command with 'bd' prefix and --json flag, or nil on error
+---@return string? error Error message if validation fails
+local function prepare_bd_command(args)
     -- Validate arguments
     if type(args) ~= "table" then
-        return nil, "execute_bd: args must be a table"
+        return nil, "prepare_bd_command: args must be a table"
     end
 
     -- Ensure --json flag is present
@@ -26,15 +25,15 @@ function M.execute_bd(args, opts)
         table.insert(args, "--json")
     end
 
-    -- Build command
-    local cmd = vim.list_extend({ "bd" }, args)
+    -- Build command with 'bd' prefix
+    return vim.list_extend({ "bd" }, args), nil
+end
 
-    -- Default options: text=true for clean output
-    local system_opts = vim.tbl_extend("force", { text = true }, opts or {})
-
-    -- Execute command synchronously
-    local result = vim.system(cmd, system_opts):wait()
-
+--- Parse and validate bd command result
+---@param result table The result from vim.system
+---@return table|nil parsed Parsed JSON on success, nil on failure
+---@return string? error Error message on failure, nil on success
+local function parse_bd_result(result)
     -- Check for command execution errors
     if result.code ~= 0 then
         local stderr = result.stderr
@@ -52,6 +51,52 @@ function M.execute_bd(args, opts)
     end
 
     return parsed, nil
+end
+
+--- Execute a bd command synchronously with JSON output parsing
+---@param args table List of command arguments (e.g., {'ready', '--json'})
+---@param opts? table Options for vim.system (optional)
+---@return table|nil result Parsed JSON result on success, nil on failure
+---@return string? error Error message on failure, nil on success
+function M.execute_bd(args, opts)
+    local cmd, err = prepare_bd_command(args)
+    if err then
+        return nil, err
+    end
+
+    -- Default options: text=true for clean output
+    local system_opts = vim.tbl_extend("force", { text = true }, opts or {})
+
+    -- Execute command synchronously
+    local result = vim.system(cmd, system_opts):wait()
+
+    return parse_bd_result(result)
+end
+
+--- Execute a bd command asynchronously with JSON output parsing
+---@param args table List of command arguments (e.g., {'ready'})
+---@param callback function Callback function(result: table|nil, error: string|nil)
+function M.execute_bd_async(args, callback)
+    if type(callback) ~= "function" then
+        error("execute_bd_async: callback must be a function")
+        return
+    end
+
+    local cmd, err = prepare_bd_command(args)
+    if err then
+        vim.schedule(function()
+            callback(nil, err)
+        end)
+        return
+    end
+
+    -- Execute command asynchronously
+    vim.system(cmd, { text = true }, function(result)
+        vim.schedule(function()
+            local parsed, parse_err = parse_bd_result(result)
+            callback(parsed, parse_err)
+        end)
+    end)
 end
 
 --- Show ready (unblocked) beads issues
@@ -218,6 +263,40 @@ function M.get_issue(issue_id)
     end
 
     return issue, nil
+end
+
+--- Fetches and parses a single issue by its ID asynchronously.
+---@param issue_id string The ID of the issue to fetch.
+---@param callback function Callback function(issue: table|nil, err: string|nil)
+function M.get_issue_async(issue_id, callback)
+    -- Validate issue_id
+    if not issue_id or type(issue_id) ~= "string" or issue_id == "" then
+        vim.schedule(function()
+            callback(nil, "Invalid issue ID")
+        end)
+        return
+    end
+
+    -- Execute bd show command
+    M.execute_bd_async({ "show", issue_id }, function(result, err)
+        if err then
+            callback(nil, string.format("Failed to fetch issue %s: %s", issue_id, err))
+            return
+        end
+
+        -- bd show returns an array with a single issue object
+        local issue = nil
+        if type(result) == "table" and #result > 0 then
+            issue = result[1]
+        end
+
+        if not issue or not issue.id then
+            callback(nil, string.format("Invalid issue data for %s", issue_id))
+            return
+        end
+
+        callback(issue, nil)
+    end)
 end
 
 return M
