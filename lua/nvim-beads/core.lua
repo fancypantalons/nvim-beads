@@ -191,4 +191,33 @@ function M.parse_list_filters(fargs)
     return filters, nil
 end
 
+--- Fetches and parses a single issue by its ID.
+---@param issue_id string The ID of the issue to fetch.
+---@return table? issue The parsed issue object on success.
+---@return string? err An error message if fetching or parsing fails.
+function M.get_issue(issue_id)
+    -- Validate issue_id
+    if not issue_id or type(issue_id) ~= "string" or issue_id == "" then
+        return nil, "Invalid issue ID"
+    end
+
+    -- Execute bd show command
+    local result, err = M.execute_bd({ "show", issue_id })
+    if err then
+        return nil, string.format("Failed to fetch issue %s: %s", issue_id, err)
+    end
+
+    -- bd show returns an array with a single issue object
+    local issue = nil
+    if type(result) == "table" and #result > 0 then
+        issue = result[1]
+    end
+
+    if not issue or not issue.id then
+        return nil, string.format("Invalid issue data for %s", issue_id)
+    end
+
+    return issue, nil
+end
+
 return M

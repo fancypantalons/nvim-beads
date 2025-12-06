@@ -3,40 +3,6 @@
 
 local M = {}
 
---- Reloads a buffer with the authoritative content of an issue from bd
----@param bufnr number The buffer number to update
----@param issue_id string The ID of the issue to fetch
----@return boolean success True if the buffer was reloaded successfully
-local function reload_buffer_from_issue_id(bufnr, issue_id)
-    local core = require("nvim-beads.core")
-    local result, err = core.execute_bd({ "show", issue_id })
-    if err then
-        vim.notify(string.format("nvim-beads: Failed to fetch/reload issue %s: %s", issue_id, err), vim.log.levels.ERROR)
-        return false
-    end
-
-    local issue = nil
-    if type(result) == "table" and #result > 0 then
-        issue = result[1]
-    end
-
-    if not issue or not issue.id then
-        vim.notify(string.format("nvim-beads: Invalid issue data for %s", issue_id), vim.log.levels.ERROR)
-        return false
-    end
-
-    local formatter = require("nvim-beads.issue.formatter")
-    local updated_lines = formatter.format_issue_to_markdown(issue)
-
-    local util = require("nvim-beads.util")
-    local final_lines = util.split_lines_with_newlines(updated_lines)
-
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
-    vim.api.nvim_set_option_value("modified", false, { buf = bufnr })
-
-    return true
-end
-
 --- Setup autocommands for beads:// buffers
 function M.setup()
     local group = vim.api.nvim_create_augroup("nvim_beads_buffers", { clear = true })
@@ -127,7 +93,8 @@ function M.handle_new_issue_save(bufnr)
     vim.api.nvim_buf_set_name(bufnr, new_buffer_name)
 
     -- Reload buffer with authoritative content from the newly created issue
-    if reload_buffer_from_issue_id(bufnr, new_id) then
+    local buffer = require("nvim-beads.buffer")
+    if buffer.reload_buffer_from_issue_id(bufnr, new_id) then
         vim.notify(string.format("nvim-beads: Issue %s created successfully", new_id), vim.log.levels.INFO)
     end
 end
@@ -153,20 +120,9 @@ function M.handle_existing_issue_save(bufnr, issue_id)
 
     -- Fetch original state from bd
     local core = require("nvim-beads.core")
-    local result, err = core.execute_bd({ "show", issue_id })
+    local original_issue, err = core.get_issue(issue_id)
     if err then
-        vim.notify(string.format("nvim-beads: Failed to fetch issue %s: %s", issue_id, err), vim.log.levels.ERROR)
-        return
-    end
-
-    -- Extract issue from result array
-    local original_issue = nil
-    if type(result) == "table" and #result > 0 then
-        original_issue = result[1]
-    end
-
-    if not original_issue or not original_issue.id then
-        vim.notify(string.format("nvim-beads: Invalid issue data for %s", issue_id), vim.log.levels.ERROR)
+        vim.notify(err, vim.log.levels.ERROR)
         return
     end
 
@@ -221,7 +177,8 @@ function M.handle_existing_issue_save(bufnr, issue_id)
 
     -- If all commands succeeded, reload buffer from authoritative source
     if all_success then
-        if reload_buffer_from_issue_id(bufnr, issue_id) then
+        local buffer = require("nvim-beads.buffer")
+        if buffer.reload_buffer_from_issue_id(bufnr, issue_id) then
             -- Restore cursor position (clamped to valid range)
             local line_count = vim.api.nvim_buf_line_count(bufnr)
             local new_row = math.min(cursor_pos[1], line_count)

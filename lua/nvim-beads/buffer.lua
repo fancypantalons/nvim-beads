@@ -1,62 +1,41 @@
 ---@class nvim-beads.buffer
 local M = {}
 
+---Populate a buffer with issue content and set standard options for beads
+---@param bufnr number The buffer number to populate
+---@param issue table The issue object to format and display
+function M.populate_beads_buffer(bufnr, issue)
+    local formatter = require("nvim-beads.issue.formatter")
+    local util = require("nvim-beads.util")
+
+    -- Format the issue to markdown
+    local lines = formatter.format_issue_to_markdown(issue)
+
+    -- Split any lines that contain newlines
+    local final_lines = util.split_lines_with_newlines(lines)
+
+    -- Populate buffer with formatted content
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
+
+    -- Configure buffer options
+    vim.api.nvim_set_option_value("filetype", "markdown", { buf = bufnr })
+    vim.api.nvim_set_option_value("buftype", "acwrite", { buf = bufnr })
+    vim.api.nvim_set_option_value("bufhidden", "hide", { buf = bufnr })
+    vim.api.nvim_set_option_value("swapfile", false, { buf = bufnr })
+    vim.api.nvim_set_option_value("modified", false, { buf = bufnr })
+end
+
 ---Open an issue in a beads:// buffer
 ---Fetches issue data via 'bd show --json', formats it, and displays in a buffer
 ---@param issue_id string The issue ID (e.g., "bd-1" or "nvim-beads-p69")
 ---@return boolean success True if buffer was opened successfully
 function M.open_issue_buffer(issue_id)
-    -- Validate issue_id
-    if not issue_id or type(issue_id) ~= "string" or issue_id == "" then
-        vim.notify("Invalid issue ID", vim.log.levels.ERROR)
-        return false
-    end
-
-    -- Get the core module for executing bd commands
     local core = require("nvim-beads.core")
-    local formatter = require("nvim-beads.issue.formatter")
-
-    -- Execute bd show command
-    local result, err = core.execute_bd({ "show", issue_id })
+    local issue, err = core.get_issue(issue_id)
 
     if err then
-        vim.notify(string.format("Failed to fetch issue %s: %s", issue_id, err), vim.log.levels.ERROR)
+        vim.notify(err, vim.log.levels.ERROR)
         return false
-    end
-
-    -- bd show returns an array with a single issue object
-    local issue = nil
-    if type(result) == "table" and #result > 0 then
-        issue = result[1]
-    end
-
-    if not issue or not issue.id then
-        vim.notify(string.format("Invalid issue data for %s", issue_id), vim.log.levels.ERROR)
-        return false
-    end
-
-    -- Format the issue to markdown
-    local lines = formatter.format_issue_to_markdown(issue)
-
-    -- Split any lines that contain newlines (since nvim_buf_set_lines requires single-line strings)
-    local final_lines = {}
-    for _, line in ipairs(lines) do
-        if line:find("\n") then
-            -- Split on newlines, preserving blank lines
-            local pos = 1
-            while pos <= #line do
-                local next_newline = line:find("\n", pos, true)
-                if next_newline then
-                    table.insert(final_lines, line:sub(pos, next_newline - 1))
-                    pos = next_newline + 1
-                else
-                    table.insert(final_lines, line:sub(pos))
-                    break
-                end
-            end
-        else
-            table.insert(final_lines, line)
-        end
     end
 
     -- Set buffer name using beads:// URI scheme
@@ -68,15 +47,10 @@ function M.open_issue_buffer(issue_id)
         -- Buffer doesn't exist, create a new one
         bufnr = vim.api.nvim_create_buf(false, false)
         vim.api.nvim_buf_set_name(bufnr, buffer_name)
-
-        -- Configure buffer options (only needed for new buffers)
-        vim.api.nvim_set_option_value("filetype", "markdown", { buf = bufnr })
-        vim.api.nvim_set_option_value("buftype", "acwrite", { buf = bufnr })
-        vim.api.nvim_set_option_value("bufhidden", "hide", { buf = bufnr })
     end
 
-    -- Populate buffer with formatted content (refresh with latest data)
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
+    -- Populate buffer and set options
+    M.populate_beads_buffer(bufnr, issue)
 
     -- Display buffer in current window
     vim.api.nvim_set_current_buf(bufnr)
@@ -90,8 +64,6 @@ end
 ---@param template_data table The template data from fetch_template
 ---@return boolean success True if buffer was opened successfully
 function M.open_new_issue_buffer(issue_type, template_data)
-    local formatter = require("nvim-beads.issue.formatter")
-
     -- Validate issue_type
     local valid_types = { bug = true, feature = true, task = true, epic = true, chore = true }
     if not issue_type or not valid_types[issue_type] then
@@ -124,30 +96,6 @@ function M.open_new_issue_buffer(issue_type, template_data)
         notes = template_data.notes or "",
     }
 
-    -- Format the new issue to markdown
-    local lines = formatter.format_issue_to_markdown(new_issue)
-
-    -- Split any lines that contain newlines (since nvim_buf_set_lines requires single-line strings)
-    local final_lines = {}
-    for _, line in ipairs(lines) do
-        if line:find("\n") then
-            -- Split on newlines, preserving blank lines
-            local pos = 1
-            while pos <= #line do
-                local next_newline = line:find("\n", pos, true)
-                if next_newline then
-                    table.insert(final_lines, line:sub(pos, next_newline - 1))
-                    pos = next_newline + 1
-                else
-                    table.insert(final_lines, line:sub(pos))
-                    break
-                end
-            end
-        else
-            table.insert(final_lines, line)
-        end
-    end
-
     -- Create a new buffer
     local bufnr = vim.api.nvim_create_buf(false, false)
 
@@ -155,13 +103,8 @@ function M.open_new_issue_buffer(issue_type, template_data)
     local buffer_name = string.format("beads://issue/new?type=%s", issue_type)
     vim.api.nvim_buf_set_name(bufnr, buffer_name)
 
-    -- Populate buffer with formatted content
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
-
-    -- Configure buffer options
-    vim.api.nvim_set_option_value("filetype", "markdown", { buf = bufnr })
-    vim.api.nvim_set_option_value("buftype", "acwrite", { buf = bufnr })
-    vim.api.nvim_set_option_value("bufhidden", "hide", { buf = bufnr })
+    -- Populate buffer and set options
+    M.populate_beads_buffer(bufnr, new_issue)
 
     -- Display buffer in current window
     vim.api.nvim_set_current_buf(bufnr)
@@ -169,6 +112,25 @@ function M.open_new_issue_buffer(issue_type, template_data)
     -- Position cursor on the title field (line 3 in the YAML frontmatter)
     -- Line 1: ---, Line 2: id: (new), Line 3: title: ...
     vim.api.nvim_win_set_cursor(0, { 3, 7 }) -- Position after "title: "
+
+    return true
+end
+
+--- Reloads a buffer with the authoritative content of an issue from bd
+---@param bufnr number The buffer number to update
+---@param issue_id string The ID of the issue to fetch
+---@return boolean success True if the buffer was reloaded successfully
+function M.reload_buffer_from_issue_id(bufnr, issue_id)
+    local core = require("nvim-beads.core")
+    local issue, err = core.get_issue(issue_id)
+
+    if err then
+        vim.notify(err, vim.log.levels.ERROR)
+        return false
+    end
+
+    -- Delegate buffer population to the new helper
+    M.populate_beads_buffer(bufnr, issue)
 
     return true
 end
