@@ -18,14 +18,5 @@ end, {
     end,
 })
 
--- Provide <Plug> mappings for users to bind (lazy-loaded)
-vim.keymap.set("n", "<Plug>(BeadsReady)", function()
-    require("nvim-beads.core").show_ready()
-end, { desc = "Show ready beads issues" })
-
-vim.keymap.set("n", "<Plug>(BeadsList)", function()
-    require("nvim-beads.core").show_list()
-end, { desc = "List all beads issues" })
-
 -- Setup autocommands for beads:// buffers
 require("nvim-beads.autocmds").setup()
