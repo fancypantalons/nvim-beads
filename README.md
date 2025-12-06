@@ -1,287 +1,218 @@
 # nvim-beads
 
-A Neovim plugin for integrating with the [beads (bd)](https://github.com/steveyegge/beads) issue tracker.
+A Neovim plugin for integrating with [bd (beads)](https://github.com/steveyegge/beads)--a lightweight, git-friendly issue tracker.
 
 | <!-- --> | <!-- --> |
-|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Build Status | [![unittests](https://img.shields.io/github/actions/workflow/status/YourUsername/nvim-beads.nvim/test.yml?branch=main&style=for-the-badge&label=Unittests)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/test.yml) [![documentation](https://img.shields.io/github/actions/workflow/status/ColinKennedy/nvim-beads.nvim/documentation.yml?branch=main&style=for-the-badge&label=Documentation)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/documentation.yml) [![luacheck](https://img.shields.io/github/actions/workflow/status/ColinKennedy/nvim-beads.nvim/luacheck.yml?branch=main&style=for-the-badge&label=Luacheck)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/luacheck.yml) [![llscheck](https://img.shields.io/github/actions/workflow/status/ColinKennedy/nvim-beads.nvim/llscheck.yml?branch=main&style=for-the-badge&label=llscheck)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/llscheck.yml) [![checkhealth](https://img.shields.io/github/actions/workflow/status/ColinKennedy/nvim-beads.nvim/checkhealth.yml?branch=main&style=for-the-badge&label=checkhealth)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/checkhealth.yml) [![stylua](https://img.shields.io/github/actions/workflow/status/ColinKennedy/nvim-beads.nvim/stylua.yml?branch=main&style=for-the-badge&label=Stylua)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/stylua.yml) [![urlchecker](https://img.shields.io/github/actions/workflow/status/ColinKennedy/nvim-beads.nvim/urlchecker.yml?branch=main&style=for-the-badge&label=URLChecker)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/urlchecker.yml) [![mdformat](https://img.shields.io/github/actions/workflow/status/ColinKennedy/nvim-beads.nvim/mdformat.yml?branch=main&style=for-the-badge&label=mdformat)](https://github.com/ColinKennedy/nvim-beads.nvim/actions/workflows/mdformat.yml) |
-| License | [![License-MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/YourUsername/nvim-beads.nvim/blob/main/LICENSE) |
-| Social | [![RSS](https://img.shields.io/badge/rss-F88900?style=for-the-badge&logo=rss&logoColor=white)](https://github.com/YourUsername/nvim-beads.nvim/commits/main/doc/news.txt.atom) |
+|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Build Status | [![unittests](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/test.yml?branch=main&style=for-the-badge&label=Unittests)](https://github.com/brettk/nvim-beads/actions/workflows/test.yml) [![documentation](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/documentation.yml?branch=main&style=for-the-badge&label=Documentation)](https://github.com/brettk/nvim-beads/actions/workflows/documentation.yml) [![luacheck](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/luacheck.yml?branch=main&style=for-the-badge&label=Luacheck)](https://github.com/brettk/nvim-beads/actions/workflows/luacheck.yml) [![llscheck](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/llscheck.yml?branch=main&style=for-the-badge&label=llscheck)](https://github.com/brettk/nvim-beads/actions/workflows/llscheck.yml) [![checkhealth](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/checkhealth.yml?branch=main&style=for-the-badge&label=checkhealth)](https://github.com/brettk/nvim-beads/actions/workflows/checkhealth.yml) [![stylua](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/stylua.yml?branch=main&style=for-the-badge&label=Stylua)](https://github.com/brettk/nvim-beads/actions/workflows/stylua.yml) [![urlchecker](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/urlchecker.yml?branch=main&style=for-the-badge&label=URLChecker)](https://github.com/brettk/nvim-beads/actions/workflows/urlchecker.yml) [![mdformat](https://img.shields.io/github/actions/workflow/status/brettk/nvim-beads/mdformat.yml?branch=main&style=for-the-badge&label=mdformat)](https://github.com/brettk/nvim-beads/actions/workflows/mdformat.yml) |
+| License | [![License-MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](https://github.com/brettk/nvim-beads/blob/main/LICENSE) |
+| Social | [![RSS](https://img.shields.io/badge/rss-F88900?style=for-the-badge&logo=rss&logoColor=white)](https://github.com/brettk/nvim-beads/commits/main/doc/news.txt.atom) |
 
-# Features
+## What is this?
 
-- View ready (unblocked) beads issues directly in Neovim
-- Browse all issues with Telescope integration
-- Create new issues from within Neovim
-- Fast startup with lazy-loaded modules
-- Follows Neovim plugin best practices
-- 100% Lua
-- [LuaCATS](https://luals.github.io/wiki/annotations/) type annotations
+[Beads](https://github.com/steveyegge/beads) is described by the author as:
 
-# Installation
+> Beads is a lightweight memory system for coding agents, using a graph-based issue tracker. Four kinds of dependencies work to chain your issues together like beads, making them easy for agents to follow for long distances, and reliably perform complex task streams in the right order.
 
-<!-- TODO: (you) - Adjust and add your dependencies as needed here -->
+In practice, Beads is essentially a ticketing system where the data resides right in your code repository. For people who don't want to be tied down to centralized infrastructure, this is nice as it divorces your issue tracking from the platform where your code is hosted. For LLMs, this is enormously powerful as the full ticketing system is local and available and can be used for long-term memory, context control, and as an alternative to to-do-lists or similar mechanisms.
 
-- [lazy.nvim](https://github.com/folke/lazy.nvim)
+But, Beads is a command-line tool, and as a command-line tool, can be a bit difficult to work with as a human, and that's where this plugin comes in. `nvim-beads` allows you list, create, edit, and close Beads tickets right from Neovim.
+
+## Features
+
+- Browse and filter issues using Telescope
+- View ready/unblocked issues so you know what to work on next
+- Create new issues without leaving your editor
+- Edit issue details in markdown-formatted buffers
+- Filter by status, type, priority, assignee using natural language
+- Fast lazy-loading
+- Clean Lua API for scripting [bd (beads)](https://github.com/steveyegge/beads) command-line tool
+- [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (required, not optional)
+
+## Installation
+
+Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
     "brettk/nvim-beads",
     dependencies = {
-        "nvim-telescope/telescope.nvim", -- Optional, for Telescope integration
+        "nvim-telescope/telescope.nvim", -- Required
     },
     cmd = "Beads",
-    keys = {
-        { "<leader>br", "<Plug>(BeadsReady)", desc = "Show ready beads issues" },
-        { "<leader>bl", "<Plug>(BeadsList)", desc = "List all beads issues" },
-    },
 }
 ```
 
-# Configuration
+## Quick Start
 
-(These are default values)
+Initialize bd in your project (if you haven't already):
 
-<!-- TODO: (you) - Remove / Add / Adjust your configuration here -->
-
-- [lazy.nvim](https://github.com/folke/lazy.nvim)
-
-```lua
-{
-    "YourUsername/nvim-beads.nvim",
-    config = function()
-        vim.g.nvim_beads_configuration = {
-            commands = {
-                goodnight_moon = { read = { phrase = "A good book" } },
-                hello_world = {
-                    say = { ["repeat"] = 1, style = "lowercase" },
-                },
-            },
-            logging = {
-                level = "info",
-                use_console = false,
-                use_file = false,
-            },
-            tools = {
-                lualine = {
-                    arbitrary_thing = {
-                        color = "Visual",
-                        text = " Arbitrary Thing",
-                    },
-                    copy_logs = {
-                        color = "Comment",
-                        text = "󰈔 Copy Logs",
-                    },
-                    goodnight_moon = {
-                        color = "Question",
-                        text = " Goodnight moon",
-                    },
-                    hello_world = {
-                        color = "Title",
-                        text = " Hello, World!",
-                    },
-                },
-                telescope = {
-                    goodnight_moon = {
-                        { "Foo Book", "Author A" },
-                        { "Bar Book Title", "John Doe" },
-                        { "Fizz Drink", "Some Name" },
-                        { "Buzz Bee", "Cool Person" },
-                    },
-                    hello_world = { "Hi there!", "Hello, Sailor!", "What's up, doc?" },
-                },
-            },
-        }
-    end
-}
+```bash
+cd /path/to/your/project
+bd init
 ```
 
-## Lualine
-
-<!-- TODO: (you) - Remove this is you do not want lualine -->
-
-> Note: You can customize lualine colors here or using
-> `vim.g.nvim_beads_configuration`.
-
-[lualine.nvim](https://github.com/nvim-lualine/lualine.nvim)
-
-```lua
-require("lualine").setup {
-    sections = {
-        lualine_y = {
-            -- ... Your other configuration ...
-            {
-                "nvim_beads",
-                -- NOTE: These will override default values
-                -- display = {
-                --     goodnight_moon = {color={fg="#FFFFFF"}, text="Custom message 1"}},
-                --     hello_world = {color={fg="#333333"}, text="Custom message 2"},
-                -- },
-            },
-        }
-    }
-}
-```
-
-## Telescope
-
-<!-- TODO: (you) - Remove this is you do not want telescope -->
-
-> Note: You can customize telescope colors here or using
-> `vim.g.nvim_beads_configuration`.
-
-[telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)
-
-```lua
-{
-    "nvim-telescope/telescope.nvim",
-    cmd = "Telescope",
-    config = function()
-        -- ... Your other configuration ...
-        require("telescope").load_extension("nvim_beads")
-    end,
-    dependencies = {
-        "YourUsername/nvim-beads.nvim",
-        "nvim-lua/plenary.nvim",
-    },
-    version = "0.1.*",
-},
-```
-
-### Colors
-
-This plugin provides two default highlights
-
-- `YourPluginTelescopeEntry`
-- `YourPluginTelescopeSecondary`
-
-Both come with default colors that should look nice. If you want to change them, here's how:
-
-```lua
-vim.api.nvim_set_hl(0, "YourPluginTelescopeEntry", {link="Statement"})
-vim.api.nvim_set_hl(0, "YourPluginTelescopeSecondary", {link="Question"})
-```
-
-# Usage
-
-## Commands
+Then from Neovim:
 
 ```vim
-:Beads          " Open Telescope picker (requires telescope.nvim)
-:Beads ready    " Show ready (unblocked) issues
-:Beads list     " List all issues
-:Beads create   " Create a new issue
+" Browse issues
+:Beads list                 " All open issues
+:Beads list ready           " Ready (unblocked) issues
+:Beads list bugs            " All bugs
+:Beads list open features   " Open features
+
+" View/edit a specific issue
+:Beads show bd-123
+
+" Create a new issue
+:Beads create bug
 ```
 
-**Note**: The bare `:Beads` command requires telescope.nvim to be installed and will automatically load the extension. If you prefer to load the extension manually in your config, add:
+## Usage
 
-```lua
-require('telescope').load_extension('nvim_beads')
+### Commands
+
+#### `:Beads list [status] [type]`
+
+Browse and filter issues using natural language. Arguments are positional but flexible--the parser figures out whether you're specifying a status or type.
+
+**Valid statuses:** `open`, `in_progress`, `blocked`, `closed`, `ready`, `stale`, `all`
+
+**Valid types:** `bug`/`bugs`, `feature`/`features`, `task`/`tasks`, `epic`/`epics`, `chore`/`chores`, `all`
+
+Examples:
+```vim
+:Beads list                " All open issues (default)
+:Beads list ready          " Ready (unblocked) issues
+:Beads list bugs           " All bugs
+:Beads list open bugs      " Open bugs
+:Beads list ready features " Ready features
 ```
 
-## Keymaps
+#### `:Beads create {type}`
 
-The plugin provides `<Plug>` mappings you can bind to your preferred keys:
+Create a new issue. Opens a markdown buffer with a template--fill it in and save.
 
-```lua
-vim.keymap.set("n", "<leader>br", "<Plug>(BeadsReady)")
-vim.keymap.set("n", "<leader>bl", "<Plug>(BeadsList)")
-```
-
-## Telescope Integration
-
-If you have telescope.nvim installed:
+Valid types: `bug`, `feature`, `task`, `epic`, `chore`
 
 ```vim
-:Telescope nvim_beads ready
+:Beads create bug
+:Beads create feature
+```
+
+#### `:Beads show {issue-id}`
+
+Open a specific issue by ID. Edit the markdown buffer and save to update the issue.
+
+```vim
+:Beads show bd-123
+```
+
+#### Other commands
+
+- `:Beads compact` - Compact the issues database
+- `:Beads cleanup` - Clean up orphaned dependencies
+- `:Beads sync` - Sync issues with git
+- `:Beads daemon` - Start the bd daemon
+
+### Telescope Integration
+
+The `:Beads list` command is just a convenience wrapper. You can also call Telescope directly:
+
+```vim
 :Telescope nvim_beads list
+:Telescope nvim_beads list status=ready
+:Telescope nvim_beads list type=bug
 ```
 
-# Tests
+Or via Lua:
 
-## Initialization
+```lua
+local telescope = require("telescope")
+telescope.load_extension("nvim_beads")
 
-Run this line once before calling any `busted` command
+telescope.extensions.nvim_beads.list()
+telescope.extensions.nvim_beads.list({ status = "ready", type = "bug" })
+```
+
+**Telescope keymaps** (while browsing issues):
+
+- `<CR>` - Open the issue
+- `d` - Delete the issue (with confirmation)
+- `c` - Mark as closed
+- `o` - Reopen
+- `i` - Mark as in-progress
+
+### Lua API
+
+The plugin provides a public Lua API if you want to integrate it into your own scripts:
+
+```lua
+local beads = require("nvim-beads")
+
+-- List issues with filters
+beads.list({ status = "ready", type = "bug" })
+
+-- Show a specific issue
+beads.show("bd-123")
+
+-- Create a new issue
+beads.create({ type = "feature" })
+
+-- Execute arbitrary bd command
+local result = beads.execute({ "list", "--status", "open" })
+```
+
+See `:help nvim-beads_api.txt` for full API documentation.
+
+## Configuration
+
+Good news: there's no configuration needed. The plugin works out of the box.
+
+All issue tracking behavior is controlled by bd itself. See the [bd documentation](https://github.com/steveyegge/beads) for configuration options.
+
+## Documentation
+
+Complete documentation is available via `:help nvim-beads`
+
+## Development
+
+### Running Tests
+
+Initialize the test environment (run once):
 
 ```sh
 eval $(luarocks path --lua-version 5.1 --bin)
 ```
 
-## Running
-
-Run all tests
+Run all tests:
 
 ```sh
-# Using the package manager
-luarocks test --test-type busted
-# Or manually
-busted .
-# Or with Make
 make test
 ```
 
-Run test based on tags
+Or using busted directly:
 
 ```sh
-busted . --tags=simple
+busted .
 ```
 
-# Coverage
+### Coverage
 
-Making sure that your plugin is well tested is important.
-`nvim-beads.nvim` can generate a per-line breakdown of exactly where
-your code is lacking tests using [LuaCov](https://luarocks.org/modules/mpeterv/luacov).
-
-## Setup
-
-Make sure to install all dependencies for the unittests + coverage reporter if
-you have not installed them already.
-
-```sh
-luarocks install busted --local
-luarocks install luacov --local
-luarocks install luacov-multiple --local
-```
-
-## Running
+Generate test coverage reports:
 
 ```sh
 make coverage-html
 ```
 
-This will generate a `luacov.stats.out` & `luacov_html/` directory.
-
-## Viewing
+View the coverage report:
 
 ```sh
-(cd luacov_html && python -m http.server)
+cd luacov_html && python -m http.server
 ```
 
-If it worked, you should see a message like
-`"Serving HTTP on 0.0.0.0 port 8000 (http://0.0.0.0:8000) ..."`
-Open `http://0.0.0.0:8000` in a browser like
-[Firefox](https://www.mozilla.org/en-US/firefox) and you should see a view like this:
+Then open http://localhost:8000 in your browser.
 
-![Image](https://github.com/user-attachments/assets/e5b30df8-036a-4886-81b9-affbf5c9e32a)
+## License
 
-Just navigate down a few folders until you get to a .lua file and you'll see a breakdown
-of your line coverage like this:
-
-![Image](https://github.com/user-attachments/assets/c5420b16-4be7-4177-92c7-01af0b418816)
-
-# Tracking Updates
-
-See [doc/news.txt](doc/news.txt) for updates.
-
-You can watch this plugin for changes by adding this URL to your RSS feed:
-
-```
-https://github.com/YourUsername/nvim-beads.nvim/commits/main/doc/news.txt.atom
-```
-
-# Other Plugins
-
-This template is full of various features. But if your plugin is only meant to
-be a simple plugin and you don't want the bells and whistles that this template
-provides, consider instead using
-[nvim-nvim-beads](https://github.com/ellisonleao/nvim-plugin-template)
+MIT
