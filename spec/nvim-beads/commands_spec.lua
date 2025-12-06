@@ -45,7 +45,7 @@ describe("nvim-beads.issue.diff", function()
 
             for _, test_case in ipairs(metadata_test_cases) do
                 it("should generate command for " .. test_case.name, function()
-                    local commands = diff.generate_update_commands("bd-1", test_case.changes)
+                    local commands = diff.generate_update_commands("bd-1", test_case.changes, nil)
 
                     assert.equals(1, #commands)
                     assert.same(test_case.expected_command, commands[1])
@@ -60,7 +60,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 local cmd = commands[1]
@@ -114,7 +114,7 @@ describe("nvim-beads.issue.diff", function()
 
             for _, test_case in ipairs(section_test_cases) do
                 it("should generate command for " .. test_case.name, function()
-                    local commands = diff.generate_update_commands("bd-1", test_case.changes)
+                    local commands = diff.generate_update_commands("bd-1", test_case.changes, nil)
 
                     assert.equals(1, #commands)
                     assert.same(test_case.expected_command, commands[1])
@@ -129,7 +129,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 local cmd = commands[1]
@@ -158,7 +158,7 @@ describe("nvim-beads.issue.diff", function()
                     status = "in_progress",
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 assert.same({"bd", "update", "bd-1", "--status", "in_progress"}, commands[1])
@@ -169,7 +169,7 @@ describe("nvim-beads.issue.diff", function()
                     status = "blocked",
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 assert.same({"bd", "update", "bd-1", "--status", "blocked"}, commands[1])
@@ -180,7 +180,7 @@ describe("nvim-beads.issue.diff", function()
                     status = "closed",
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 assert.same({"bd", "close", "bd-1"}, commands[1])
@@ -191,7 +191,7 @@ describe("nvim-beads.issue.diff", function()
                     status = "open",
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 assert.same({"bd", "reopen", "bd-1"}, commands[1])
@@ -206,7 +206,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(2, #commands)
                 assert.same({"bd", "label", "add", "bd-1", "ui"}, commands[1])
@@ -220,7 +220,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(2, #commands)
                 assert.same({"bd", "label", "remove", "bd-1", "old-label"}, commands[1])
@@ -235,7 +235,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(2, #commands)
                 -- Removals should come before additions
@@ -252,7 +252,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(2, #commands)
                 assert.same({"bd", "dep", "add", "bd-1", "bd-120", "--type", "blocks"}, commands[1])
@@ -266,7 +266,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(2, #commands)
                 assert.same({"bd", "dep", "remove", "bd-1", "bd-100"}, commands[1])
@@ -281,7 +281,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(2, #commands)
                 -- Removals should come before additions
@@ -296,23 +296,22 @@ describe("nvim-beads.issue.diff", function()
                     parent = "bd-50",
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 assert.same({"bd", "dep", "add", "bd-1", "bd-50", "--type", "parent-child"}, commands[1])
             end)
 
-            it("should generate placeholder command for parent removal", function()
+            it("should generate command for parent removal", function()
                 local changes = {
                     parent = "", -- Empty string indicates removal
                 }
+                local original_parent_id = "bd-42"
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, original_parent_id)
 
                 assert.equals(1, #commands)
-                -- Note: This is a placeholder - actual implementation would need
-                -- the original parent ID from the caller
-                assert.same({"bd", "dep", "remove", "bd-1", "<parent-id>"}, commands[1])
+                assert.same({ "bd", "dep", "remove", "bd-1", "bd-42" }, commands[1])
             end)
 
             it("should generate command for parent change", function()
@@ -320,7 +319,7 @@ describe("nvim-beads.issue.diff", function()
                     parent = "bd-60", -- Changed from bd-50 to bd-60
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 -- New parent is added (removal of old parent would be handled separately)
@@ -336,7 +335,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 -- With command tables, single quotes don't need escaping
@@ -350,7 +349,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 assert.same({"bd", "update", "bd-1", "--description", "The user's session wasn't persisted"}, commands[1])
@@ -363,7 +362,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 -- Double quotes are passed as-is in command tables
@@ -377,7 +376,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 -- Newlines are preserved as literal \n characters in the string
@@ -391,7 +390,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 -- Special chars should be safe inside single quotes
@@ -421,7 +420,7 @@ describe("nvim-beads.issue.diff", function()
                     },
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 -- Expected order: parent, deps, labels, status, metadata/sections
                 -- Parent: 1 command
@@ -463,7 +462,7 @@ describe("nvim-beads.issue.diff", function()
             it("should return empty array for no changes", function()
                 local changes = {}
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.is_table(commands)
                 assert.equals(0, #commands)
@@ -474,7 +473,7 @@ describe("nvim-beads.issue.diff", function()
                     status = "in_progress",
                 }
 
-                local commands = diff.generate_update_commands("bd-1", changes)
+                local commands = diff.generate_update_commands("bd-1", changes, nil)
 
                 assert.equals(1, #commands)
                 assert.same({"bd", "update", "bd-1", "--status", "in_progress"}, commands[1])

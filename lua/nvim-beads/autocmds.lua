@@ -3,6 +3,40 @@
 
 local M = {}
 
+--- Reloads a buffer with the authoritative content of an issue from bd
+---@param bufnr number The buffer number to update
+---@param issue_id string The ID of the issue to fetch
+---@return boolean success True if the buffer was reloaded successfully
+local function reload_buffer_from_issue_id(bufnr, issue_id)
+    local core = require("nvim-beads.core")
+    local result, err = core.execute_bd({ "show", issue_id })
+    if err then
+        vim.notify(string.format("nvim-beads: Failed to fetch/reload issue %s: %s", issue_id, err), vim.log.levels.ERROR)
+        return false
+    end
+
+    local issue = nil
+    if type(result) == "table" and #result > 0 then
+        issue = result[1]
+    end
+
+    if not issue or not issue.id then
+        vim.notify(string.format("nvim-beads: Invalid issue data for %s", issue_id), vim.log.levels.ERROR)
+        return false
+    end
+
+    local formatter = require("nvim-beads.issue.formatter")
+    local updated_lines = formatter.format_issue_to_markdown(issue)
+
+    local util = require("nvim-beads.util")
+    local final_lines = util.split_lines_with_newlines(updated_lines)
+
+    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
+    vim.api.nvim_set_option_value("modified", false, { buf = bufnr })
+
+    return true
+end
+
 --- Setup autocommands for beads:// buffers
 function M.setup()
     local group = vim.api.nvim_create_augroup("nvim_beads_buffers", { clear = true })
@@ -40,7 +74,6 @@ end
 
 --- Handle save workflow for new issue buffers
 ---@param bufnr number The buffer number
----@param buffer_name string The buffer name
 function M.handle_new_issue_save(bufnr)
     -- Get buffer content
     local buffer_content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
@@ -82,10 +115,8 @@ function M.handle_new_issue_save(bufnr)
         return
     end
 
-    local output = result.stdout
-
     -- Extract new issue ID from output
-    local new_id, extract_err = diff.extract_id_from_create_output(output)
+    local new_id, extract_err = diff.extract_id_from_create_output(result.stdout)
     if extract_err then
         vim.notify(string.format("nvim-beads: Failed to extract issue ID: %s", extract_err), vim.log.levels.ERROR)
         return
@@ -95,40 +126,10 @@ function M.handle_new_issue_save(bufnr)
     local new_buffer_name = string.format("beads://issue/%s", new_id)
     vim.api.nvim_buf_set_name(bufnr, new_buffer_name)
 
-    -- Fetch the authoritative state from bd
-    local core = require("nvim-beads.core")
-    local result, err = core.execute_bd({ "show", new_id })
-    if err then
-        vim.notify(string.format("nvim-beads: Failed to fetch created issue %s: %s", new_id, err), vim.log.levels.ERROR)
-        return
+    -- Reload buffer with authoritative content from the newly created issue
+    if reload_buffer_from_issue_id(bufnr, new_id) then
+        vim.notify(string.format("nvim-beads: Issue %s created successfully", new_id), vim.log.levels.INFO)
     end
-
-    -- Extract issue from result array
-    local created_issue = nil
-    if type(result) == "table" and #result > 0 then
-        created_issue = result[1]
-    end
-
-    if not created_issue or not created_issue.id then
-        vim.notify(string.format("nvim-beads: Invalid issue data for %s", new_id), vim.log.levels.ERROR)
-        return
-    end
-
-    -- Format the created issue
-    local formatter = require("nvim-beads.issue.formatter")
-    local updated_lines = formatter.format_issue_to_markdown(created_issue)
-
-    -- Split any lines that contain newlines
-    local util = require("nvim-beads.util")
-    local final_lines = util.split_lines_with_newlines(updated_lines)
-
-    -- Update buffer with authoritative content
-    vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
-
-    -- Clear modified flag
-    vim.api.nvim_set_option_value("modified", false, { buf = bufnr })
-
-    vim.notify(string.format("nvim-beads: Issue %s created successfully", new_id), vim.log.levels.INFO)
 end
 
 --- Handle save workflow for existing issue buffers
@@ -180,39 +181,19 @@ function M.handle_existing_issue_save(bufnr, issue_id)
         return
     end
 
-    -- Handle parent removal if needed (we need the original parent ID)
-    if changes.parent == "" then
-        -- Find the original parent ID from dependencies
-        local original_parent_id = nil
-        if original_issue.dependencies then
-            for _, dep in ipairs(original_issue.dependencies) do
-                if dep.dependency_type == "parent-child" then
-                    original_parent_id = dep.id
-                    break
-                end
+    -- Find the original parent ID, if any, for the command generator
+    local original_parent_id = nil
+    if changes.parent == "" and original_issue.dependencies then
+        for _, dep in ipairs(original_issue.dependencies) do
+            if dep.dependency_type == "parent-child" then
+                original_parent_id = dep.id
+                break
             end
         end
-
-        if original_parent_id then
-            -- Execute parent removal first
-            local remove_cmd = { "bd", "dep", "remove", issue_id, original_parent_id }
-            local result = vim.system(remove_cmd, { text = true }):wait()
-            if result.code ~= 0 then
-                local stderr = result.stderr or "no error output"
-                vim.notify(
-                    string.format("nvim-beads: Failed to remove parent: %s", stderr),
-                    vim.log.levels.ERROR
-                )
-                return
-            end
-        end
-
-        -- Clear the parent change from the changes table since we handled it
-        changes.parent = nil
     end
 
     -- Generate update commands
-    local commands = diff.generate_update_commands(issue_id, changes)
+    local commands = diff.generate_update_commands(issue_id, changes, original_parent_id)
 
     if #commands == 0 then
         vim.notify("nvim-beads: No changes to apply", vim.log.levels.INFO)
@@ -240,57 +221,24 @@ function M.handle_existing_issue_save(bufnr, issue_id)
 
     -- If all commands succeeded, reload buffer from authoritative source
     if all_success then
-        -- Fetch updated issue
-        local updated_result, updated_err = core.execute_bd({ "show", issue_id })
-        if updated_err then
-            vim.notify(
-                string.format("nvim-beads: Failed to reload issue %s: %s", issue_id, updated_err),
-                vim.log.levels.ERROR
-            )
-            return
-        end
+        if reload_buffer_from_issue_id(bufnr, issue_id) then
+            -- Restore cursor position (clamped to valid range)
+            local line_count = vim.api.nvim_buf_line_count(bufnr)
+            local new_row = math.min(cursor_pos[1], line_count)
+            local new_col = cursor_pos[2]
 
-        -- Extract updated issue
-        local updated_issue = nil
-        if type(updated_result) == "table" and #updated_result > 0 then
-            updated_issue = updated_result[1]
-        end
-
-        if not updated_issue or not updated_issue.id then
-            vim.notify(string.format("nvim-beads: Invalid updated issue data for %s", issue_id), vim.log.levels.ERROR)
-            return
-        end
-
-        -- Format the updated issue
-        local formatter = require("nvim-beads.issue.formatter")
-        local updated_lines = formatter.format_issue_to_markdown(updated_issue)
-
-        -- Split any lines that contain newlines
-        local util = require("nvim-beads.util")
-        local final_lines = util.split_lines_with_newlines(updated_lines)
-
-        -- Update buffer with new content
-        vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, final_lines)
-
-        -- Clear modified flag
-        vim.api.nvim_set_option_value("modified", false, { buf = bufnr })
-
-        -- Restore cursor position (clamped to valid range)
-        local line_count = vim.api.nvim_buf_line_count(bufnr)
-        local new_row = math.min(cursor_pos[1], line_count)
-        local new_col = cursor_pos[2]
-
-        -- Get the line at the new row and clamp column
-        if new_row > 0 and new_row <= line_count then
-            local line = vim.api.nvim_buf_get_lines(bufnr, new_row - 1, new_row, false)[1]
-            if line then
-                new_col = math.min(new_col, #line)
+            -- Get the line at the new row and clamp column
+            if new_row > 0 and new_row <= line_count then
+                local line = vim.api.nvim_buf_get_lines(bufnr, new_row - 1, new_row, false)[1]
+                if line then
+                    new_col = math.min(new_col, #line)
+                end
             end
+
+            vim.api.nvim_win_set_cursor(0, { new_row, new_col })
+
+            vim.notify("nvim-beads: Issue saved successfully", vim.log.levels.INFO)
         end
-
-        vim.api.nvim_win_set_cursor(0, { new_row, new_col })
-
-        vim.notify("nvim-beads: Issue saved successfully", vim.log.levels.INFO)
     end
 end
 

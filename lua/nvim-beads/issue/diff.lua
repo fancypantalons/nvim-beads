@@ -167,8 +167,9 @@ end
 ---Generate bd CLI commands to apply changes from diff_issues
 ---@param issue_id string The issue ID (e.g., "bd-1")
 ---@param changes table The changes table from diff_issues()
+---@param original_parent_id string|nil The ID of the parent before the change, if any
 ---@return table[] commands List of bd command tables
-function M.generate_update_commands(issue_id, changes)
+function M.generate_update_commands(issue_id, changes, original_parent_id)
     local commands = {}
 
     -- Helper to add a command
@@ -178,15 +179,13 @@ function M.generate_update_commands(issue_id, changes)
 
     -- Process in order: parent/deps first, then labels, then status, then metadata/text
 
-    -- 1. Handle parent changes (may need to remove old parent first)
+    -- 1. Handle parent changes
     if changes.parent ~= nil then
         if changes.parent == "" then
-            -- Parent removed - need to find and remove the old parent-child dependency
-            -- Note: The caller will need to know the old parent ID to remove it
-            -- For now, we'll use a placeholder that the caller must replace
-            -- This is handled by the caller checking the original.dependencies array
-            -- and removing any parent-child type dependencies first
-            add_cmd({ "bd", "dep", "remove", issue_id, "<parent-id>" })
+            -- Parent removed. The caller must provide the original parent ID.
+            if original_parent_id then
+                add_cmd({ "bd", "dep", "remove", issue_id, original_parent_id })
+            end
         else
             -- Parent added or changed
             add_cmd({ "bd", "dep", "add", issue_id, changes.parent, "--type", "parent-child" })
