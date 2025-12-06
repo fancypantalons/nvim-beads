@@ -24,7 +24,9 @@ end
 local subcommands = {
     list = {
         impl = function(args)
-            require("nvim-beads.core").show_list(args)
+            local beads = require("nvim-beads")
+            -- Pass args directly - show_list handles both fargs and opts for backward compat
+            beads.list(args)
         end,
     },
     create = {
@@ -41,34 +43,30 @@ local subcommands = {
                 return
             end
 
-            local issue_type = args[1]
-
-            -- Fetch the template
-            local core = require("nvim-beads.core")
-            local template, err = core.fetch_template(issue_type)
-
-            if err then
-                vim.notify("Beads create: " .. err, vim.log.levels.ERROR)
-                return
-            end
-
-            -- Open new issue buffer with template
-            local buffer = require("nvim-beads.buffer")
-            local success = buffer.open_new_issue_buffer(issue_type, template)
-
-            if not success then
-                vim.notify("Beads create: Failed to create issue buffer", vim.log.levels.ERROR)
-            end
+            local beads = require("nvim-beads")
+            beads.create({ type = args[1] })
         end,
     },
     open = {
         impl = function(args)
-            require("nvim-beads.buffer").open_issue_buffer(args[1])
+            if #args == 0 then
+                vim.notify("Beads open: missing issue ID. Usage: :Beads open <issue-id>", vim.log.levels.ERROR)
+                return
+            end
+
+            local beads = require("nvim-beads")
+            beads.show(args[1])
         end,
     },
     show = {
         impl = function(args)
-            require("nvim-beads.buffer").open_issue_buffer(args[1])
+            if #args == 0 then
+                vim.notify("Beads show: missing issue ID. Usage: :Beads show <issue-id>", vim.log.levels.ERROR)
+                return
+            end
+
+            local beads = require("nvim-beads")
+            beads.show(args[1])
         end,
     },
     compact = passthrough_command("compact"),
