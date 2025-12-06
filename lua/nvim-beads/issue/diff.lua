@@ -366,6 +366,9 @@ function M.build_create_command(parsed_issue)
         table.insert(cmd, deps_str)
     end
 
+    -- Add --json flag for programmatic output (required for parsing the result)
+    table.insert(cmd, "--json")
+
     return cmd, nil
 end
 

@@ -78,27 +78,27 @@ describe("nvim-beads.issue.diff", function()
                 {
                     name = "bug type",
                     parsed_issue = { title = "Fix bug in parser", issue_type = "bug" },
-                    expected_command = { "bd", "create", "Fix bug in parser", "--type", "bug" },
+                    expected_command = { "bd", "create", "Fix bug in parser", "--type", "bug", "--json" },
                 },
                 {
                     name = "task type",
                     parsed_issue = { title = "Update documentation", issue_type = "task" },
-                    expected_command = { "bd", "create", "Update documentation", "--type", "task" },
+                    expected_command = { "bd", "create", "Update documentation", "--type", "task", "--json" },
                 },
                 {
                     name = "feature type",
                     parsed_issue = { title = "Add dark mode", issue_type = "feature" },
-                    expected_command = { "bd", "create", "Add dark mode", "--type", "feature" },
+                    expected_command = { "bd", "create", "Add dark mode", "--type", "feature", "--json" },
                 },
                 {
                     name = "epic type",
                     parsed_issue = { title = "User authentication system", issue_type = "epic" },
-                    expected_command = { "bd", "create", "User authentication system", "--type", "epic" },
+                    expected_command = { "bd", "create", "User authentication system", "--type", "epic", "--json" },
                 },
                 {
                     name = "chore type",
                     parsed_issue = { title = "Update dependencies", issue_type = "chore" },
-                    expected_command = { "bd", "create", "Update dependencies", "--type", "chore" },
+                    expected_command = { "bd", "create", "Update dependencies", "--type", "chore", "--json" },
                 },
             }
 
@@ -220,7 +220,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.same({ "bd", "create", "Fix user's authentication", "--type", "bug" }, command)
+                assert.same({ "bd", "create", "Fix user's authentication", "--type", "bug", "--json" }, command)
             end)
 
             it("should handle double quotes in title", function()
@@ -232,7 +232,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.same({ "bd", "create", 'Add "advanced" search', "--type", "feature" }, command)
+                assert.same({ "bd", "create", 'Add "advanced" search', "--type", "feature", "--json" }, command)
             end)
 
             it("should handle single quotes in description", function()
@@ -270,7 +270,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.same({ "bd", "create", "Fix: $var & pipe | redirect >", "--type", "bug" }, command)
+                assert.same({ "bd", "create", "Fix: $var & pipe | redirect >", "--type", "bug", "--json" }, command)
             end)
 
             it("should handle single quotes in acceptance criteria", function()

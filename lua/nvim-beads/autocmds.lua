@@ -66,9 +66,6 @@ function M.handle_new_issue_save(bufnr)
         return
     end
 
-    -- Add --json flag for programmatic output
-    table.insert(create_cmd, "--json")
-
     -- Execute create command using vim.system
     local result = vim.system(create_cmd, { text = true }):wait()
 
