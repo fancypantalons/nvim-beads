@@ -16,8 +16,9 @@ local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
 local beads = require("nvim-beads")
 
--- Internal modules for formatting only (not core/buffer)
+-- Internal modules for formatting and utilities
 local formatter = require("nvim-beads.issue.formatter")
+local util = require("nvim-beads.util")
 
 --- Create a previewer for beads issues
 ---
@@ -59,7 +60,9 @@ local function create_issue_previewer()
 
                     -- Format issue and populate preview buffer
                     local lines = formatter.format_issue_to_markdown(issue)
-                    vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+                    -- Split any lines that contain newlines (issue descriptions often have them)
+                    local final_lines = util.split_lines_with_newlines(lines)
+                    vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, final_lines)
                 end,
             })
         end,
