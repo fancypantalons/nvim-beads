@@ -14,10 +14,10 @@ local previewers = require("telescope.previewers")
 local conf = require("telescope.config").values
 local actions = require("telescope.actions")
 local action_state = require("telescope.actions.state")
+local beads = require("nvim-beads")
+
+-- Internal modules for formatting only (not core/buffer)
 local formatter = require("nvim-beads.issue.formatter")
-local buffer = require("nvim-beads.buffer")
-local util = require("nvim-beads.util")
-local core = require("nvim-beads.core")
 
 --- Create a previewer for beads issues
 ---
@@ -30,22 +30,38 @@ local function create_issue_previewer()
             -- Extract issue_id from entry.value
             local issue_id = entry.value.id
 
-            -- Fetch issue asynchronously
-            core.get_issue_async(issue_id, function(issue, err)
-                if err then
-                    -- Handle error gracefully
-                    local error_lines = {
-                        "Error fetching issue details:",
-                        "",
-                        err,
-                    }
-                    vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, error_lines)
-                    return
-                end
+            -- Fetch issue asynchronously using public API
+            beads.execute({ "show", issue_id }, {
+                async = true,
+                callback = function(result, err)
+                    if err then
+                        -- Handle error gracefully
+                        local error_lines = {
+                            "Error fetching issue details:",
+                            "",
+                            err,
+                        }
+                        vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, error_lines)
+                        return
+                    end
 
-                -- Populate preview buffer with formatted issue
-                buffer.populate_beads_buffer(self.state.bufnr, issue)
-            end)
+                    -- bd show returns an array with a single issue
+                    local issue = nil
+                    if type(result) == "table" and #result > 0 then
+                        issue = result[1]
+                    end
+
+                    if not issue then
+                        local error_lines = { "No issue data returned" }
+                        vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, error_lines)
+                        return
+                    end
+
+                    -- Format issue and populate preview buffer
+                    local lines = formatter.format_issue_for_buffer(issue)
+                    vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
+                end,
+            })
         end,
     })
 end
@@ -78,8 +94,8 @@ local function list(call_opts)
         args = { "list" }
     end
 
-    -- Run bd command and parse the output
-    local all_issues, err = core.execute_bd(args)
+    -- Run bd command using public API and parse the output
+    local all_issues, err = beads.execute(args)
     if err then
         vim.notify("Failed to list issues: " .. err, vim.log.levels.ERROR)
         return
@@ -138,7 +154,7 @@ local function list(call_opts)
                 actions.select_default:replace(function()
                     local selection = action_state.get_selected_entry()
                     actions.close(prompt_bufnr)
-                    buffer.open_issue_buffer(selection.value.id)
+                    beads.show(selection.value.id)
                 end)
 
                 local function delete_issue(p_prompt_bufnr)
@@ -150,15 +166,18 @@ local function list(call_opts)
 
                     local issue_id = selection.value.id
                     if vim.fn.confirm("Delete issue " .. issue_id .. "?", "&Yes\n&No", 2) == 1 then
-                        core.execute_bd_async({ "delete", issue_id, "--force" }, function(_, err)
-                            if err then
-                                vim.notify("Failed to delete issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
-                            else
-                                vim.notify("Issue " .. issue_id .. " deleted")
-                                actions.close(p_prompt_bufnr)
-                                list(call_opts)
-                            end
-                        end)
+                        beads.execute({ "delete", issue_id, "--force" }, {
+                            async = true,
+                            callback = function(_, err)
+                                if err then
+                                    vim.notify("Failed to delete issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
+                                else
+                                    vim.notify("Issue " .. issue_id .. " deleted")
+                                    actions.close(p_prompt_bufnr)
+                                    list(call_opts)
+                                end
+                            end,
+                        })
                     end
                 end
 
@@ -171,15 +190,18 @@ local function list(call_opts)
 
                     local issue_id = selection.value.id
                     if vim.fn.confirm("Close issue " .. issue_id .. "?", "&Yes\n&No", 2) == 1 then
-                        core.execute_bd_async({ "update", issue_id, "--status", "closed" }, function(_, err)
-                            if err then
-                                vim.notify("Failed to close issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
-                            else
-                                vim.notify("Issue " .. issue_id .. " closed")
-                                actions.close(p_prompt_bufnr)
-                                list(call_opts)
-                            end
-                        end)
+                        beads.execute({ "update", issue_id, "--status", "closed" }, {
+                            async = true,
+                            callback = function(_, err)
+                                if err then
+                                    vim.notify("Failed to close issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
+                                else
+                                    vim.notify("Issue " .. issue_id .. " closed")
+                                    actions.close(p_prompt_bufnr)
+                                    list(call_opts)
+                                end
+                            end,
+                        })
                     end
                 end
 
@@ -192,15 +214,18 @@ local function list(call_opts)
 
                     local issue_id = selection.value.id
                     if vim.fn.confirm("Open issue " .. issue_id .. "?", "&Yes\n&No", 2) == 1 then
-                        core.execute_bd_async({ "update", issue_id, "--status", "open" }, function(_, err)
-                            if err then
-                                vim.notify("Failed to open issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
-                            else
-                                vim.notify("Issue " .. issue_id .. " opened")
-                                actions.close(p_prompt_bufnr)
-                                list(call_opts)
-                            end
-                        end)
+                        beads.execute({ "update", issue_id, "--status", "open" }, {
+                            async = true,
+                            callback = function(_, err)
+                                if err then
+                                    vim.notify("Failed to open issue " .. issue_id .. ": " .. err, vim.log.levels.ERROR)
+                                else
+                                    vim.notify("Issue " .. issue_id .. " opened")
+                                    actions.close(p_prompt_bufnr)
+                                    list(call_opts)
+                                end
+                            end,
+                        })
                     end
                 end
 
@@ -213,15 +238,18 @@ local function list(call_opts)
 
                     local issue_id = selection.value.id
                     if vim.fn.confirm("Mark issue " .. issue_id .. " as in-progress?", "&Yes\n&No", 2) == 1 then
-                        core.execute_bd_async({ "update", issue_id, "--status", "in_progress" }, function(_, err)
-                            if err then
-                                vim.notify("Failed to mark issue " .. issue_id .. " as in-progress: " .. err, vim.log.levels.ERROR)
-                            else
-                                vim.notify("Issue " .. issue_id .. " marked as in-progress")
-                                actions.close(p_prompt_bufnr)
-                                list(call_opts)
-                            end
-                        end)
+                        beads.execute({ "update", issue_id, "--status", "in_progress" }, {
+                            async = true,
+                            callback = function(_, err)
+                                if err then
+                                    vim.notify("Failed to mark issue " .. issue_id .. " as in-progress: " .. err, vim.log.levels.ERROR)
+                                else
+                                    vim.notify("Issue " .. issue_id .. " marked as in-progress")
+                                    actions.close(p_prompt_bufnr)
+                                    list(call_opts)
+                                end
+                            end,
+                        })
                     end
                 end
 
