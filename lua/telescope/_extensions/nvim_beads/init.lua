@@ -58,7 +58,7 @@ local function create_issue_previewer()
                     end
 
                     -- Format issue and populate preview buffer
-                    local lines = formatter.format_issue_for_buffer(issue)
+                    local lines = formatter.format_issue_to_markdown(issue)
                     vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, lines)
                 end,
             })
