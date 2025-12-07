@@ -14,7 +14,14 @@ Oh, and for the love of all that's holy, don't tell me I'm absolutely right (or 
 
 You **MUST** review all Markdown documents in the [References](doc/dev/reference/) folder before beginning any development, as those documents contain critical technical details, including development best practices.
 
-Note, in order to run tests you'll need to use `busted`, which has been installed using `luarocks`. Run `luarocks path --lua-version 5.1 --bin` to initialize the environment, at which point `busted` will be available.
+Prior to finalizing any work item, you **MUST** use the following Makefile targets to validate your changes. Any errors must be fixed before code can be commited:
+
+* `make test`
+* `make luacheck`
+* `make check-stylua`
+* `make check-mdformat`
+
+Additionally, you **MUST** run `make api-documentation` and include any modified files in your changes in order to ensure published documentation and tags are updated before we push new work.
 
 ### Requirements
 
