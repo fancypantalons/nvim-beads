@@ -45,9 +45,9 @@ function M.open_issue_buffer(issue_id)
     -- Set buffer name using beads:// URI scheme
     local buffer_name = string.format("beads://issue/%s", issue_id)
 
-    -- Check if a buffer with this name already exists and is loaded
-    local bufnr = vim.api.nvim_buf_get_number(buffer_name)
-    if bufnr == 0 then
+    -- Check if a buffer with this name already exists
+    local bufnr = vim.fn.bufnr(buffer_name)
+    if bufnr == -1 then
         -- Buffer doesn't exist, create a new one
         bufnr = vim.api.nvim_create_buf(false, false)
         vim.api.nvim_buf_set_name(bufnr, buffer_name)

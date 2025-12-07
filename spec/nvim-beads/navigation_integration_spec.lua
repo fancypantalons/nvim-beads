@@ -125,6 +125,12 @@ describe("navigation integration", function()
                     end
                     return ""
                 end,
+                bufnr = function(name)
+                    if name == env.buffer_name then
+                        return env.created_bufnr
+                    end
+                    return -1
+                end,
             }
 
             -- Track buffer operations
@@ -180,6 +186,12 @@ describe("navigation integration", function()
                     end
                     return ""
                 end,
+                bufnr = function(name)
+                    if name == env.buffer_name then
+                        return env.created_bufnr
+                    end
+                    return -1
+                end,
             }
 
             local success = navigation.navigate_to_issue_at_cursor()
@@ -221,6 +233,12 @@ describe("navigation integration", function()
                     end
                     return ""
                 end,
+                bufnr = function(name)
+                    if name == env.buffer_name then
+                        return env.created_bufnr
+                    end
+                    return -1
+                end,
             }
 
             local success = navigation.navigate_to_issue_at_cursor()
@@ -245,6 +263,12 @@ describe("navigation integration", function()
                         return "nvim-beads-nonexistent"
                     end
                     return ""
+                end,
+                bufnr = function(name)
+                    if name == env.buffer_name then
+                        return env.created_bufnr
+                    end
+                    return -1
                 end,
             }
 
