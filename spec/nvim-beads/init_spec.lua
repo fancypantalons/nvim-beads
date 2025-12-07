@@ -603,4 +603,116 @@ describe("nvim-beads (public API)", function()
             assert.same({ "search", "fix", "login", "bug", "in", "authentication" }, received_bd_args)
         end)
     end)
+
+    describe("show_under_cursor()", function()
+        local mock_navigation
+
+        before_each(function()
+            -- Clear navigation module cache
+            package.loaded["nvim-beads.navigation"] = nil
+
+            -- Create navigation mock
+            mock_navigation = {
+                navigate_to_issue_at_cursor = function()
+                    return true
+                end,
+            }
+
+            -- Mock require to return navigation mock
+            local original_require = require
+            _G.require = function(module)
+                if module == "nvim-beads.navigation" then
+                    return mock_navigation
+                elseif module == "nvim-beads.core" then
+                    return mock_core
+                elseif module == "nvim-beads.buffer" then
+                    return mock_buffer
+                else
+                    return original_require(module)
+                end
+            end
+
+            -- Reload nvim-beads with new mocks
+            package.loaded["nvim-beads"] = nil
+            nvim_beads = original_require("nvim-beads")
+        end)
+
+        it("should call navigation.navigate_to_issue_at_cursor with notify_on_miss=true by default", function()
+            local called = false
+            local received_opts = nil
+            mock_navigation.navigate_to_issue_at_cursor = function(opts)
+                called = true
+                received_opts = opts
+                return true
+            end
+
+            local success = nvim_beads.show_under_cursor()
+
+            assert.is_true(called)
+            assert.is_true(success)
+            assert.is_not_nil(received_opts)
+            assert.is_true(received_opts.notify_on_miss)
+        end)
+
+        it("should pass notify_on_miss=false when explicitly set", function()
+            local called = false
+            local received_opts = nil
+            mock_navigation.navigate_to_issue_at_cursor = function(opts)
+                called = true
+                received_opts = opts
+                return true
+            end
+
+            local success = nvim_beads.show_under_cursor({ notify_on_miss = false })
+
+            assert.is_true(called)
+            assert.is_true(success)
+            assert.is_not_nil(received_opts)
+            assert.is_false(received_opts.notify_on_miss)
+        end)
+
+        it("should return false when navigation fails", function()
+            mock_navigation.navigate_to_issue_at_cursor = function(_opts)
+                return false
+            end
+
+            local success = nvim_beads.show_under_cursor()
+
+            assert.is_false(success)
+        end)
+
+        it("should handle empty opts table", function()
+            local called = false
+            local received_opts = nil
+            mock_navigation.navigate_to_issue_at_cursor = function(opts)
+                called = true
+                received_opts = opts
+                return true
+            end
+
+            local success = nvim_beads.show_under_cursor({})
+
+            assert.is_true(called)
+            assert.is_true(success)
+            -- Should default to notify_on_miss=true
+            assert.is_true(received_opts.notify_on_miss)
+        end)
+
+        it("should preserve other opts when notify_on_miss not specified", function()
+            local called = false
+            local received_opts = nil
+            mock_navigation.navigate_to_issue_at_cursor = function(opts)
+                called = true
+                received_opts = opts
+                return true
+            end
+
+            local success = nvim_beads.show_under_cursor({ some_other_opt = "value" })
+
+            assert.is_true(called)
+            assert.is_true(success)
+            assert.is_true(received_opts.notify_on_miss)
+            assert.equals("value", received_opts.some_other_opt)
+        end)
+    end)
 end)

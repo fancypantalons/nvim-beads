@@ -178,4 +178,33 @@ function M.execute_with_ui(args, opts)
     core.execute_with_ui(args, opts)
 end
 
+--- Navigate to an issue ID under the cursor in any buffer
+--- This function detects issue IDs (e.g., "nvim-beads-123") under the cursor
+--- in ANY buffer and opens them in a beads buffer.
+---
+--- Use cases:
+---   - Navigate from issue IDs in markdown files (README.md, notes, PR descriptions)
+---   - Jump from code comments mentioning issues
+---   - Create custom keybindings in different contexts
+---
+--- Example usage:
+---   vim.keymap.set("n", "gf", function()
+---     require("nvim-beads").show_under_cursor()
+---   end, { desc = "Go to issue under cursor" })
+---
+---@param opts table|nil Options:
+---   - notify_on_miss (boolean): Whether to notify if no issue ID is found (default: true)
+---@return boolean success True if an issue was found and opened
+function M.show_under_cursor(opts)
+    opts = normalize_opts(opts)
+
+    -- Default notify_on_miss to true for public API (different from buffer keymap default)
+    if opts.notify_on_miss == nil then
+        opts.notify_on_miss = true
+    end
+
+    local navigation = require("nvim-beads.navigation")
+    return navigation.navigate_to_issue_at_cursor(opts)
+end
+
 return M

@@ -25,4 +25,5 @@ nvim-beads.list()	nvim-beads_api.txt	/*nvim-beads.list()*
 nvim-beads.ready()	nvim-beads_api.txt	/*nvim-beads.ready()*
 nvim-beads.search()	nvim-beads_api.txt	/*nvim-beads.search()*
 nvim-beads.show()	nvim-beads_api.txt	/*nvim-beads.show()*
+nvim-beads.show_under_cursor()	nvim-beads_api.txt	/*nvim-beads.show_under_cursor()*
 nvim-beads.txt	nvim-beads.txt	/*nvim-beads.txt*

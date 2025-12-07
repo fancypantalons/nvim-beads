@@ -4,20 +4,12 @@
 ---@class nvim-beads.navigation
 local M = {}
 
---- Cached repository prefix
----@type string|nil
-local cached_prefix = nil
-
 --- Get the repository issue ID prefix by querying bd
 --- This works even for new issue buffers by querying any existing issue
+--- Note: Prefix is not cached to support working directory changes across repos
 ---@return string|nil prefix The issue ID prefix (e.g., "nvim-beads"), or nil on error
 ---@return string? error Error message if prefix detection fails
 local function get_repo_prefix()
-    -- Return cached value if available
-    if cached_prefix then
-        return cached_prefix, nil
-    end
-
     local core = require("nvim-beads.core")
 
     -- Query for a single issue to extract the prefix
@@ -33,7 +25,6 @@ local function get_repo_prefix()
         -- Extract everything before the last hyphen and alphanumeric suffix
         local prefix = issue_id:match("^(.+)%-[a-zA-Z0-9]+$")
         if prefix then
-            cached_prefix = prefix
             return prefix, nil
         end
     end
@@ -70,12 +61,20 @@ end
 
 --- Navigate to an issue referenced under the cursor
 --- Extracts issue ID from cursor position and opens it in a beads buffer
+---@param opts table|nil Options:
+---   - notify_on_miss (boolean): Whether to notify if no issue ID is found
+---     (default: false for buffer keymaps, true for public API)
 ---@return boolean success True if navigation succeeded
-function M.navigate_to_issue_at_cursor()
+function M.navigate_to_issue_at_cursor(opts)
+    opts = opts or {}
+    local notify_on_miss = opts.notify_on_miss or false
+
     local issue_id = extract_issue_id_at_cursor()
 
     if not issue_id then
-        -- Silent failure as per design decision
+        if notify_on_miss then
+            vim.notify("No issue ID found under cursor", vim.log.levels.WARN)
+        end
         return false
     end
 

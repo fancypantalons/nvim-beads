@@ -288,4 +288,183 @@ describe("navigation integration", function()
             assert.is_true(found_error)
         end)
     end)
+
+    describe("public API - show_under_cursor in regular buffers", function()
+        local init_module
+
+        before_each(function()
+            package.loaded["nvim-beads"] = nil
+            init_module = require("nvim-beads")
+        end)
+
+        it("should work in a regular markdown buffer", function()
+            -- Setup repository with an issue
+            core_module.execute_bd = function(args)
+                if args[1] == "list" then
+                    return { { id = "nvim-beads-abc" } }, nil
+                elseif args[1] == "show" and args[2] == "nvim-beads-doc" then
+                    return {
+                        {
+                            id = "nvim-beads-doc",
+                            title = "Documentation task",
+                            issue_type = "task",
+                            status = "open",
+                            priority = 2,
+                            created_at = "2025-11-30T12:00:00Z",
+                            updated_at = "2025-11-30T12:00:00Z",
+                            closed_at = nil,
+                            description = "Add documentation",
+                            labels = {},
+                            dependencies = {},
+                        },
+                    },
+                        nil
+                end
+                return nil, "Unknown command"
+            end
+
+            -- Simulate cursor in a regular markdown file mentioning an issue
+            vim.fn = {
+                expand = function(expr)
+                    if expr == "<cWORD>" then
+                        -- Cursor on "See nvim-beads-doc for details"
+                        return "nvim-beads-doc"
+                    end
+                    return ""
+                end,
+                bufnr = function(name)
+                    if name == env.buffer_name then
+                        return env.created_bufnr
+                    end
+                    return -1
+                end,
+            }
+
+            -- Call public API
+            local success = init_module.show_under_cursor()
+
+            assert.is_true(success)
+            assert.equals("beads://issue/nvim-beads-doc", env.buffer_name)
+        end)
+
+        it("should work in a code file with comment reference", function()
+            core_module.execute_bd = function(args)
+                if args[1] == "list" then
+                    return { { id = "nvim-beads-bug" } }, nil
+                elseif args[1] == "show" and args[2] == "nvim-beads-bug" then
+                    return {
+                        {
+                            id = "nvim-beads-bug",
+                            title = "Fix the thing",
+                            issue_type = "bug",
+                            status = "in_progress",
+                            priority = 1,
+                            created_at = "2025-11-30T12:00:00Z",
+                            updated_at = "2025-11-30T12:00:00Z",
+                            closed_at = nil,
+                            description = "Bug details",
+                            labels = {},
+                            dependencies = {},
+                        },
+                    },
+                        nil
+                end
+                return nil, "Unknown command"
+            end
+
+            -- Simulate cursor in code comment like "-- TODO: see nvim-beads-bug"
+            vim.fn = {
+                expand = function(expr)
+                    if expr == "<cWORD>" then
+                        return "nvim-beads-bug"
+                    end
+                    return ""
+                end,
+                bufnr = function(name)
+                    if name == env.buffer_name then
+                        return env.created_bufnr
+                    end
+                    return -1
+                end,
+            }
+
+            local success = init_module.show_under_cursor()
+
+            assert.is_true(success)
+            assert.equals("beads://issue/nvim-beads-bug", env.buffer_name)
+        end)
+
+        it("should notify when no issue found and notify_on_miss is true", function()
+            core_module.execute_bd = function(args)
+                if args[1] == "list" then
+                    return { { id = "nvim-beads-test" } }, nil
+                end
+                return nil, "Unknown command"
+            end
+
+            vim.fn = {
+                expand = function(expr)
+                    if expr == "<cWORD>" then
+                        return "not-an-issue-id"
+                    end
+                    return ""
+                end,
+                bufnr = function(_name)
+                    return -1
+                end,
+            }
+
+            local success = init_module.show_under_cursor({ notify_on_miss = true })
+
+            assert.is_false(success)
+
+            -- Verify warning notification was sent
+            local found_warning = false
+            for _, notif in ipairs(env.notifications) do
+                if notif.level == vim.log.levels.WARN and notif.message == "No issue ID found under cursor" then
+                    found_warning = true
+                    break
+                end
+            end
+            assert.is_true(found_warning)
+        end)
+
+        it("should not notify when no issue found and notify_on_miss is false", function()
+            core_module.execute_bd = function(args)
+                if args[1] == "list" then
+                    return { { id = "nvim-beads-test" } }, nil
+                end
+                return nil, "Unknown command"
+            end
+
+            vim.fn = {
+                expand = function(expr)
+                    if expr == "<cWORD>" then
+                        return "not-an-issue-id"
+                    end
+                    return ""
+                end,
+                bufnr = function(_name)
+                    return -1
+                end,
+            }
+
+            -- Clear notifications
+            env.notifications = {}
+
+            local success = init_module.show_under_cursor({ notify_on_miss = false })
+
+            assert.is_false(success)
+
+            -- Should have no warning notifications
+            local found_warning = false
+            for _, notif in ipairs(env.notifications) do
+                if notif.level == vim.log.levels.WARN and notif.message == "No issue ID found under cursor" then
+                    found_warning = true
+                    break
+                end
+            end
+            assert.is_false(found_warning)
+        end)
+    end)
 end)

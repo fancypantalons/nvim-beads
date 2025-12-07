@@ -250,6 +250,109 @@ describe("navigation", function()
             assert.is_true(success)
             assert.equals("my-project.test-5ia", opened_issue_id)
         end)
+
+        it("should notify when no issue ID found and notify_on_miss is true", function()
+            core_module.execute_bd = function(args)
+                if args[1] == "list" then
+                    return { { id = "nvim-beads-123" } }, nil
+                end
+                return nil, "Unknown command"
+            end
+
+            vim.fn = {
+                expand = function(expr)
+                    if expr == "<cWORD>" then
+                        return "not-an-issue"
+                    end
+                    return ""
+                end,
+            }
+
+            -- Mock notifications
+            local notifications = {}
+            local original_notify = vim.notify
+            vim.notify = function(msg, level)
+                table.insert(notifications, { message = msg, level = level })
+            end
+
+            local success = navigation.navigate_to_issue_at_cursor({ notify_on_miss = true })
+
+            -- Restore notify
+            vim.notify = original_notify
+
+            assert.is_false(success)
+            assert.equals(1, #notifications)
+            assert.equals("No issue ID found under cursor", notifications[1].message)
+            assert.equals(vim.log.levels.WARN, notifications[1].level)
+        end)
+
+        it("should not notify when no issue ID found and notify_on_miss is false", function()
+            core_module.execute_bd = function(args)
+                if args[1] == "list" then
+                    return { { id = "nvim-beads-123" } }, nil
+                end
+                return nil, "Unknown command"
+            end
+
+            vim.fn = {
+                expand = function(expr)
+                    if expr == "<cWORD>" then
+                        return "not-an-issue"
+                    end
+                    return ""
+                end,
+            }
+
+            -- Mock notifications
+            local notifications = {}
+            local original_notify = vim.notify
+            vim.notify = function(msg, level)
+                table.insert(notifications, { message = msg, level = level })
+            end
+
+            local success = navigation.navigate_to_issue_at_cursor({ notify_on_miss = false })
+
+            -- Restore notify
+            vim.notify = original_notify
+
+            assert.is_false(success)
+            -- Should have no notifications (silent failure)
+            assert.equals(0, #notifications)
+        end)
+
+        it("should default to silent (no notification) when opts not provided", function()
+            core_module.execute_bd = function(args)
+                if args[1] == "list" then
+                    return { { id = "nvim-beads-123" } }, nil
+                end
+                return nil, "Unknown command"
+            end
+
+            vim.fn = {
+                expand = function(expr)
+                    if expr == "<cWORD>" then
+                        return "not-an-issue"
+                    end
+                    return ""
+                end,
+            }
+
+            -- Mock notifications
+            local notifications = {}
+            local original_notify = vim.notify
+            vim.notify = function(msg, level)
+                table.insert(notifications, { message = msg, level = level })
+            end
+
+            local success = navigation.navigate_to_issue_at_cursor()
+
+            -- Restore notify
+            vim.notify = original_notify
+
+            assert.is_false(success)
+            -- Should have no notifications by default
+            assert.equals(0, #notifications)
+        end)
     end)
 
     describe("setup_buffer_keymaps", function()
