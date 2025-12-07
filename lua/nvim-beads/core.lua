@@ -291,38 +291,4 @@ function M.get_issue(issue_id)
     return issue, nil
 end
 
---- Fetches and parses a single issue by its ID asynchronously.
----@param issue_id string The ID of the issue to fetch.
----@param callback function Callback function(issue: table|nil, err: string|nil)
-function M.get_issue_async(issue_id, callback)
-    -- Validate issue_id
-    if not issue_id or type(issue_id) ~= "string" or issue_id == "" then
-        vim.schedule(function()
-            callback(nil, "Invalid issue ID")
-        end)
-        return
-    end
-
-    -- Execute bd show command
-    M.execute_bd_async({ "show", issue_id }, function(result, err)
-        if err then
-            callback(nil, string.format("Failed to fetch issue %s: %s", issue_id, err))
-            return
-        end
-
-        -- bd show returns an array with a single issue object
-        local issue = nil
-        if type(result) == "table" and #result > 0 then
-            issue = result[1]
-        end
-
-        if not issue or not issue.id then
-            callback(nil, string.format("Invalid issue data for %s", issue_id))
-            return
-        end
-
-        callback(issue, nil)
-    end)
-end
-
 return M

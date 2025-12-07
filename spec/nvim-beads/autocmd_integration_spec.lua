@@ -446,4 +446,340 @@ describe("autocmd save workflow", function()
             assert.is_false(modified)
         end)
     end)
+
+    describe("setup", function()
+        it("should create autocommand group and register BufWriteCmd", function()
+            -- Track autocmd creation
+            local autocmd_created = false
+            local group_created = false
+            local original_create_augroup = vim.api.nvim_create_augroup
+            local original_create_autocmd = vim.api.nvim_create_autocmd
+
+            vim.api.nvim_create_augroup = function(name, opts)
+                if name == "nvim_beads_buffers" then
+                    group_created = true
+                    assert.is_true(opts.clear)
+                end
+                return 123 -- Return a dummy group ID
+            end
+
+            vim.api.nvim_create_autocmd = function(event, opts)
+                if event == "BufWriteCmd" and opts.pattern == "beads://issue/*" then
+                    autocmd_created = true
+                    assert.equals(123, opts.group)
+                    assert.equals(autocmds.on_buffer_write, opts.callback)
+                end
+            end
+
+            -- Call setup
+            autocmds.setup()
+
+            -- Verify both were created
+            assert.is_true(group_created)
+            assert.is_true(autocmd_created)
+
+            -- Restore
+            vim.api.nvim_create_augroup = original_create_augroup
+            vim.api.nvim_create_autocmd = original_create_autocmd
+        end)
+    end)
+
+    describe("on_buffer_write", function()
+        it("should route to handle_new_issue_save for new issue buffers", function()
+            local called = false
+            local original_handle = autocmds.handle_new_issue_save
+            autocmds.handle_new_issue_save = function(bufnr)
+                called = true
+                assert.equals(test_bufnr, bufnr)
+            end
+
+            vim.api.nvim_buf_set_name(test_bufnr, "beads://issue/new?type=task")
+            autocmds.on_buffer_write({ buf = test_bufnr })
+
+            assert.is_true(called)
+            autocmds.handle_new_issue_save = original_handle
+        end)
+
+        it("should route to handle_existing_issue_save for existing issue buffers", function()
+            local called = false
+            local captured_id = nil
+            local original_handle = autocmds.handle_existing_issue_save
+            autocmds.handle_existing_issue_save = function(bufnr, issue_id)
+                called = true
+                assert.equals(test_bufnr, bufnr)
+                captured_id = issue_id
+            end
+
+            vim.api.nvim_buf_set_name(test_bufnr, "beads://issue/bd-123")
+            autocmds.on_buffer_write({ buf = test_bufnr })
+
+            assert.is_true(called)
+            assert.equals("bd-123", captured_id)
+            autocmds.handle_existing_issue_save = original_handle
+        end)
+
+        it("should show error for invalid buffer name format", function()
+            vim.api.nvim_buf_set_name(test_bufnr, "some-other-buffer")
+            autocmds.on_buffer_write({ buf = test_bufnr })
+
+            local found_error = false
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("Invalid buffer name format") and notif.level == vim.log.levels.ERROR then
+                    found_error = true
+                    break
+                end
+            end
+            assert.is_true(found_error)
+        end)
+    end)
+
+    describe("existing issue update workflow", function()
+        it("should successfully update an existing issue with changes", function()
+            -- Create buffer with modified content
+            local buffer_content = {
+                "---",
+                "id: bd-100",
+                "title: Updated title",
+                "type: bug",
+                "status: open",
+                "priority: 1",
+                "created_at: 2025-11-30T10:00:00Z",
+                "updated_at: 2025-11-30T10:00:00Z",
+                "closed_at: null",
+                "---",
+                "",
+                "# Description",
+                "",
+                "Updated description",
+                "",
+            }
+
+            vim.api.nvim_buf_set_lines(test_bufnr, 0, -1, false, buffer_content)
+            vim.api.nvim_buf_set_name(test_bufnr, "beads://issue/bd-100")
+
+            -- Set the buffer as current in a window to avoid "Invalid buffer id" error
+            vim.api.nvim_set_current_buf(test_bufnr)
+
+            -- Mock nvim_buf_line_count since it requires buffer in window
+            local original_line_count = vim.api.nvim_buf_line_count
+            vim.api.nvim_buf_line_count = function(bufnr)
+                return #vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+            end
+
+            -- Mock core.get_issue to return original state
+            core_module.get_issue = function(issue_id)
+                if issue_id == "bd-100" then
+                    return {
+                        id = "bd-100",
+                        title = "Original title",
+                        issue_type = "bug",
+                        status = "open",
+                        priority = 2,
+                        created_at = "2025-11-30T10:00:00Z",
+                        updated_at = "2025-11-30T10:00:00Z",
+                        closed_at = nil,
+                        description = "Original description",
+                        labels = {},
+                        dependencies = {},
+                    }, nil
+                end
+                return nil, "Issue not found"
+            end
+
+            -- Track update commands
+            local update_commands = {}
+            vim.system = function(cmd_table, _opts)
+                table.insert(update_commands, cmd_table)
+                return {
+                    wait = function()
+                        return { code = 0, stdout = "", stderr = "" }
+                    end,
+                }
+            end
+
+            -- Mock core.execute_bd for reload
+            core_module.execute_bd = function(args)
+                if args[1] == "show" and args[2] == "bd-100" then
+                    return {
+                        {
+                            id = "bd-100",
+                            title = "Updated title",
+                            issue_type = "bug",
+                            status = "open",
+                            priority = 1,
+                            created_at = "2025-11-30T10:00:00Z",
+                            updated_at = "2025-11-30T10:00:00Z",
+                            closed_at = nil,
+                            description = "Updated description",
+                            labels = {},
+                            dependencies = {},
+                        },
+                    }, nil
+                end
+                return nil, "Issue not found"
+            end
+
+            -- Call the handler
+            autocmds.handle_existing_issue_save(test_bufnr, "bd-100")
+
+            -- Restore mocked function
+            vim.api.nvim_buf_line_count = original_line_count
+
+            -- Verify update command was called
+            assert.is_true(#update_commands > 0)
+            local found_update = false
+            for _, cmd in ipairs(update_commands) do
+                if cmd[1] == "bd" and cmd[2] == "update" and cmd[3] == "bd-100" then
+                    found_update = true
+                    break
+                end
+            end
+            assert.is_true(found_update)
+
+            -- Verify success notification
+            local found_success = false
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("Issue saved successfully") then
+                    found_success = true
+                    break
+                end
+            end
+            assert.is_true(found_success)
+        end)
+
+        it("should handle no changes detected", function()
+            -- Create buffer with same content as original
+            local buffer_content = {
+                "---",
+                "id: bd-100",
+                "title: Same title",
+                "type: bug",
+                "status: open",
+                "priority: 2",
+                "created_at: 2025-11-30T10:00:00Z",
+                "updated_at: 2025-11-30T10:00:00Z",
+                "closed_at: null",
+                "---",
+            }
+
+            vim.api.nvim_buf_set_lines(test_bufnr, 0, -1, false, buffer_content)
+
+            core_module.get_issue = function(issue_id)
+                if issue_id == "bd-100" then
+                    return {
+                        id = "bd-100",
+                        title = "Same title",
+                        issue_type = "bug",
+                        status = "open",
+                        priority = 2,
+                        created_at = "2025-11-30T10:00:00Z",
+                        updated_at = "2025-11-30T10:00:00Z",
+                        labels = {},
+                        dependencies = {},
+                    }, nil
+                end
+                return nil, "Issue not found"
+            end
+
+            autocmds.handle_existing_issue_save(test_bufnr, "bd-100")
+
+            -- Verify "No changes detected" notification
+            local found_no_changes = false
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("No changes detected") then
+                    found_no_changes = true
+                    break
+                end
+            end
+            assert.is_true(found_no_changes)
+        end)
+
+
+        it("should handle failed fetch of original issue", function()
+            local buffer_content = {
+                "---",
+                "id: bd-999",
+                "title: Test",
+                "type: bug",
+                "status: open",
+                "priority: 2",
+                "created_at: null",
+                "updated_at: null",
+                "closed_at: null",
+                "---",
+            }
+
+            vim.api.nvim_buf_set_lines(test_bufnr, 0, -1, false, buffer_content)
+
+            core_module.get_issue = function(_issue_id)
+                return nil, "Issue not found in database"
+            end
+
+            autocmds.handle_existing_issue_save(test_bufnr, "bd-999")
+
+            -- Verify error notification
+            local found_error = false
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("Issue not found") and notif.level == vim.log.levels.ERROR then
+                    found_error = true
+                    break
+                end
+            end
+            assert.is_true(found_error)
+        end)
+
+        it("should handle command execution failure", function()
+            local buffer_content = {
+                "---",
+                "id: bd-100",
+                "title: Updated title",
+                "type: bug",
+                "status: open",
+                "priority: 1",
+                "created_at: 2025-11-30T10:00:00Z",
+                "updated_at: 2025-11-30T10:00:00Z",
+                "closed_at: null",
+                "---",
+            }
+
+            vim.api.nvim_buf_set_lines(test_bufnr, 0, -1, false, buffer_content)
+
+            core_module.get_issue = function(issue_id)
+                if issue_id == "bd-100" then
+                    return {
+                        id = "bd-100",
+                        title = "Original title",
+                        issue_type = "bug",
+                        status = "open",
+                        priority = 2,
+                        created_at = "2025-11-30T10:00:00Z",
+                        updated_at = "2025-11-30T10:00:00Z",
+                        labels = {},
+                        dependencies = {},
+                    }, nil
+                end
+                return nil, "Issue not found"
+            end
+
+            vim.system = function(_cmd_table, _opts)
+                return {
+                    wait = function()
+                        return { code = 1, stdout = "", stderr = "Database error" }
+                    end,
+                }
+            end
+
+            autocmds.handle_existing_issue_save(test_bufnr, "bd-100")
+
+            -- Verify error notification
+            local found_error = false
+            for _, notif in ipairs(env.notifications) do
+                if notif.message:match("Command failed") and notif.level == vim.log.levels.ERROR then
+                    found_error = true
+                    break
+                end
+            end
+            assert.is_true(found_error)
+        end)
+    end)
 end)

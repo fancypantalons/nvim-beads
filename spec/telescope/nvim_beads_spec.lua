@@ -170,4 +170,221 @@ describe("telescope nvim_beads extension", function()
             assert.equals(3, #_G.test_results) -- bd-1, bd-3, bd-4
         end)
     end)
+
+    describe("previewer", function()
+        it("should create a buffer previewer", function()
+            local previewer_created = false
+            package.loaded["telescope.previewers"] = {
+                new_buffer_previewer = function(opts)
+                    previewer_created = true
+                    assert.is_not_nil(opts.define_preview)
+                    assert.equals("Issue Preview", opts.title)
+                    return opts
+                end,
+            }
+
+            -- Reload extension to pick up new mock
+            package.loaded["telescope._extensions.nvim_beads"] = nil
+            require("telescope._extensions.nvim_beads")
+
+            -- Trigger list to create the previewer
+            extension.exports.list({})
+
+            assert.is_true(previewer_created)
+        end)
+
+        it("should have define_preview function in previewer", function()
+            local define_preview_func = nil
+
+            package.loaded["telescope.previewers"] = {
+                new_buffer_previewer = function(opts)
+                    define_preview_func = opts.define_preview
+                    return opts
+                end,
+            }
+
+            -- Reload extension
+            package.loaded["telescope._extensions.nvim_beads"] = nil
+            require("telescope._extensions.nvim_beads")
+            extension.exports.list({})
+
+            -- Verify the previewer has a define_preview function
+            assert.is_not_nil(define_preview_func)
+            assert.equals("function", type(define_preview_func))
+        end)
+    end)
+
+    describe("action mappings", function()
+        local actions_mock
+        local action_state_mock
+        local attach_mappings_func
+
+        before_each(function()
+            local select_default_obj = {}
+            function select_default_obj:replace(fn)
+                _G.test_select_action = fn
+            end
+
+            actions_mock = {
+                close = function() end,
+                select_default = select_default_obj,
+            }
+
+            action_state_mock = {
+                get_selected_entry = function()
+                    return {
+                        value = { id = "bd-test", title = "Test issue" },
+                    }
+                end,
+            }
+
+            package.loaded["telescope.actions"] = actions_mock
+            package.loaded["telescope.actions.state"] = action_state_mock
+
+            -- Capture attach_mappings function
+            telescope_picker.new = function(_, params)
+                attach_mappings_func = params.attach_mappings
+                return {
+                    find = function()
+                        if params.finder and params.finder.results then
+                            _G.test_results = params.finder.results
+                        end
+                    end,
+                }
+            end
+
+            -- Reload extension
+            package.loaded["telescope._extensions.nvim_beads"] = nil
+            require("telescope._extensions.nvim_beads")
+        end)
+
+        it("should map default action to open issue buffer", function()
+            -- Mock beads.show BEFORE calling list
+            local show_called = false
+            local show_id = nil
+            package.loaded["nvim-beads"] = {
+                show = function(id)
+                    show_called = true
+                    show_id = id
+                end,
+                execute = function()
+                    return sample_issues
+                end,
+            }
+
+            -- Reload extension with mock in place
+            package.loaded["telescope._extensions.nvim_beads"] = nil
+            require("telescope._extensions.nvim_beads")
+
+            extension.exports.list({})
+            assert.is_not_nil(attach_mappings_func)
+
+            local prompt_bufnr = vim.api.nvim_create_buf(false, true)
+            local map_calls = {}
+
+            local map = function(mode, key, fn)
+                map_calls[mode .. ":" .. key] = fn
+            end
+
+            attach_mappings_func(prompt_bufnr, map)
+
+            -- Verify select_default was replaced
+            assert.is_not_nil(_G.test_select_action)
+            assert.equals("function", type(_G.test_select_action))
+
+            -- Call the select action
+            _G.test_select_action()
+
+            assert.is_true(show_called)
+            assert.equals("bd-test", show_id)
+
+            vim.api.nvim_buf_delete(prompt_bufnr, { force = true })
+        end)
+
+        it("should map 'd' to delete issue", function()
+            extension.exports.list({})
+            local prompt_bufnr = vim.api.nvim_create_buf(false, true)
+            local map_calls = {}
+
+            local map = function(mode, key, fn)
+                map_calls[mode .. ":" .. key] = fn
+            end
+
+            attach_mappings_func(prompt_bufnr, map)
+
+            -- Verify 'd' mapping exists
+            assert.is_not_nil(map_calls["n:d"])
+
+            vim.api.nvim_buf_delete(prompt_bufnr, { force = true })
+        end)
+
+        it("should map 'c' to close issue", function()
+            extension.exports.list({})
+            local prompt_bufnr = vim.api.nvim_create_buf(false, true)
+            local map_calls = {}
+
+            local map = function(mode, key, fn)
+                map_calls[mode .. ":" .. key] = fn
+            end
+
+            attach_mappings_func(prompt_bufnr, map)
+
+            -- Verify 'c' mapping exists
+            assert.is_not_nil(map_calls["n:c"])
+
+            vim.api.nvim_buf_delete(prompt_bufnr, { force = true })
+        end)
+
+        it("should map 'o' to open issue", function()
+            extension.exports.list({})
+            local prompt_bufnr = vim.api.nvim_create_buf(false, true)
+            local map_calls = {}
+
+            local map = function(mode, key, fn)
+                map_calls[mode .. ":" .. key] = fn
+            end
+
+            attach_mappings_func(prompt_bufnr, map)
+
+            -- Verify 'o' mapping exists
+            assert.is_not_nil(map_calls["n:o"])
+
+            vim.api.nvim_buf_delete(prompt_bufnr, { force = true })
+        end)
+
+        it("should map 'i' to mark issue as in_progress", function()
+            extension.exports.list({})
+            local prompt_bufnr = vim.api.nvim_create_buf(false, true)
+            local map_calls = {}
+
+            local map = function(mode, key, fn)
+                map_calls[mode .. ":" .. key] = fn
+            end
+
+            attach_mappings_func(prompt_bufnr, map)
+
+            -- Verify 'i' mapping exists
+            assert.is_not_nil(map_calls["n:i"])
+
+            vim.api.nvim_buf_delete(prompt_bufnr, { force = true })
+        end)
+    end)
+
+    describe("entry_maker", function()
+        it("should create proper entries from issues", function()
+            -- We don't directly expose entry_maker, but we can verify the finder results
+            -- are structured correctly
+            extension.exports.list({})
+
+            -- test_results should contain the sample issues
+            assert.is_not_nil(_G.test_results)
+            assert.equals(#sample_issues, #_G.test_results)
+
+            -- Each result should be the original issue object
+            for i, result in ipairs(_G.test_results) do
+                assert.equals(sample_issues[i].id, result.id)
+                assert.equals(sample_issues[i].title, result.title)
+            end
+        end)
+    end)
 end)
