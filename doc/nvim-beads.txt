@@ -195,6 +195,39 @@ Examples:
 <
 
 ------------------------------------------------------------------------------
+Search Subcommand ~
+                                                            *:Beads-search*
+
+:Beads search {query}
+                        Search for issues matching {query}. The query can be
+                        multiple words and will search across issue titles,
+                        descriptions, and other text fields.
+
+                        Unlike `:Beads list` or `:Beads ready`, a search query
+                        is required--you can't just run `:Beads search` with
+                        no arguments.
+
+                        Optional filters can be placed before the query:
+                          • Status filters: open, closed, in_progress, blocked
+                          • Type filters: bug/bugs, feature/features, task/tasks,
+                            epic/epics, chore/chores
+
+                        Filters can appear anywhere in the command and in any
+                        order--the parser is smart enough to separate them from
+                        your query terms.
+
+                        Results are displayed in a Telescope picker with the
+                        same keybindings as |:Beads-list|.
+
+Examples:
+>vim
+    :Beads search refactor database
+    :Beads search open refactor database
+    :Beads search bugs authentication
+    :Beads search open bugs login
+<
+
+------------------------------------------------------------------------------
 Create Subcommand ~
                                                             *:Beads-create*
 
@@ -284,8 +317,10 @@ Execute Subcommand ~
 
 Examples:
 >vim
-    :Beads execute list -p 1 -s open
-    :Beads execute search -s open "search string"
+    :Beads execute list open bugs
+    :Beads execute search -s open --priority-min 2 "authentication bug"
+    :Beads execute ready features
+    :Beads execute show bd-123
 
 ==============================================================================
 7. Lua API                                               *nvim-beads-lua-api*

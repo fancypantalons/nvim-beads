@@ -91,6 +91,40 @@ function M.ready(opts)
     core.show_ready(opts)
 end
 
+--- Search for issues matching the given query with optional filters.
+--- Results are displayed in Telescope.
+---@param query string Search query (required, must be non-empty)
+---@param opts table|nil Filter options:
+---   - status (string): Filter by status - "open", "in_progress", "blocked", "closed"
+---   - type (string): Filter by type - "bug", "feature", "task", "epic", "chore"
+function M.search(query, opts)
+    -- Validate query
+    if not query or type(query) ~= "string" or query == "" then
+        vim.notify("nvim-beads.search: query is required and must be a non-empty string", vim.log.levels.ERROR)
+        return
+    end
+
+    opts = normalize_opts(opts)
+
+    -- Build bd_args by splitting query into words
+    local bd_args = { "search" }
+    for word in query:gmatch("%S+") do
+        table.insert(bd_args, word)
+    end
+
+    -- Build filter table from opts
+    local filter = {}
+    if opts.status then
+        filter.status = opts.status
+    end
+    if opts.type then
+        filter.type = opts.type
+    end
+
+    -- Call execute_with_ui which will route to Telescope (search is in TELESCOPE_COMMANDS)
+    M.execute_with_ui(bd_args, filter)
+end
+
 --- Excute an arbitrary bd command. All arguments are passed straight to 'bd'.
 ---@param args table Array of bd command arguments (e.g., {"show", "bd-123"})
 ---@param opts table|nil Options:

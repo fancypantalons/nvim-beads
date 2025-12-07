@@ -499,3 +499,194 @@ describe("nvim-beads.issue.diff", function()
         end)
     end)
 end)
+
+--- Tests for search command argument parsing
+describe("search command", function()
+    local commands
+    local mock_beads
+    local mock_constants
+
+    before_each(function()
+        -- Mock vim.notify
+        _G.vim = _G.vim or {}
+        _G.vim.notify = function() end
+        _G.vim.log = { levels = { ERROR = 1 } }
+
+        -- Mock constants
+        mock_constants = {
+            STATUSES = {
+                open = true,
+                closed = true,
+                in_progress = true,
+                blocked = true,
+            },
+            ISSUE_TYPES = {
+                bug = true,
+                feature = true,
+                task = true,
+                epic = true,
+                chore = true,
+            },
+            PLURAL_MAP = {
+                bugs = "bug",
+                features = "feature",
+                tasks = "task",
+                epics = "epic",
+                chores = "chore",
+            },
+        }
+
+        -- Mock beads module
+        mock_beads = {
+            execute_with_ui = function() end,
+        }
+
+        package.loaded["nvim-beads.constants"] = mock_constants
+        package.loaded["nvim-beads"] = mock_beads
+
+        -- Load commands module
+        package.loaded["nvim-beads.commands"] = nil
+        commands = require("nvim-beads.commands")
+    end)
+
+    describe("argument parsing", function()
+        it("parses query without filters", function()
+            local called_with_bd_args
+            local called_with_filter
+            mock_beads.execute_with_ui = function(bd_args, filter)
+                called_with_bd_args = bd_args
+                called_with_filter = filter
+            end
+
+            commands.execute({ fargs = { "search", "foo", "bar" } })
+
+            assert.same({ "search", "foo", "bar" }, called_with_bd_args)
+            assert.same({}, called_with_filter)
+        end)
+
+        it("extracts status filter from args", function()
+            local called_with_bd_args
+            local called_with_filter
+            mock_beads.execute_with_ui = function(bd_args, filter)
+                called_with_bd_args = bd_args
+                called_with_filter = filter
+            end
+
+            commands.execute({ fargs = { "search", "open", "foo" } })
+
+            assert.same({ "search", "foo" }, called_with_bd_args)
+            assert.same({ status = "open" }, called_with_filter)
+        end)
+
+        it("extracts type filter from args", function()
+            local called_with_bd_args
+            local called_with_filter
+            mock_beads.execute_with_ui = function(bd_args, filter)
+                called_with_bd_args = bd_args
+                called_with_filter = filter
+            end
+
+            commands.execute({ fargs = { "search", "bugs", "foo" } })
+
+            assert.same({ "search", "foo" }, called_with_bd_args)
+            assert.same({ type = "bug" }, called_with_filter)
+        end)
+
+        it("handles plural forms via PLURAL_MAP", function()
+            local called_with_bd_args
+            local called_with_filter
+            mock_beads.execute_with_ui = function(bd_args, filter)
+                called_with_bd_args = bd_args
+                called_with_filter = filter
+            end
+
+            commands.execute({ fargs = { "search", "features", "authentication" } })
+
+            assert.same({ "search", "authentication" }, called_with_bd_args)
+            assert.same({ type = "feature" }, called_with_filter)
+        end)
+
+        it("extracts combined filters", function()
+            local called_with_bd_args
+            local called_with_filter
+            mock_beads.execute_with_ui = function(bd_args, filter)
+                called_with_bd_args = bd_args
+                called_with_filter = filter
+            end
+
+            commands.execute({ fargs = { "search", "open", "bugs", "foo" } })
+
+            assert.same({ "search", "foo" }, called_with_bd_args)
+            assert.same({ status = "open", type = "bug" }, called_with_filter)
+        end)
+
+        it("handles filters in any order", function()
+            local called_with_bd_args
+            local called_with_filter
+            mock_beads.execute_with_ui = function(bd_args, filter)
+                called_with_bd_args = bd_args
+                called_with_filter = filter
+            end
+
+            commands.execute({ fargs = { "search", "bugs", "open", "foo" } })
+
+            assert.same({ "search", "foo" }, called_with_bd_args)
+            assert.same({ status = "open", type = "bug" }, called_with_filter)
+        end)
+
+        it("treats invalid filter as query term", function()
+            local called_with_bd_args
+            local called_with_filter
+            mock_beads.execute_with_ui = function(bd_args, filter)
+                called_with_bd_args = bd_args
+                called_with_filter = filter
+            end
+
+            commands.execute({ fargs = { "search", "invalid", "foo" } })
+
+            assert.same({ "search", "invalid", "foo" }, called_with_bd_args)
+            assert.same({}, called_with_filter)
+        end)
+    end)
+
+    describe("error handling", function()
+        it("errors when no query provided", function()
+            local error_shown = false
+            _G.vim.notify = function(msg, level)
+                if msg:match("query required") and level == vim.log.levels.ERROR then
+                    error_shown = true
+                end
+            end
+
+            commands.execute({ fargs = { "search" } })
+
+            assert.is_true(error_shown)
+        end)
+
+        it("errors when only status filter provided", function()
+            local error_shown = false
+            _G.vim.notify = function(msg, level)
+                if msg:match("query required") and level == vim.log.levels.ERROR then
+                    error_shown = true
+                end
+            end
+
+            commands.execute({ fargs = { "search", "open" } })
+
+            assert.is_true(error_shown)
+        end)
+
+        it("errors when only type filter provided", function()
+            local error_shown = false
+            _G.vim.notify = function(msg, level)
+                if msg:match("query required") and level == vim.log.levels.ERROR then
+                    error_shown = true
+                end
+            end
+
+            commands.execute({ fargs = { "search", "bugs" } })
+
+            assert.is_true(error_shown)
+        end)
+    end)
+end)

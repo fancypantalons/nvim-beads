@@ -491,4 +491,116 @@ describe("nvim-beads (public API)", function()
             assert.same({ "show", "bd-123" }, received_args)
         end)
     end)
+
+    describe("search()", function()
+        it("should validate query parameter is non-empty string", function()
+            local notified = false
+            local notify_msg = nil
+            vim.notify = function(msg, _)
+                notified = true
+                notify_msg = msg
+            end
+
+            nvim_beads.search("")
+
+            assert.is_true(notified)
+            assert.matches("query is required", notify_msg)
+        end)
+
+        it("should validate query parameter is a string", function()
+            local notified = false
+            local notify_msg = nil
+            vim.notify = function(msg, _)
+                notified = true
+                notify_msg = msg
+            end
+
+            nvim_beads.search(nil)
+
+            assert.is_true(notified)
+            assert.matches("query is required", notify_msg)
+        end)
+
+        it("should split query into words and call execute_with_ui", function()
+            local called = false
+            local received_bd_args = nil
+            local received_filter = nil
+            mock_core.execute_with_ui = function(bd_args, filter)
+                called = true
+                received_bd_args = bd_args
+                received_filter = filter
+            end
+
+            nvim_beads.search("foo bar baz")
+
+            assert.is_true(called)
+            assert.same({ "search", "foo", "bar", "baz" }, received_bd_args)
+            assert.same({}, received_filter)
+        end)
+
+        it("should pass status filter to execute_with_ui", function()
+            local called = false
+            local received_bd_args = nil
+            local received_filter = nil
+            mock_core.execute_with_ui = function(bd_args, filter)
+                called = true
+                received_bd_args = bd_args
+                received_filter = filter
+            end
+
+            nvim_beads.search("query", { status = "open" })
+
+            assert.is_true(called)
+            assert.same({ "search", "query" }, received_bd_args)
+            assert.same({ status = "open" }, received_filter)
+        end)
+
+        it("should pass type filter to execute_with_ui", function()
+            local called = false
+            local received_bd_args = nil
+            local received_filter = nil
+            mock_core.execute_with_ui = function(bd_args, filter)
+                called = true
+                received_bd_args = bd_args
+                received_filter = filter
+            end
+
+            nvim_beads.search("query", { type = "bug" })
+
+            assert.is_true(called)
+            assert.same({ "search", "query" }, received_bd_args)
+            assert.same({ type = "bug" }, received_filter)
+        end)
+
+        it("should pass combined filters to execute_with_ui", function()
+            local called = false
+            local received_bd_args = nil
+            local received_filter = nil
+            mock_core.execute_with_ui = function(bd_args, filter)
+                called = true
+                received_bd_args = bd_args
+                received_filter = filter
+            end
+
+            nvim_beads.search("authentication", { status = "open", type = "bug" })
+
+            assert.is_true(called)
+            assert.same({ "search", "authentication" }, received_bd_args)
+            assert.same({ status = "open", type = "bug" }, received_filter)
+        end)
+
+        it("should handle multi-word queries correctly", function()
+            local called = false
+            local received_bd_args = nil
+            mock_core.execute_with_ui = function(bd_args, _)
+                called = true
+                received_bd_args = bd_args
+            end
+
+            nvim_beads.search("fix login bug in authentication")
+
+            assert.is_true(called)
+            assert.same({ "search", "fix", "login", "bug", "in", "authentication" }, received_bd_args)
+        end)
+    end)
 end)

@@ -102,6 +102,22 @@ Valid types: `bug`/`bugs`, `feature`/`features`, `task`/`tasks`, `epic`/`epics`,
 :Beads ready features      " Ready features
 ```
 
+#### `:Beads search {query}`
+
+Search for issues matching the given query. The query can be multiple words and will search across issue titles, descriptions, and other text fields.
+
+Optional filters can be placed before the query:
+
+- Status filters: `open`, `closed`, `in_progress`, `blocked`
+- Type filters: `bug`/`bugs`, `feature`/`features`, `task`/`tasks`, `epic`/`epics`, `chore`/`chores`
+
+```vim
+:Beads search refactor database
+:Beads search open refactor database
+:Beads search bugs authentication
+:Beads search open bugs login
+```
+
 #### `:Beads create {type}`
 
 Create a new issue. Opens a markdown buffer with a template--fill it in and save.
@@ -126,7 +142,10 @@ Open a specific issue by ID. Edit the markdown buffer and save to update the iss
 Execute a beads command and present the results in a nice, pretty way if possible, or in an embedded terminal otherwise:
 
 ```vim
-:Beads execute search -s open "search terms"
+:Beads execute list open bugs
+:Beads execute search -s open --priority-min 2 "authentication bug"
+:Beads execute ready features
+:Beads execute show bd-123
 ```
 
 #### Other commands

@@ -56,6 +56,20 @@ Parameters ~
     {opts} `(table)`|`(nil)` |Same| filter options as list()
 
 ------------------------------------------------------------------------------
+                                                           *nvim-beads.search()*
+
+`search`({query}, {opts})
+
+Search for issues matching the given query with optional filters.
+Results are displayed in Telescope.
+
+Parameters ~
+    {query} `(string)` Search query (required, must be non-empty)
+    {opts} `(table)`|`(nil)` |Filter| options:
+      - status (string): Filter by status - "open", "in_progress", "blocked", "closed"
+      - type (string): Filter by type - "bug", "feature", "task", "epic", "chore"
+
+------------------------------------------------------------------------------
                                                           *nvim-beads.execute()*
 
 `execute`({args}, {opts})

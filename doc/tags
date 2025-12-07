@@ -5,6 +5,7 @@
 :Beads-open	nvim-beads.txt	/*:Beads-open*
 :Beads-passthrough	nvim-beads.txt	/*:Beads-passthrough*
 :Beads-ready	nvim-beads.txt	/*:Beads-ready*
+:Beads-search	nvim-beads.txt	/*:Beads-search*
 :Beads-show	nvim-beads.txt	/*:Beads-show*
 nvim-beads-about	nvim-beads.txt	/*nvim-beads-about*
 nvim-beads-commands	nvim-beads.txt	/*nvim-beads-commands*
@@ -22,5 +23,6 @@ nvim-beads.execute()	nvim-beads_api.txt	/*nvim-beads.execute()*
 nvim-beads.execute_with_ui()	nvim-beads_api.txt	/*nvim-beads.execute_with_ui()*
 nvim-beads.list()	nvim-beads_api.txt	/*nvim-beads.list()*
 nvim-beads.ready()	nvim-beads_api.txt	/*nvim-beads.ready()*
+nvim-beads.search()	nvim-beads_api.txt	/*nvim-beads.search()*
 nvim-beads.show()	nvim-beads_api.txt	/*nvim-beads.show()*
 nvim-beads.txt	nvim-beads.txt	/*nvim-beads.txt*

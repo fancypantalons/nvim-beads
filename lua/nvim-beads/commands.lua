@@ -76,6 +76,43 @@ local subcommands = {
             beads.execute_with_ui(bd_args, filter)
         end,
     },
+    search = {
+        impl = function(args)
+            local beads = require("nvim-beads")
+            local constants = require("nvim-beads.constants")
+
+            -- Parse args into bd_args and filter
+            local bd_args = { "search" }
+            local filter = {}
+            local query_parts = {}
+
+            for _, arg in ipairs(args) do
+                local normalized = constants.PLURAL_MAP[arg:lower()] or arg:lower()
+
+                if constants.STATUSES[normalized] and not filter.status then
+                    filter.status = normalized
+                elseif constants.ISSUE_TYPES[normalized] and not filter.type then
+                    filter.type = normalized
+                else
+                    -- Not a filter, add to query
+                    table.insert(query_parts, arg)
+                end
+            end
+
+            -- Error if no query provided
+            if #query_parts == 0 then
+                vim.notify("Beads search: query required", vim.log.levels.ERROR)
+                return
+            end
+
+            -- Add query parts to bd_args
+            for _, part in ipairs(query_parts) do
+                table.insert(bd_args, part)
+            end
+
+            beads.execute_with_ui(bd_args, filter)
+        end,
+    },
     create = {
         impl = function(args)
             -- Validate that we have exactly one argument
