@@ -38,13 +38,11 @@ check-mdformat:
 mdformat:
 	python3 -m mdformat README.md markdown/manual/docs/index.md
 
-# IMPORTANT: Make sure to run this first
-# ```
-# luarocks install busted
-# luarocks install luacov
-# luarocks install luacov-multiple
-# ```
-#
+# Generates a luacov.report
+coverage: download-dependencies
+	nvim -u NONE -U NONE -N -i NONE --headless -c "luafile scripts/luacov.lua" -c "quit"
+	luacov
+
 coverage-html: download-dependencies
 	nvim -u NONE -U NONE -N -i NONE --headless -c "luafile scripts/luacov.lua" -c "quit"
 	luacov --reporter multiple.html
