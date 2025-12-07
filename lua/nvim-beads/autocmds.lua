@@ -14,6 +14,56 @@ function M.setup()
         callback = M.on_buffer_write,
         desc = "Save beads issue buffer and sync with bd",
     })
+
+    -- Handle buffer read for beads:// buffers (:e and :e! support)
+    vim.api.nvim_create_autocmd("BufReadCmd", {
+        group = group,
+        pattern = "beads://issue/*",
+        callback = M.on_buffer_read,
+        desc = "Reload beads issue buffer from bd (:e and :e! support)",
+    })
+end
+
+--- Handle buffer read for beads:// issue buffers (:e and :e! support)
+---@param args table Autocommand callback arguments
+function M.on_buffer_read(args)
+    local bufnr = args.buf
+    local buffer_name = vim.api.nvim_buf_get_name(bufnr)
+
+    -- Check if this is a new issue buffer
+    if buffer_name:match("beads://issue/new") then
+        vim.notify("nvim-beads: Cannot reload new issue buffers", vim.log.levels.WARN)
+        return
+    end
+
+    -- Extract issue ID from buffer name (beads://issue/<id>)
+    local issue_id = buffer_name:match("beads://issue/(.+)$")
+    if not issue_id then
+        vim.notify("nvim-beads: Invalid buffer name format", vim.log.levels.ERROR)
+        return
+    end
+
+    -- Save cursor position before reload
+    local cursor_pos = vim.api.nvim_win_get_cursor(0)
+
+    -- Reload buffer from bd
+    local buffer = require("nvim-beads.buffer")
+    if buffer.reload_buffer_from_issue_id(bufnr, issue_id) then
+        -- Restore cursor position (clamped to valid range)
+        local line_count = vim.api.nvim_buf_line_count(bufnr)
+        local new_row = math.min(cursor_pos[1], line_count)
+        local new_col = cursor_pos[2]
+
+        -- Get the line at the new row and clamp column
+        if new_row > 0 and new_row <= line_count then
+            local line = vim.api.nvim_buf_get_lines(bufnr, new_row - 1, new_row, false)[1]
+            if line then
+                new_col = math.min(new_col, #line)
+            end
+        end
+
+        vim.api.nvim_win_set_cursor(0, { new_row, new_col })
+    end
 end
 
 --- Handle buffer write for beads:// issue buffers
