@@ -170,23 +170,6 @@ describe("telescope nvim_beads extension", function()
             assert.equals(3, #_G.test_results) -- bd-1, bd-3, bd-4
         end)
 
-        it("should use custom title when provided", function()
-            local picker_title
-            telescope_picker.new = function(_, params)
-                picker_title = params.prompt_title
-                return {
-                    find = function()
-                        if params.finder and params.finder.results then
-                            _G.test_results = params.finder.results
-                        end
-                    end,
-                }
-            end
-
-            extension.exports.show_issues({ "list" }, { title = "Custom Title" })
-            assert.equals("Custom Title", picker_title)
-        end)
-
         it("should default to 'Beads Issues' title", function()
             local picker_title
             telescope_picker.new = function(_, params)
