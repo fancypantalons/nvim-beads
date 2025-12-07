@@ -49,6 +49,31 @@ local subcommands = {
             beads.list(opts)
         end,
     },
+    ready = {
+        impl = function(args)
+            local beads = require("nvim-beads")
+            local constants = require("nvim-beads.constants")
+
+            -- Parse args into opts (only issue types are valid for ready)
+            local opts = {}
+
+            for _, arg in ipairs(args) do
+                local normalized = constants.PLURAL_MAP[arg:lower()] or arg:lower()
+
+                if constants.ISSUE_TYPES[normalized] and not opts.type then
+                    opts.type = normalized
+                else
+                    vim.notify(
+                        string.format("Beads ready: invalid or duplicate argument '%s'", arg),
+                        vim.log.levels.ERROR
+                    )
+                    return
+                end
+            end
+
+            beads.ready(opts)
+        end,
+    },
     create = {
         impl = function(args)
             -- Validate that we have exactly one argument

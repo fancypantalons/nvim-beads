@@ -58,7 +58,7 @@ Then from Neovim:
 ```vim
 " Browse issues
 :Beads list                 " All open issues
-:Beads list ready           " Ready (unblocked) issues
+:Beads ready                " Ready (unblocked) issues
 :Beads list bugs            " All bugs
 :Beads list open features   " Open features
 
@@ -85,10 +85,21 @@ Examples:
 
 ```vim
 :Beads list                " All open issues (default)
-:Beads list ready          " Ready (unblocked) issues
 :Beads list bugs           " All bugs
 :Beads list open bugs      " Open bugs
-:Beads list ready features " Ready features
+:Beads list closed         " All closed issues
+```
+
+#### `:Beads ready [type]`
+
+Show ready (unblocked) issues that can be worked on right now. This is a convenience command equivalent to `:Beads list ready` but with cleaner syntax.
+
+Valid types: `bug`/`bugs`, `feature`/`features`, `task`/`tasks`, `epic`/`epics`, `chore`/`chores`
+
+```vim
+:Beads ready               " All ready issues
+:Beads ready bugs          " Ready bugs
+:Beads ready features      " Ready features
 ```
 
 #### `:Beads create {type}`
@@ -153,7 +164,10 @@ The plugin provides a public Lua API if you want to integrate it into your own s
 local beads = require("nvim-beads")
 
 -- List issues with filters
-beads.list({ status = "ready", type = "bug" })
+beads.list({ status = "open", type = "bug" })
+
+-- Show ready issues (convenience function)
+beads.ready({ type = "bug" })
 
 -- Show a specific issue
 beads.show("bd-123")

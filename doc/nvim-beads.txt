@@ -85,9 +85,9 @@ Now, from Neovim:
 >vim
     " Browse issues (requires telescope.nvim)
     :Beads list                 " All open issues
-    :Beads list ready           " Ready (unblocked) issues
     :Beads list bugs            " All bugs
     :Beads list open features   " Open features
+    :Beads ready                " Ready (unblocked) issues
 
     " View/edit a specific issue
     :Beads show bd-123
@@ -96,19 +96,18 @@ Now, from Neovim:
     :Beads create bug
 <
 
-A quick note: `:Beads list` is really just a convenience wrapper that
-auto-loads the Telescope extension and calls it for you. So this:
+A quick note: `:Beads list` and `:Beads ready` are convenience wrappers
+that auto-load the Telescope extension and call it for you. So this:
 >vim
-    :Beads list ready
-<
+    :Beads ready
 
 Is exactly the same as this:
 >vim
     :lua require("telescope").load_extension("nvim_beads")
     :Telescope nvim_beads list status=ready
-<
 
-Use whichever you prefer. Most folks find `:Beads list` easier to remember.
+Use whichever you prefer. Most folks find the command forms easier to
+remember.
 
 ==============================================================================
 6. Commands                                            *nvim-beads-commands*
@@ -160,11 +159,39 @@ List Subcommand ~
 Examples:
 >vim
     :Beads list                " Show all open issues (default)
-    :Beads list ready          " Show ready (unblocked) issues
     :Beads list bugs           " Show all bugs
     :Beads list open bugs      " Show open bugs
-    :Beads list ready features " Show ready features
     :Beads list closed         " Show closed issues
+<
+
+------------------------------------------------------------------------------
+Ready Subcommand ~
+                                                             *:Beads-ready*
+
+:Beads ready [type]
+                        Show ready (unblocked) issues that can be worked on
+                        right now. This is a convenience command equivalent
+                        to `:Beads list ready` but with cleaner syntax.
+
+                        Ready issues are those that:
+                          • Have no blocking dependencies
+                          • Are either 'open' or 'in_progress'
+
+                        You can optionally filter by issue type. The parser
+                        handles both singular and plural forms.
+
+                        Valid types:
+                          • bug/bugs
+                          • feature/features
+                          • task/tasks
+                          • epic/epics
+                          • chore/chores
+
+Examples:
+>vim
+    :Beads ready               " Show all ready issues
+    :Beads ready bugs          " Show ready bugs
+    :Beads ready features      " Show ready features
 <
 
 ------------------------------------------------------------------------------
@@ -246,7 +273,10 @@ Quick example to get you started:
     local beads = require("nvim-beads")
 
     -- List issues with filters
-    beads.list({ status = "ready", type = "bug" })
+    beads.list({ status = "open", type = "bug" })
+
+    -- Show ready issues (convenience function)
+    beads.ready({ type = "bug" })
 
     -- Show a specific issue
     beads.show("bd-123")
