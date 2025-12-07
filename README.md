@@ -121,6 +121,14 @@ Open a specific issue by ID. Edit the markdown buffer and save to update the iss
 :Beads show bd-123
 ```
 
+#### `:Beads execute {command} {args}`
+
+Execute a beads command and present the results in a nice, pretty way if possible, or in an embedded terminal otherwise:
+
+```vim
+:Beads execute search -s open "search terms"
+```
+
 #### Other commands
 
 - `:Beads compact` - Compact the issues database
