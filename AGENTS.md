@@ -23,6 +23,61 @@ Prior to finalizing any work item, you **MUST** use the following Makefile targe
 
 Additionally, you **MUST** run `make api-documentation` and include any modified files in your changes in order to ensure published documentation and tags are updated before we push new work.
 
+### Git Commit Message Guidelines
+
+A clear, concise, and standardized commit message is **REQUIRED** for maintaining a readable and useful project history. All agents **MUST** adhere to the following best practices:
+
+#### Structure and Format
+
+Commit messages should be composed of a subject and an optional body, separated by a blank line.
+
+| Component | Rule | Example |
+| :--- | :--- | :--- |
+| **Subject (Title)** | **Max 50 characters**. Must be concise and use the **imperative mood**. | `feat(auth): Add support for external key import` |
+| **Body (Description)** | **Wrap lines at 72 characters**. Explain **what** was changed and, more importantly, **why**. | `Currently, users can only use keys created within the platform. This function allows the import of keys created externally.` |
+
+**Key Rules:**
+
+  * Use the **imperative mood** in the subject: start with verbs like **Add**, **Fix**, **Refactor**, **Update**, etc., *not* "Adding," "Fixed," or "Updates."
+  * Separate the subject from the body with a single **blank line**.
+  * The body should answer the *why* and *how* of the change.
+  * Reference external issues, tickets, or pull requests in the body or footer (e.g., `Closes #123`).
+  * Keep commit messages short, succinct, and punchy. We don't want a novel, but we also want to be able to quickly grok what the commit is, why it was written, and any critical/surprising/interesting technical decisions that were made during its implementation.
+
+#### Conventional Commits
+
+To enable human- and machine-readable commit history, use the [Conventional Commits](https://www.conventionalcommits.org/) specification for the subject line:
+
+**Format:** `<type>(optional scope): <subject-description>`
+
+##### Common Commit Types
+
+| Type | Description |
+| :--- | :--- |
+| **feat** | A new **feature** is introduced. |
+| **fix** | A bug **fix**. |
+| **docs** | Changes to **documentation** (e.g., README, AGENTS.md). |
+| **style** | Formatting, missing semicolons, white-space (no code change). |
+| **refactor** | Code changes that are neither a bug fix nor a feature (e.g., restructuring). |
+| **test** | Adding or updating tests. |
+| **chore** | Routine maintenance, build process, or helper tool changes. |
+
+##### Breaking Changes
+
+If a commit introduces a **breaking change** (a change that requires users/consumers to update their code), it **must** be clearly indicated:
+
+  * **Option 1 (Recommended):** Append an exclamation mark (`!`) after the type/scope:
+    `chore!(deps): Drop support for Python 3.6`
+  * **Option 2:** Include a `BREAKING CHANGE:` section in the footer of the commit body:
+    ```
+    chore(deps): Update Python version
+
+    More recent versions of important project libs no longer support Python 3.6.
+    This has prevented us from using new features offered by such libs.
+
+    BREAKING CHANGE: drop support for Python 3.6
+    ```
+
 ### Requirements
 
 General product requirements are stored in the [Requirements](doc/dev/requirements/) folder and should be consulted when designing new features.
