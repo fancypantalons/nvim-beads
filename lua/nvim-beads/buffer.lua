@@ -23,6 +23,10 @@ function M.populate_beads_buffer(bufnr, issue)
     vim.api.nvim_set_option_value("bufhidden", "hide", { buf = bufnr })
     vim.api.nvim_set_option_value("swapfile", false, { buf = bufnr })
     vim.api.nvim_set_option_value("modified", false, { buf = bufnr })
+
+    -- Setup navigation keymaps for issue references
+    local navigation = require("nvim-beads.navigation")
+    navigation.setup_buffer_keymaps(bufnr)
 end
 
 ---Open an issue in a beads:// buffer
@@ -41,9 +45,9 @@ function M.open_issue_buffer(issue_id)
     -- Set buffer name using beads:// URI scheme
     local buffer_name = string.format("beads://issue/%s", issue_id)
 
-    -- Check if a buffer with this name already exists
-    local bufnr = vim.fn.bufnr(buffer_name)
-    if bufnr == -1 then
+    -- Check if a buffer with this name already exists and is loaded
+    local bufnr = vim.api.nvim_buf_get_number(buffer_name)
+    if bufnr == 0 then
         -- Buffer doesn't exist, create a new one
         bufnr = vim.api.nvim_create_buf(false, false)
         vim.api.nvim_buf_set_name(bufnr, buffer_name)

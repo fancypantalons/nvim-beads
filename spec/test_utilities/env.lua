@@ -6,8 +6,11 @@ local original_vim_api_set_lines
 local original_vim_api_set_option_value
 local original_vim_api_set_current_buf
 local original_vim_api_win_set_cursor
+local original_vim_api_buf_get_number
 local original_vim_notify
 local original_vim_system
+local original_vim_keymap
+local original_vim_fn
 
 -- Mock state variables
 M.created_bufnr = 42
@@ -18,6 +21,7 @@ M.current_buf = nil
 M.cursor_position = nil
 M.notifications = {}
 M.system_commands = {}
+M.keymaps = {}
 
 --- Sets up a mocked Neovim environment for testing.
 -- Mocks `vim.api` functions, `vim.notify`, and `vim.system`.
@@ -30,8 +34,11 @@ function M.setup_mock_env()
     original_vim_api_set_option_value = vim.api.nvim_set_option_value
     original_vim_api_set_current_buf = vim.api.nvim_set_current_buf
     original_vim_api_win_set_cursor = vim.api.nvim_win_set_cursor
+    original_vim_api_buf_get_number = vim.api.nvim_buf_get_number
     original_vim_notify = vim.notify
     original_vim_system = vim.system
+    original_vim_keymap = vim.keymap
+    original_vim_fn = vim.fn
 
     -- Reset mock state
     M.created_bufnr = 42
@@ -42,6 +49,7 @@ function M.setup_mock_env()
     M.cursor_position = nil
     M.notifications = {}
     M.system_commands = {}
+    M.keymaps = {}
 
     -- Mock vim.api functions
     vim.api.nvim_create_buf = function(_, _)
@@ -71,6 +79,13 @@ function M.setup_mock_env()
 
     vim.api.nvim_win_set_cursor = function(_, pos)
         M.cursor_position = pos
+    end
+
+    vim.api.nvim_buf_get_number = function(name)
+        if name == M.buffer_name then
+            return M.created_bufnr
+        end
+        return 0
     end
 
     vim.api.nvim_buf_is_valid = function(bufnr)
@@ -120,6 +135,27 @@ function M.setup_mock_env()
             end,
         }
     end
+
+    -- Mock vim.keymap
+    vim.keymap = {
+        set = function(mode, lhs, rhs, opts)
+            table.insert(M.keymaps, { mode = mode, lhs = lhs, rhs = rhs, opts = opts })
+        end,
+    }
+
+    -- Mock vim.fn
+    vim.fn = {
+        bufnr = function(name)
+            if name == M.buffer_name then
+                return M.created_bufnr
+            end
+            return -1
+        end,
+        expand = function(_expr)
+            -- Default implementation - tests can override
+            return ""
+        end,
+    }
 end
 
 --- Restores the original Neovim functions.
@@ -130,8 +166,11 @@ function M.teardown_mock_env()
     vim.api.nvim_set_option_value = original_vim_api_set_option_value
     vim.api.nvim_set_current_buf = original_vim_api_set_current_buf
     vim.api.nvim_win_set_cursor = original_vim_api_win_set_cursor
+    vim.api.nvim_buf_get_number = original_vim_api_buf_get_number
     vim.notify = original_vim_notify
     vim.system = original_vim_system
+    vim.keymap = original_vim_keymap
+    vim.fn = original_vim_fn
 end
 
 return M
