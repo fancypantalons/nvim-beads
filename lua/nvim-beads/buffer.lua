@@ -65,8 +65,8 @@ end
 ---@return boolean success True if buffer was opened successfully
 function M.open_new_issue_buffer(issue_type, template_data)
     -- Validate issue_type
-    local valid_types = { bug = true, feature = true, task = true, epic = true, chore = true }
-    if not issue_type or not valid_types[issue_type] then
+    local constants = require("nvim-beads.constants")
+    if not issue_type or not constants.ISSUE_TYPES[issue_type] then
         vim.notify("Invalid issue type", vim.log.levels.ERROR)
         return false
     end

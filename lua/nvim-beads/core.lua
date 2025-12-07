@@ -112,32 +112,9 @@ function M.show_ready(opts)
 end
 
 --- Show list of all beads issues
----@param args_or_opts table|nil Optional filter arguments (fargs array)
----   OR opts table {status, type, priority, assignee}
-function M.show_list(args_or_opts)
-    local filters
-
-    -- Backward compatibility: detect if this is an opts table or fargs array
-    if args_or_opts == nil or #args_or_opts == 0 then
-        -- Empty or nil - could be either, treat as fargs for backward compat
-        local err
-        filters, err = M.parse_list_filters(args_or_opts)
-        if err then
-            vim.notify("Beads list: " .. err, vim.log.levels.ERROR)
-            return
-        end
-    elseif args_or_opts.status or args_or_opts.type or args_or_opts.priority or args_or_opts.assignee then
-        -- This is an opts table with named parameters
-        filters = args_or_opts
-    else
-        -- This is an fargs array (positional arguments)
-        local err
-        filters, err = M.parse_list_filters(args_or_opts)
-        if err then
-            vim.notify("Beads list: " .. err, vim.log.levels.ERROR)
-            return
-        end
-    end
+---@param opts table|nil Optional filter options {status, type, priority, assignee}
+function M.show_list(opts)
+    local filters = opts or {}
 
     local has_telescope, telescope = pcall(require, "telescope")
     if not has_telescope then
@@ -163,8 +140,8 @@ end
 ---@return string? error Error message on failure, nil on success
 function M.fetch_template(issue_type)
     -- Validate issue type
-    local valid_types = { bug = true, feature = true, task = true, epic = true, chore = true }
-    if not valid_types[issue_type] then
+    local constants = require("nvim-beads.constants")
+    if not constants.ISSUE_TYPES[issue_type] then
         return nil,
             string.format("Invalid issue type '%s'. Must be one of: bug, feature, task, epic, chore", issue_type)
     end
@@ -193,73 +170,6 @@ function M.fetch_template(issue_type)
     end
 
     return result, nil
-end
-
---- Parse list filter arguments from the command
----@param fargs table|nil The filter arguments from the command
----@return table? filters A table with parsed status and type, or nil on error
----@return string? err An error message if validation fails
-function M.parse_list_filters(fargs)
-    if not fargs or #fargs == 0 then
-        return { status = "open", type = nil }, nil
-    end
-
-    local valid_statuses = {
-        open = true,
-        in_progress = true,
-        blocked = true,
-        closed = true,
-        ready = true,
-        stale = true,
-        all = true,
-    }
-    local valid_types = {
-        bug = true,
-        feature = true,
-        task = true,
-        epic = true,
-        chore = true,
-        all = true,
-    }
-    local plural_map = {
-        bugs = "bug",
-        features = "feature",
-        tasks = "task",
-        epics = "epic",
-        chores = "chore",
-    }
-
-    local filters = { status = nil, type = nil }
-
-    for _, arg in ipairs(fargs) do
-        local term = plural_map[string.lower(arg)] or string.lower(arg)
-
-        local is_status = valid_statuses[term]
-        local is_type = valid_types[term]
-
-        if not is_status and not is_type then
-            return nil, string.format("Invalid issue status or type '%s'", arg)
-        end
-
-        -- Prefer assigning to status if it's not taken yet
-        if is_status and not filters.status then
-            filters.status = term
-        -- Then try assigning to type if it's not taken
-        elseif is_type and not filters.type then
-            filters.type = term
-        else
-            -- If we are here, it means both slots that the arg could fill are taken.
-            if is_status and is_type then
-                return nil, string.format("Duplicate or ambiguous status and type for '%s'", arg)
-            elseif is_status then
-                return nil, string.format("Duplicate issue status '%s'", arg)
-            else -- is_type
-                return nil, string.format("Duplicate issue type '%s'", arg)
-            end
-        end
-    end
-
-    return filters, nil
 end
 
 --- Fetches and parses a single issue by its ID.

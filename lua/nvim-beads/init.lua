@@ -50,8 +50,8 @@ function M.create(opts)
     local template = opts.template
 
     -- Validate issue type
-    local valid_types = { bug = true, feature = true, task = true, epic = true, chore = true }
-    if not valid_types[issue_type] then
+    local constants = require("nvim-beads.constants")
+    if not constants.ISSUE_TYPES[issue_type] then
         vim.notify(
             string.format(
                 "nvim-beads.create: invalid issue type '%s'. Must be one of: bug, feature, task, epic, chore",

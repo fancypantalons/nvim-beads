@@ -25,8 +25,28 @@ local subcommands = {
     list = {
         impl = function(args)
             local beads = require("nvim-beads")
-            -- Pass args directly - show_list handles both fargs and opts for backward compat
-            beads.list(args)
+            local constants = require("nvim-beads.constants")
+
+            -- Parse args into opts
+            local opts = {}
+
+            for _, arg in ipairs(args) do
+                local normalized = constants.PLURAL_MAP[arg:lower()] or arg:lower()
+
+                if constants.STATUSES[normalized] and not opts.status then
+                    opts.status = normalized
+                elseif constants.ISSUE_TYPES[normalized] and not opts.type then
+                    opts.type = normalized
+                else
+                    vim.notify(
+                        string.format("Beads list: invalid or duplicate argument '%s'", arg),
+                        vim.log.levels.ERROR
+                    )
+                    return
+                end
+            end
+
+            beads.list(opts)
         end,
     },
     create = {
