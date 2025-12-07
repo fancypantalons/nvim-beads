@@ -280,10 +280,9 @@ describe("telescope nvim_beads extension", function()
             assert.is_not_nil(attach_mappings_func)
 
             local prompt_bufnr = vim.api.nvim_create_buf(false, true)
-            local map_calls = {}
 
-            local map = function(mode, key, fn)
-                map_calls[mode .. ":" .. key] = fn
+            local map = function(mode, key, fn) -- luacheck: ignore
+                -- Mapping function stub for testing
             end
 
             attach_mappings_func(prompt_bufnr, map)

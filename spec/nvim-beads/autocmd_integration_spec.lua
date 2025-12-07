@@ -581,7 +581,8 @@ describe("autocmd save workflow", function()
                         description = "Original description",
                         labels = {},
                         dependencies = {},
-                    }, nil
+                    },
+                        nil
                 end
                 return nil, "Issue not found"
             end
@@ -614,7 +615,8 @@ describe("autocmd save workflow", function()
                             labels = {},
                             dependencies = {},
                         },
-                    }, nil
+                    },
+                        nil
                 end
                 return nil, "Issue not found"
             end
@@ -676,7 +678,8 @@ describe("autocmd save workflow", function()
                         updated_at = "2025-11-30T10:00:00Z",
                         labels = {},
                         dependencies = {},
-                    }, nil
+                    },
+                        nil
                 end
                 return nil, "Issue not found"
             end
@@ -693,7 +696,6 @@ describe("autocmd save workflow", function()
             end
             assert.is_true(found_no_changes)
         end)
-
 
         it("should handle failed fetch of original issue", function()
             local buffer_content = {
@@ -756,7 +758,8 @@ describe("autocmd save workflow", function()
                         updated_at = "2025-11-30T10:00:00Z",
                         labels = {},
                         dependencies = {},
-                    }, nil
+                    },
+                        nil
                 end
                 return nil, "Issue not found"
             end

@@ -11,23 +11,21 @@ local specrev = "$specrev"
 local repo_url = "$repo_url"
 
 rockspec_format = "3.0"
-package = "nvim-beads.nvim"
+package = "nvim-beads"
 version = modrev .. "-" .. specrev
 
 local user = "fancypantalons"
 
 description = {
     homepage = "https://github.com/" .. user .. "/" .. package,
-    labels = { "neovim", "neovim-plugin" },
+    labels = { "neovim", "neovim-plugin", "beads" },
     license = "MIT",
-    summary = 'A "Best Practices" Neovim plugin template',
+    summary = 'A Neovim wrapper for the beads issue tracker',
 }
 
 dependencies = {
+    "mega.cmdparse >= 1.0.3, < 2.0",
     "mega.logging >= 1.1.4, < 2.0",
-
-    -- TODO(you): Remove these dependencies if you don't need them
-    -- "lualine.nvim", -- Reference: https://luarocks.org/modules/neorocks/lualine.nvim
     "telescope.nvim >= 0.1.8 < 1.0",
 }
 

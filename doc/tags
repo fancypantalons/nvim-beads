@@ -12,9 +12,6 @@ nvim-beads-feature-list	nvim-beads.txt	/*nvim-beads-feature-list*
 nvim-beads-install	nvim-beads.txt	/*nvim-beads-install*
 nvim-beads-introduction	nvim-beads.txt	/*nvim-beads-introduction*
 nvim-beads-lua-api	nvim-beads.txt	/*nvim-beads-lua-api*
-nvim-beads-new-breaking	news.txt	/*nvim-beads-new-breaking*
-nvim-beads-new-features	news.txt	/*nvim-beads-new-features*
-nvim-beads-news.txt	news.txt	/*nvim-beads-news.txt*
 nvim-beads-quick-start	nvim-beads.txt	/*nvim-beads-quick-start*
 nvim-beads-requirements	nvim-beads.txt	/*nvim-beads-requirements*
 nvim-beads-telescope-integration	nvim-beads.txt	/*nvim-beads-telescope-integration*

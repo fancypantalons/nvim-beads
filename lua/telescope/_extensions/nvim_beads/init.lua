@@ -258,10 +258,7 @@ local function list(call_opts)
                             callback = function(_, progress_err)
                                 if progress_err then
                                     vim.notify(
-                                        "Failed to mark issue "
-                                            .. issue_id
-                                            .. " as in-progress: "
-                                            .. progress_err,
+                                        "Failed to mark issue " .. issue_id .. " as in-progress: " .. progress_err,
                                         vim.log.levels.ERROR
                                     )
                                 else

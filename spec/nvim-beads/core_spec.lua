@@ -667,11 +667,10 @@ describe("nvim-beads.core", function()
         describe("argument validation", function()
             it("should call callback with error when callback is not a function", function()
                 -- This should error before calling vim.system
-                local error_caught = false
                 local success = pcall(function()
                     core.execute_bd_async({ "ready" }, "not a function")
                 end)
-                error_caught = not success
+                local error_caught = not success
                 assert.is_true(error_caught)
             end)
 
@@ -742,7 +741,7 @@ describe("nvim-beads.core", function()
                     vim.schedule(function()
                         callback({
                             code = 0,
-                            stdout = '{}',
+                            stdout = "{}",
                             stderr = "",
                         })
                     end)
@@ -826,5 +825,4 @@ describe("nvim-beads.core", function()
             end)
         end)
     end)
-
 end)
