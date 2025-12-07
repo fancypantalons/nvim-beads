@@ -130,6 +130,7 @@ local function show_issues(bd_args, opts)
     pickers
         .new(opts, {
             prompt_title = title,
+            sorting_strategy = "ascending",
             finder = finders.new_table({
                 results = filtered_issues,
                 entry_maker = entry_maker,
