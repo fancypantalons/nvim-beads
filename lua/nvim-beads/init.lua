@@ -126,4 +126,22 @@ function M.execute(args, opts)
     end
 end
 
+--- Execute a bd command with smart UI routing.
+--- Whitelisted commands (list, search, blocked, ready) display in Telescope.
+--- Other commands execute in a terminal buffer.
+---@param args table Array of bd command arguments (e.g., {"list", "--priority", "1"})
+---@param opts table|nil Options (reserved for future use)
+function M.execute_with_ui(args, opts)
+    opts = normalize_opts(opts)
+
+    -- Validate args
+    if not args or type(args) ~= "table" or #args == 0 then
+        vim.notify("nvim-beads.execute_with_ui: args must be a non-empty table", vim.log.levels.ERROR)
+        return
+    end
+
+    local core = require("nvim-beads.core")
+    core.execute_with_ui(args, opts)
+end
+
 return M

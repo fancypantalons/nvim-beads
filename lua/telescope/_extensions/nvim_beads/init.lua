@@ -72,48 +72,29 @@ local function create_issue_previewer()
     })
 end
 
---- Run the `:Telescope nvim_beads list` command to show all issues
+--- Show issues in a Telescope picker with bd_args and optional filters
 ---
----@param call_opts table|nil Either Telescope options or a filter table {status?: string, type?: string}
-local function list(call_opts)
-    local opts, filters
-    if call_opts then
-        if call_opts.status or call_opts.type or call_opts.priority or call_opts.assignee then
-            filters = call_opts
-            opts = {}
-        else
-            opts = call_opts
-            filters = {}
-        end
-    else
-        opts = {}
-        filters = {}
-    end
-
-    -- Choose the bd command based on filters
-    local args
-    if filters.status == "ready" then
-        args = { "ready" }
-    elseif filters.status == "stale" then
-        args = { "stale" }
-    else
-        args = { "list" }
-    end
+---@param bd_args table Array of bd command arguments (e.g., {'list', '--status', 'open'})
+---@param opts table|nil Optional table containing:
+---   - filter: {status?: string, type?: string, priority?: number, assignee?: string} for client-side filtering
+---   - ... any other Telescope picker options
+local function show_issues(bd_args, opts)
+    opts = opts or {}
+    local filters = opts or {}
+    local title = "Beads Issues"
 
     -- Run bd command using public API and parse the output
-    local all_issues, err = beads.execute(args)
+    local all_issues, err = beads.execute(bd_args)
     if err then
-        vim.notify("Failed to list issues: " .. err, vim.log.levels.ERROR)
+        vim.notify("Failed to execute bd command: " .. err, vim.log.levels.ERROR)
         return
     end
 
-    -- Filter issues in Lua
+    -- Apply client-side filters
     local filtered_issues = {}
     for _, issue in ipairs(all_issues) do
-        -- 'ready' is a special status that uses `bd ready`. We don't need to re-filter by status
-        -- if the user asked for 'ready' issues.
         local status_match = true
-        if filters.status and filters.status ~= "all" and filters.status ~= "ready" and filters.status ~= "stale" then
+        if filters.status and filters.status ~= "all" then
             status_match = issue.status == filters.status
         end
 
@@ -122,18 +103,17 @@ local function list(call_opts)
             type_match = issue.issue_type == filters.type
         end
 
-        -- TODO: Add priority and assignee filtering when supported
-        -- local priority_match = true
-        -- if filters.priority then
-        --     priority_match = issue.priority == filters.priority
-        -- end
-        --
-        -- local assignee_match = true
-        -- if filters.assignee then
-        --     assignee_match = issue.assignee == filters.assignee
-        -- end
+        local priority_match = true
+        if filters.priority then
+            priority_match = issue.priority == filters.priority
+        end
 
-        if status_match and type_match then
+        local assignee_match = true
+        if filters.assignee then
+            assignee_match = issue.assignee == filters.assignee
+        end
+
+        if status_match and type_match and priority_match and assignee_match then
             table.insert(filtered_issues, issue)
         end
     end
@@ -149,7 +129,7 @@ local function list(call_opts)
 
     pickers
         .new(opts, {
-            prompt_title = "Beads Issues",
+            prompt_title = title,
             finder = finders.new_table({
                 results = filtered_issues,
                 entry_maker = entry_maker,
@@ -183,7 +163,7 @@ local function list(call_opts)
                                 else
                                     vim.notify("Issue " .. issue_id .. " deleted")
                                     actions.close(p_prompt_bufnr)
-                                    list(call_opts)
+                                    show_issues(bd_args, opts)
                                 end
                             end,
                         })
@@ -210,7 +190,7 @@ local function list(call_opts)
                                 else
                                     vim.notify("Issue " .. issue_id .. " closed")
                                     actions.close(p_prompt_bufnr)
-                                    list(call_opts)
+                                    show_issues(bd_args, opts)
                                 end
                             end,
                         })
@@ -237,7 +217,7 @@ local function list(call_opts)
                                 else
                                     vim.notify("Issue " .. issue_id .. " opened")
                                     actions.close(p_prompt_bufnr)
-                                    list(call_opts)
+                                    show_issues(bd_args, opts)
                                 end
                             end,
                         })
@@ -264,7 +244,7 @@ local function list(call_opts)
                                 else
                                     vim.notify("Issue " .. issue_id .. " marked as in-progress")
                                     actions.close(p_prompt_bufnr)
-                                    list(call_opts)
+                                    show_issues(bd_args, opts)
                                 end
                             end,
                         })
@@ -284,7 +264,7 @@ end
 
 return telescope.register_extension({
     exports = {
-        list = list,
-        nvim_beads = list, -- Default action
+        show_issues = show_issues,
+        nvim_beads = show_issues, -- Default action
     },
 })

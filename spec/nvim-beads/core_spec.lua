@@ -825,4 +825,268 @@ describe("nvim-beads.core", function()
             end)
         end)
     end)
+
+    describe("show_issues", function()
+        it("should load telescope extension and call show_issues", function()
+            local show_issues_called = false
+            local show_issues_bd_args = nil
+            local show_issues_opts = nil
+
+            package.loaded["telescope"] = {
+                extensions = {
+                    nvim_beads = {
+                        show_issues = function(bd_args, opts)
+                            show_issues_called = true
+                            show_issues_bd_args = bd_args
+                            show_issues_opts = opts
+                        end,
+                    },
+                },
+                load_extension = function() end,
+            }
+
+            core.show_issues({ "list", "--status", "open" }, { type = "bug" })
+
+            assert.is_true(show_issues_called)
+            assert.same({ "list", "--status", "open" }, show_issues_bd_args)
+            assert.same({ type = "bug" }, show_issues_opts)
+        end)
+
+        it("should load telescope extension if not already loaded", function()
+            local load_extension_called = false
+            local extension_name = nil
+
+            package.loaded["telescope"] = {
+                extensions = {},
+                load_extension = function(name)
+                    load_extension_called = true
+                    extension_name = name
+                    -- Simulate extension being loaded
+                    package.loaded["telescope"].extensions.nvim_beads = {
+                        show_issues = function() end,
+                    }
+                end,
+            }
+
+            core.show_issues({ "ready" }, {})
+
+            assert.is_true(load_extension_called)
+            assert.equals("nvim_beads", extension_name)
+        end)
+
+        it("should show error when telescope is not installed", function()
+            local notify_called = false
+            local notify_msg = nil
+            local notify_level = nil
+
+            local original_notify = vim.notify
+            local original_pcall = _G.pcall
+
+            vim.notify = function(msg, level)
+                notify_called = true
+                notify_msg = msg
+                notify_level = level
+            end
+
+            -- Mock pcall to make require("telescope") fail
+            _G.pcall = function(fn, ...)
+                if fn == require and select(1, ...) == "telescope" then
+                    return false, "module 'telescope' not found"
+                end
+                return original_pcall(fn, ...)
+            end
+
+            core.show_issues({ "list" }, {})
+
+            vim.notify = original_notify
+            _G.pcall = original_pcall
+
+            assert.is_true(notify_called)
+            assert.matches("Telescope not found", notify_msg)
+            assert.equals(vim.log.levels.ERROR, notify_level)
+        end)
+
+        it("should handle nil opts", function()
+            local show_issues_opts = "NOT_SET"
+
+            package.loaded["telescope"] = {
+                extensions = {
+                    nvim_beads = {
+                        show_issues = function(_, opts)
+                            show_issues_opts = opts
+                        end,
+                    },
+                },
+                load_extension = function() end,
+            }
+
+            core.show_issues({ "list" }, nil)
+
+            assert.same({}, show_issues_opts)
+        end)
+    end)
+
+    describe("execute_with_ui", function()
+        local original_telescope
+        local original_util
+
+        before_each(function()
+            -- Save originals
+            original_telescope = package.loaded["telescope"]
+            original_util = package.loaded["nvim-beads.util"]
+
+            -- Mock telescope
+            package.loaded["telescope"] = {
+                extensions = {
+                    nvim_beads = {
+                        show_issues = function() end,
+                    },
+                },
+                load_extension = function() end,
+            }
+
+            -- Mock util
+            package.loaded["nvim-beads.util"] = {
+                execute_command_in_scratch_buffer = function() end,
+            }
+        end)
+
+        after_each(function()
+            -- Restore originals
+            package.loaded["telescope"] = original_telescope
+            package.loaded["nvim-beads.util"] = original_util
+        end)
+
+        it("should route whitelisted 'list' command to telescope", function()
+            local show_issues_called = false
+            local show_issues_args = nil
+
+            package.loaded["telescope"].extensions.nvim_beads.show_issues = function(bd_args)
+                show_issues_called = true
+                show_issues_args = bd_args
+            end
+
+            core.execute_with_ui({ "list", "--status", "open" })
+
+            assert.is_true(show_issues_called)
+            assert.same({ "list", "--status", "open" }, show_issues_args)
+        end)
+
+        it("should route whitelisted 'ready' command to telescope", function()
+            local show_issues_called = false
+
+            package.loaded["telescope"].extensions.nvim_beads.show_issues = function()
+                show_issues_called = true
+            end
+
+            core.execute_with_ui({ "ready" })
+
+            assert.is_true(show_issues_called)
+        end)
+
+        it("should route whitelisted 'search' command to telescope", function()
+            local show_issues_called = false
+
+            package.loaded["telescope"].extensions.nvim_beads.show_issues = function()
+                show_issues_called = true
+            end
+
+            core.execute_with_ui({ "search", "keyword" })
+
+            assert.is_true(show_issues_called)
+        end)
+
+        it("should route whitelisted 'blocked' command to telescope", function()
+            local show_issues_called = false
+
+            package.loaded["telescope"].extensions.nvim_beads.show_issues = function()
+                show_issues_called = true
+            end
+
+            core.execute_with_ui({ "blocked" })
+
+            assert.is_true(show_issues_called)
+        end)
+
+        it("should route non-whitelisted 'show' command to terminal", function()
+            local terminal_called = false
+            local terminal_command = nil
+            local terminal_args = nil
+
+            package.loaded["nvim-beads.util"].execute_command_in_scratch_buffer = function(cmd, args)
+                terminal_called = true
+                terminal_command = cmd
+                terminal_args = args
+            end
+
+            core.execute_with_ui({ "show", "bd-123" })
+
+            assert.is_true(terminal_called)
+            assert.equals("show", terminal_command)
+            assert.same({ "bd-123" }, terminal_args)
+        end)
+
+        it("should route 'create' command to terminal", function()
+            local terminal_called = false
+
+            package.loaded["nvim-beads.util"].execute_command_in_scratch_buffer = function()
+                terminal_called = true
+            end
+
+            core.execute_with_ui({ "create", "New issue" })
+
+            assert.is_true(terminal_called)
+        end)
+
+        it("should show error when args is empty", function()
+            local notify_called = false
+            local notify_msg = nil
+
+            local original_notify = vim.notify
+            vim.notify = function(msg, _)
+                notify_called = true
+                notify_msg = msg
+            end
+
+            -- Reload core to ensure it picks up our vim.notify mock
+            package.loaded["nvim-beads.core"] = nil
+            local test_core = require("nvim-beads.core")
+
+            test_core.execute_with_ui({})
+
+            vim.notify = original_notify
+
+            assert.is_true(notify_called, "vim.notify should have been called, got: " .. tostring(notify_called))
+            assert.is_not_nil(notify_msg, "notify message should not be nil")
+            assert.is_string(notify_msg, "notify_msg should be a string, got: " .. type(notify_msg))
+            assert.matches("non%-empty table", notify_msg)
+        end)
+
+        it("should show error when args is not a table", function()
+            local notify_called = false
+
+            local original_notify = vim.notify
+            vim.notify = function()
+                notify_called = true
+            end
+
+            core.execute_with_ui("not a table")
+
+            vim.notify = original_notify
+
+            assert.is_true(notify_called)
+        end)
+
+        it("should handle nil opts", function()
+            local show_issues_opts = "NOT_SET"
+
+            package.loaded["telescope"].extensions.nvim_beads.show_issues = function(_, opts)
+                show_issues_opts = opts
+            end
+
+            core.execute_with_ui({ "list" }, nil)
+
+            assert.same({}, show_issues_opts)
+        end)
+    end)
 end)

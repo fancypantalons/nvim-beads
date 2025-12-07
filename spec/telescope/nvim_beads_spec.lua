@@ -99,22 +99,22 @@ describe("telescope nvim_beads extension", function()
         assert.is_not_nil(extension, "Extension should be registered")
     end)
 
-    describe("list function", function()
+    describe("show_issues function", function()
         it("should show all issues with no filters", function()
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
             assert.equals(#sample_issues, #_G.test_results)
         end)
 
-        it("should filter by status 'open'", function()
-            extension.exports.list({ status = "open" })
+        it("should filter by status 'open' client-side", function()
+            extension.exports.show_issues({ "list" }, { status = "open" })
             assert.equals(3, #_G.test_results) -- bd-1, bd-3, bd-4
             for _, issue in ipairs(_G.test_results) do
                 assert.equals("open", issue.status)
             end
         end)
 
-        it("should filter by type 'bug'", function()
-            extension.exports.list({ type = "bug" })
+        it("should filter by type 'bug' client-side", function()
+            extension.exports.show_issues({ "list" }, { type = "bug" })
             assert.equals(2, #_G.test_results) -- bd-1, bd-2
             for _, issue in ipairs(_G.test_results) do
                 assert.equals("bug", issue.issue_type)
@@ -122,12 +122,12 @@ describe("telescope nvim_beads extension", function()
         end)
 
         it("should filter by status 'closed' and type 'bug'", function()
-            extension.exports.list({ status = "closed", type = "bug" })
+            extension.exports.show_issues({ "list" }, { status = "closed", type = "bug" })
             assert.equals(1, #_G.test_results)
             assert.equals("bd-2", _G.test_results[1].id)
         end)
 
-        it("should use 'bd ready' when status is 'ready'", function()
+        it("should accept bd_args for 'bd ready' command", function()
             local cmd_used
             vim.system = function(cmd, _)
                 cmd_used = cmd
@@ -137,12 +137,12 @@ describe("telescope nvim_beads extension", function()
                     end,
                 }
             end
-            extension.exports.list({ status = "ready" })
+            extension.exports.show_issues({ "ready" }, {})
             assert.same({ "bd", "ready", "--json" }, cmd_used)
             assert.equals(#ready_issues, #_G.test_results)
         end)
 
-        it("should filter by type on top of 'ready' status", function()
+        it("should filter by type on top of 'ready' command", function()
             local issues_from_ready = {
                 { id = "bd-4", title = "Ready feature", status = "open", issue_type = "feature" },
                 { id = "bd-6", title = "Ready bug", status = "open", issue_type = "bug" },
@@ -155,19 +155,53 @@ describe("telescope nvim_beads extension", function()
                 }
             end
 
-            extension.exports.list({ status = "ready", type = "feature" })
+            extension.exports.show_issues({ "ready" }, { type = "feature" })
             assert.equals(1, #_G.test_results)
             assert.equals("bd-4", _G.test_results[1].id)
         end)
 
         it("should handle 'all' for status", function()
-            extension.exports.list({ status = "all", type = "feature" })
+            extension.exports.show_issues({ "list" }, { status = "all", type = "feature" })
             assert.equals(2, #_G.test_results) -- bd-3, bd-4
         end)
 
         it("should handle 'all' for type", function()
-            extension.exports.list({ status = "open", type = "all" })
+            extension.exports.show_issues({ "list" }, { status = "open", type = "all" })
             assert.equals(3, #_G.test_results) -- bd-1, bd-3, bd-4
+        end)
+
+        it("should use custom title when provided", function()
+            local picker_title
+            telescope_picker.new = function(_, params)
+                picker_title = params.prompt_title
+                return {
+                    find = function()
+                        if params.finder and params.finder.results then
+                            _G.test_results = params.finder.results
+                        end
+                    end,
+                }
+            end
+
+            extension.exports.show_issues({ "list" }, { title = "Custom Title" })
+            assert.equals("Custom Title", picker_title)
+        end)
+
+        it("should default to 'Beads Issues' title", function()
+            local picker_title
+            telescope_picker.new = function(_, params)
+                picker_title = params.prompt_title
+                return {
+                    find = function()
+                        if params.finder and params.finder.results then
+                            _G.test_results = params.finder.results
+                        end
+                    end,
+                }
+            end
+
+            extension.exports.show_issues({ "list" }, {})
+            assert.equals("Beads Issues", picker_title)
         end)
     end)
 
@@ -187,8 +221,8 @@ describe("telescope nvim_beads extension", function()
             package.loaded["telescope._extensions.nvim_beads"] = nil
             require("telescope._extensions.nvim_beads")
 
-            -- Trigger list to create the previewer
-            extension.exports.list({})
+            -- Trigger show_issues to create the previewer
+            extension.exports.show_issues({ "list" }, {})
 
             assert.is_true(previewer_created)
         end)
@@ -206,7 +240,7 @@ describe("telescope nvim_beads extension", function()
             -- Reload extension
             package.loaded["telescope._extensions.nvim_beads"] = nil
             require("telescope._extensions.nvim_beads")
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
 
             -- Verify the previewer has a define_preview function
             assert.is_not_nil(define_preview_func)
@@ -276,7 +310,7 @@ describe("telescope nvim_beads extension", function()
             package.loaded["telescope._extensions.nvim_beads"] = nil
             require("telescope._extensions.nvim_beads")
 
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
             assert.is_not_nil(attach_mappings_func)
 
             local prompt_bufnr = vim.api.nvim_create_buf(false, true)
@@ -301,7 +335,7 @@ describe("telescope nvim_beads extension", function()
         end)
 
         it("should map 'd' to delete issue", function()
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
             local prompt_bufnr = vim.api.nvim_create_buf(false, true)
             local map_calls = {}
 
@@ -318,7 +352,7 @@ describe("telescope nvim_beads extension", function()
         end)
 
         it("should map 'c' to close issue", function()
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
             local prompt_bufnr = vim.api.nvim_create_buf(false, true)
             local map_calls = {}
 
@@ -335,7 +369,7 @@ describe("telescope nvim_beads extension", function()
         end)
 
         it("should map 'o' to open issue", function()
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
             local prompt_bufnr = vim.api.nvim_create_buf(false, true)
             local map_calls = {}
 
@@ -352,7 +386,7 @@ describe("telescope nvim_beads extension", function()
         end)
 
         it("should map 'i' to mark issue as in_progress", function()
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
             local prompt_bufnr = vim.api.nvim_create_buf(false, true)
             local map_calls = {}
 
@@ -373,7 +407,7 @@ describe("telescope nvim_beads extension", function()
         it("should create proper entries from issues", function()
             -- We don't directly expose entry_maker, but we can verify the finder results
             -- are structured correctly
-            extension.exports.list({})
+            extension.exports.show_issues({ "list" }, {})
 
             -- test_results should contain the sample issues
             assert.is_not_nil(_G.test_results)

@@ -27,16 +27,17 @@ local subcommands = {
             local beads = require("nvim-beads")
             local constants = require("nvim-beads.constants")
 
-            -- Parse args into opts
-            local opts = {}
+            -- Parse args into bd_args and filter
+            local bd_args = { "list" }
+            local filter = {}
 
             for _, arg in ipairs(args) do
                 local normalized = constants.PLURAL_MAP[arg:lower()] or arg:lower()
 
-                if constants.STATUSES[normalized] and not opts.status then
-                    opts.status = normalized
-                elseif constants.ISSUE_TYPES[normalized] and not opts.type then
-                    opts.type = normalized
+                if constants.STATUSES[normalized] and not filter.status then
+                    filter.status = normalized
+                elseif constants.ISSUE_TYPES[normalized] and not filter.type then
+                    filter.type = normalized
                 else
                     vim.notify(
                         string.format("Beads list: invalid or duplicate argument '%s'", arg),
@@ -46,7 +47,7 @@ local subcommands = {
                 end
             end
 
-            beads.list(opts)
+            beads.execute_with_ui(bd_args, filter)
         end,
     },
     ready = {
@@ -54,14 +55,15 @@ local subcommands = {
             local beads = require("nvim-beads")
             local constants = require("nvim-beads.constants")
 
-            -- Parse args into opts (only issue types are valid for ready)
-            local opts = {}
+            -- Parse args into bd_args and filter
+            local bd_args = { "ready" }
+            local filter = {}
 
             for _, arg in ipairs(args) do
                 local normalized = constants.PLURAL_MAP[arg:lower()] or arg:lower()
 
-                if constants.ISSUE_TYPES[normalized] and not opts.type then
-                    opts.type = normalized
+                if constants.ISSUE_TYPES[normalized] and not filter.type then
+                    filter.type = normalized
                 else
                     vim.notify(
                         string.format("Beads ready: invalid or duplicate argument '%s'", arg),
@@ -71,7 +73,7 @@ local subcommands = {
                 end
             end
 
-            beads.ready(opts)
+            beads.execute_with_ui(bd_args, filter)
         end,
     },
     create = {
@@ -112,6 +114,24 @@ local subcommands = {
 
             local beads = require("nvim-beads")
             beads.show(args[1])
+        end,
+    },
+    execute = {
+        impl = function(args)
+            if #args == 0 then
+                vim.notify(
+                    "Beads execute: missing command. Usage: :Beads execute <command> [args...]",
+                    vim.log.levels.ERROR
+                )
+                vim.notify(
+                    "Examples: :Beads execute list --priority 1 | :Beads execute show bd-123",
+                    vim.log.levels.INFO
+                )
+                return
+            end
+
+            local beads = require("nvim-beads")
+            beads.execute_with_ui(args)
         end,
     },
     compact = passthrough_command("compact"),

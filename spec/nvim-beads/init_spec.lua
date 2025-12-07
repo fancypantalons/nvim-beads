@@ -19,6 +19,7 @@ describe("nvim-beads (public API)", function()
             fetch_template = function() end,
             execute_bd = function() end,
             execute_bd_async = function() end,
+            execute_with_ui = function() end,
         }
 
         mock_buffer = {
@@ -379,6 +380,115 @@ describe("nvim-beads (public API)", function()
             assert.is_true(callback_called)
             assert.is_nil(callback_result)
             assert.matches("args must be a table", callback_error)
+        end)
+    end)
+
+    describe("execute_with_ui", function()
+        it("should call core.execute_with_ui with args", function()
+            local called = false
+            local received_args = nil
+            mock_core.execute_with_ui = function(args, _)
+                called = true
+                received_args = args
+            end
+
+            nvim_beads.execute_with_ui({ "list", "--priority", "1" })
+
+            assert.is_true(called)
+            assert.same({ "list", "--priority", "1" }, received_args)
+        end)
+
+        it("should call core.execute_with_ui with empty opts when none provided", function()
+            local received_opts = nil
+            mock_core.execute_with_ui = function(_, opts)
+                received_opts = opts
+            end
+
+            nvim_beads.execute_with_ui({ "ready" })
+
+            assert.is_not_nil(received_opts)
+            assert.same({}, received_opts)
+        end)
+
+        it("should pass opts to core.execute_with_ui", function()
+            local received_opts = nil
+            mock_core.execute_with_ui = function(_, opts)
+                received_opts = opts
+            end
+
+            nvim_beads.execute_with_ui({ "list" }, { some_opt = "value" })
+
+            assert.equals("value", received_opts.some_opt)
+        end)
+
+        it("should show error when args is nil", function()
+            local notified = false
+            local notify_msg = nil
+            vim.notify = function(msg, _)
+                notified = true
+                notify_msg = msg
+            end
+
+            nvim_beads.execute_with_ui(nil)
+
+            assert.is_true(notified)
+            assert.matches("args must be a non%-empty table", notify_msg)
+        end)
+
+        it("should show error when args is not a table", function()
+            local notified = false
+            local notify_msg = nil
+            vim.notify = function(msg, _)
+                notified = true
+                notify_msg = msg
+            end
+
+            nvim_beads.execute_with_ui("not a table")
+
+            assert.is_true(notified)
+            assert.matches("args must be a non%-empty table", notify_msg)
+        end)
+
+        it("should show error when args is empty table", function()
+            local notified = false
+            local notify_msg = nil
+            vim.notify = function(msg, _)
+                notified = true
+                notify_msg = msg
+            end
+
+            nvim_beads.execute_with_ui({})
+
+            assert.is_true(notified)
+            assert.matches("args must be a non%-empty table", notify_msg)
+        end)
+
+        it("should work with whitelisted command 'list'", function()
+            local called = false
+            local received_args = nil
+            mock_core.execute_with_ui = function(args, _)
+                called = true
+                received_args = args
+            end
+
+            nvim_beads.execute_with_ui({ "list" })
+
+            assert.is_true(called)
+            assert.same({ "list" }, received_args)
+        end)
+
+        it("should work with non-whitelisted command 'show'", function()
+            local called = false
+            local received_args = nil
+            mock_core.execute_with_ui = function(args, _)
+                called = true
+                received_args = args
+            end
+
+            nvim_beads.execute_with_ui({ "show", "bd-123" })
+
+            assert.is_true(called)
+            assert.same({ "show", "bd-123" }, received_args)
         end)
     end)
 end)

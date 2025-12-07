@@ -1,8 +1,10 @@
 :Beads	nvim-beads.txt	/*:Beads*
 :Beads-create	nvim-beads.txt	/*:Beads-create*
+:Beads-execute	nvim-beads.txt	/*:Beads-execute*
 :Beads-list	nvim-beads.txt	/*:Beads-list*
 :Beads-open	nvim-beads.txt	/*:Beads-open*
 :Beads-passthrough	nvim-beads.txt	/*:Beads-passthrough*
+:Beads-ready	nvim-beads.txt	/*:Beads-ready*
 :Beads-show	nvim-beads.txt	/*:Beads-show*
 nvim-beads-about	nvim-beads.txt	/*nvim-beads-about*
 nvim-beads-commands	nvim-beads.txt	/*nvim-beads-commands*
@@ -17,6 +19,7 @@ nvim-beads-requirements	nvim-beads.txt	/*nvim-beads-requirements*
 nvim-beads-telescope-integration	nvim-beads.txt	/*nvim-beads-telescope-integration*
 nvim-beads.create()	nvim-beads_api.txt	/*nvim-beads.create()*
 nvim-beads.execute()	nvim-beads_api.txt	/*nvim-beads.execute()*
+nvim-beads.execute_with_ui()	nvim-beads_api.txt	/*nvim-beads.execute_with_ui()*
 nvim-beads.list()	nvim-beads_api.txt	/*nvim-beads.list()*
 nvim-beads.ready()	nvim-beads_api.txt	/*nvim-beads.ready()*
 nvim-beads.show()	nvim-beads_api.txt	/*nvim-beads.show()*

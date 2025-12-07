@@ -3,6 +3,14 @@
 
 local M = {}
 
+--- Commands that should be displayed in Telescope UI
+local TELESCOPE_COMMANDS = {
+    list = true,
+    search = true,
+    blocked = true,
+    ready = true,
+}
+
 --- Prepare bd command arguments by ensuring --json flag is present
 ---@param args table List of command arguments
 ---@return table|nil cmd The full command with 'bd' prefix and --json flag, or nil on error
@@ -100,28 +108,65 @@ function M.execute_bd_async(args, callback)
 end
 
 --- Show ready (unblocked) beads issues
----@param opts table|nil Optional filter options {status, type, priority, assignee}
+---@param opts table|nil Optional filter options {type, priority, assignee}
 function M.show_ready(opts)
     opts = opts or {}
 
-    -- Set the status filter to 'ready' to distinguish this from a regular list
-    local filters = vim.tbl_extend("force", opts, { status = "ready" })
+    -- Build bd_args for ready command
+    local bd_args = { "ready" }
 
-    -- Reuse show_list with ready filter
-    M.show_list(filters)
+    -- Build filter table (ready doesn't support all filters server-side)
+    local filter = {}
+    if opts.type then
+        filter.type = opts.type
+    end
+    if opts.priority then
+        filter.priority = opts.priority
+    end
+    if opts.assignee then
+        filter.assignee = opts.assignee
+    end
+
+    -- Call show_issues with bd_args and filters
+    M.show_issues(bd_args, filter)
 end
 
 --- Show list of all beads issues
 ---@param opts table|nil Optional filter options {status, type, priority, assignee}
 function M.show_list(opts)
-    local filters = opts or {}
+    opts = opts or {}
+
+    -- Build bd_args from opts
+    local bd_args = { "list" }
+
+    -- Build filter table for client-side filtering
+    local filter = {}
+    if opts.status and opts.status ~= "all" then
+        filter.status = opts.status
+    end
+    if opts.type and opts.type ~= "all" then
+        filter.type = opts.type
+    end
+    if opts.priority then
+        filter.priority = opts.priority
+    end
+    if opts.assignee then
+        filter.assignee = opts.assignee
+    end
+
+    -- Call show_issues with bd_args and filters
+    M.show_issues(bd_args, filter)
+end
+
+--- Show issues in Telescope with bd_args and optional filters
+---@param bd_args table Array of bd command arguments (e.g., {'list', '--status', 'open'})
+---@param opts table|nil Optional table containing filter options and Telescope options
+function M.show_issues(bd_args, opts)
+    opts = opts or {}
 
     local has_telescope, telescope = pcall(require, "telescope")
     if not has_telescope then
-        vim.notify(
-            "nvim-beads: Telescope not found. Install telescope.nvim or use :Beads ready/list/create",
-            vim.log.levels.WARN
-        )
+        vim.notify("nvim-beads: Telescope not found. Install telescope.nvim", vim.log.levels.ERROR)
         return
     end
 
@@ -130,8 +175,34 @@ function M.show_list(opts)
         telescope.load_extension("nvim_beads")
     end
 
-    -- Call the default telescope picker
-    telescope.extensions.nvim_beads.nvim_beads(filters)
+    -- Call the telescope show_issues function with bd_args and opts
+    telescope.extensions.nvim_beads.show_issues(bd_args, opts)
+end
+
+--- Execute bd command with smart UI routing
+--- Routes to Telescope for whitelisted commands, otherwise executes in terminal buffer
+---@param args table Array of bd command arguments (e.g., {'show', 'bd-123'})
+---@param opts table|nil Optional table containing options
+function M.execute_with_ui(args, opts)
+    opts = opts or {}
+
+    -- Validate args
+    if type(args) ~= "table" or #args == 0 then
+        vim.notify("execute_with_ui: args must be a non-empty table", vim.log.levels.ERROR)
+        return
+    end
+
+    local command = args[1]
+
+    -- Check if command should use Telescope UI
+    if TELESCOPE_COMMANDS[command] then
+        M.show_issues(args, opts)
+    else
+        -- Execute in terminal buffer
+        local util = require("nvim-beads.util")
+        local rest_args = vim.list_slice(args, 2)
+        util.execute_command_in_scratch_buffer(command, rest_args)
+    end
 end
 
 --- Fetch template for a given issue type

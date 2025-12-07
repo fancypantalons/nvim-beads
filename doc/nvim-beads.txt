@@ -251,12 +251,41 @@ Passthrough Subcommands ~
                                                       *:Beads-passthrough*
 
 The following subcommands just pass through to bd directly and show you
-the output in a scratch buffer:
+the output in a scratch buffer and exist mainly to save you some typing:
 
 :Beads compact          Compact the issues database
 :Beads cleanup          Clean up orphaned dependencies
 :Beads sync             Sync issues with git
 :Beads daemon           Start the bd daemon
+
+------------------------------------------------------------------------------
+Execute Subcommand ~
+                                                             *:Beads-execute*
+
+:Beads execute [command] [flags]
+                        Execute a load-level beads command with the specified
+			command-line flags.
+
+			This subcommand offers special handling depending on
+			the beads command being run, providing a user friendly
+			presentation of the result where appropriate.
+
+			For example, for commands that return an issue list
+			(e.g. list, show, ready, blocked), the results are
+			presented in a Telescope picker.
+
+			Any commands that don't have special handling are
+			executed in a Neovim terminal.
+
+			For those paying attention, yes, this subcommand is
+			the plumbing that underlies all the other subcommands.
+			Everything else is just a bit of porcelain to save you
+			some typing and cognitive overhead.
+
+Examples:
+>vim
+    :Beads execute list -p 1 -s open
+    :Beads execute search -s open "search string"
 
 ==============================================================================
 7. Lua API                                               *nvim-beads-lua-api*
@@ -300,33 +329,15 @@ calls Telescope for you.
 If you want to load the extension manually (maybe you like doing things
 the hard way?):
 >lua
-    require("telescope").load_extension("nvim_beads")
-<
-
-You can also call it directly:
->vim
-    " Browse all issues
-    :Telescope nvim_beads list
-
-    " Browse with filters
-    :Telescope nvim_beads list status=ready
-    :Telescope nvim_beads list type=bug
-    :Telescope nvim_beads list status=open type=feature
-<
-
-Or via Lua:
->lua
     local telescope = require("telescope")
 
     -- Browse all issues
-    telescope.extensions.nvim_beads.list()
+    telescope.extensions.nvim_beads.show_issues({"list"})
 
     -- With filters
-    telescope.extensions.nvim_beads.list({
+    telescope.extensions.nvim_beads.list({"list"}, {
         status = "ready",
         type = "bug"
-    })
-<
 
 Telescope Keymaps ~
 

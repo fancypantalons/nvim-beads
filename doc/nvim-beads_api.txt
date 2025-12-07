@@ -71,6 +71,19 @@ Parameters ~
 Return ~
     `(table)`|`(nil)` |result| Parsed JSON |result| (sync) or `(nil)` (async)
 
+------------------------------------------------------------------------------
+                                                  *nvim-beads.execute_with_ui()*
+
+`execute_with_ui`({args}, {opts})
+
+Execute a bd command with smart UI routing.
+Whitelisted commands (list, search, blocked, ready) display in Telescope.
+Other commands execute in a terminal buffer.
+
+Parameters ~
+    {args} `(table)` Array of bd command arguments (e.g., {"list", "--priority", "1"})
+    {opts} `(table)`|`(nil)` |Options| (reserved for future use)
+
 
 WARNING: This file is auto-generated. Do not edit it!
 
