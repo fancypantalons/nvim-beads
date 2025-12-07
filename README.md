@@ -26,9 +26,8 @@ But, Beads is a command-line tool, and as a command-line tool, can be a bit diff
 - Create new issues without leaving your editor
 - Edit issue details in markdown-formatted buffers
 - Filter by status, type, priority, assignee using natural language
-- Fast lazy-loading
-- Clean Lua API for scripting [bd (beads)](https://github.com/steveyegge/beads) command-line tool
-- [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) (required, not optional)
+
+⚠️ Note: Beads is absolutely tied to the hip with [telescope-nvim](https://github.com/nvim-telescope/telescope.nvim), relying on it for the ticket listing UX. In the future that might change but for now Telescope is a very hard requirement for using this plugin.
 
 ## Installation
 
@@ -153,7 +152,7 @@ Execute a beads command and present the results in a nice, pretty way if possibl
 - `:Beads compact` - Compact the issues database
 - `:Beads cleanup` - Clean up orphaned dependencies
 - `:Beads sync` - Sync issues with git
-- `:Beads daemon` - Start the bd daemon
+- `:Beads daemon` - Manage the beads daemon
 
 ### Telescope Integration
 
