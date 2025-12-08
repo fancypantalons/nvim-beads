@@ -122,26 +122,20 @@ describe("nvim-beads (public API)", function()
             assert.equals("bd-123", received_id)
         end)
 
-        it("should show error when issue_id is nil", function()
-            nvim_beads.show(nil)
+        local invalid_issue_id_test_cases = {
+            { name = "nil", input = nil },
+            { name = "empty string", input = "" },
+            { name = "not a string", input = 123 },
+        }
 
-            assert.equals(1, #env.notifications)
-            assert.matches("issue_id is required", env.notifications[1].message)
-        end)
+        for _, test_case in ipairs(invalid_issue_id_test_cases) do
+            it("should show error when issue_id is " .. test_case.name, function()
+                nvim_beads.show(test_case.input)
 
-        it("should show error when issue_id is empty string", function()
-            nvim_beads.show("")
-
-            assert.equals(1, #env.notifications)
-            assert.matches("issue_id is required", env.notifications[1].message)
-        end)
-
-        it("should show error when issue_id is not a string", function()
-            nvim_beads.show(123)
-
-            assert.equals(1, #env.notifications)
-            assert.matches("issue_id is required", env.notifications[1].message)
-        end)
+                assert.equals(1, #env.notifications)
+                assert.matches("issue_id is required", env.notifications[1].message)
+            end)
+        end
     end)
 
     describe("create", function()
@@ -382,42 +376,36 @@ describe("nvim-beads (public API)", function()
             assert.equals("value", received_opts.some_opt)
         end)
 
-        it("should show error when args is nil", function()
-            nvim_beads.execute_with_ui(nil)
+        local invalid_args_test_cases = {
+            { name = "nil", input = nil },
+            { name = "not a table", input = "not a table" },
+            { name = "empty table", input = {} },
+        }
 
-            assert.equals(1, #env.notifications)
-            assert.matches("args must be a non%-empty table", env.notifications[1].message)
-        end)
+        for _, test_case in ipairs(invalid_args_test_cases) do
+            it("should show error when args is " .. test_case.name, function()
+                nvim_beads.execute_with_ui(test_case.input)
 
-        it("should show error when args is not a table", function()
-            nvim_beads.execute_with_ui("not a table")
-
-            assert.equals(1, #env.notifications)
-            assert.matches("args must be a non%-empty table", env.notifications[1].message)
-        end)
-
-        it("should show error when args is empty table", function()
-            nvim_beads.execute_with_ui({})
-
-            assert.equals(1, #env.notifications)
-            assert.matches("args must be a non%-empty table", env.notifications[1].message)
-        end)
+                assert.equals(1, #env.notifications)
+                assert.matches("args must be a non%-empty table", env.notifications[1].message)
+            end)
+        end
     end)
 
     describe("search()", function()
-        it("should validate query parameter is non-empty string", function()
-            nvim_beads.search("")
+        local invalid_query_test_cases = {
+            { name = "non-empty string", input = "" },
+            { name = "a string", input = nil },
+        }
 
-            assert.equals(1, #env.notifications)
-            assert.matches("query is required", env.notifications[1].message)
-        end)
+        for _, test_case in ipairs(invalid_query_test_cases) do
+            it("should validate query parameter is " .. test_case.name, function()
+                nvim_beads.search(test_case.input)
 
-        it("should validate query parameter is a string", function()
-            nvim_beads.search(nil)
-
-            assert.equals(1, #env.notifications)
-            assert.matches("query is required", env.notifications[1].message)
-        end)
+                assert.equals(1, #env.notifications)
+                assert.matches("query is required", env.notifications[1].message)
+            end)
+        end
 
         it("should split query into words and call execute_with_ui", function()
             local called = false

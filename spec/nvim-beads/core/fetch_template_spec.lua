@@ -22,117 +22,64 @@ describe("nvim-beads.core.fetch_template", function()
     end)
 
     describe("issue type validation", function()
-        it("should accept valid issue type: bug", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = '{"title": "", "type": "bug"}',
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
+        local valid_type_test_cases = {
+            { type = "bug" },
+            { type = "feature" },
+            { type = "task" },
+            { type = "epic" },
+            { type = "chore" },
+        }
 
-            local result, err = core.fetch_template("bug")
-            assert.is_nil(err)
-            assert.is_not_nil(result)
-        end)
+        for _, test_case in ipairs(valid_type_test_cases) do
+            it("should accept valid issue type: " .. test_case.type, function()
+                vim.system = function(_, _)
+                    return {
+                        wait = function()
+                            return {
+                                code = 0,
+                                stdout = '{"title": "", "type": "' .. test_case.type .. '"}',
+                                stderr = "",
+                            }
+                        end,
+                    }
+                end
 
-        it("should accept valid issue type: feature", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = '{"title": "", "type": "feature"}',
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
+                local result, err = core.fetch_template(test_case.type)
+                assert.is_nil(err)
+                assert.is_not_nil(result)
+            end)
+        end
 
-            local result, err = core.fetch_template("feature")
-            assert.is_nil(err)
-            assert.is_not_nil(result)
-        end)
+        local invalid_type_test_cases = {
+            {
+                name = "invalid issue type",
+                input = "invalid",
+                expected_error = "Invalid issue type 'invalid'",
+                additional_match = "bug, feature, task, epic, chore",
+            },
+            {
+                name = "empty string issue type",
+                input = "",
+                expected_error = "Invalid issue type",
+            },
+            {
+                name = "nil issue type",
+                input = nil,
+                expected_error = "Invalid issue type",
+            },
+        }
 
-        it("should accept valid issue type: task", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = '{"title": "", "type": "task"}',
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
-
-            local result, err = core.fetch_template("task")
-            assert.is_nil(err)
-            assert.is_not_nil(result)
-        end)
-
-        it("should accept valid issue type: epic", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = '{"title": "", "type": "epic"}',
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
-
-            local result, err = core.fetch_template("epic")
-            assert.is_nil(err)
-            assert.is_not_nil(result)
-        end)
-
-        it("should accept valid issue type: chore", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = '{"title": "", "type": "chore"}',
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
-
-            local result, err = core.fetch_template("chore")
-            assert.is_nil(err)
-            assert.is_not_nil(result)
-        end)
-
-        it("should reject invalid issue type", function()
-            local result, err = core.fetch_template("invalid")
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("Invalid issue type 'invalid'", err)
-            assert.matches("bug, feature, task, epic, chore", err)
-        end)
-
-        it("should reject empty string issue type", function()
-            local result, err = core.fetch_template("")
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("Invalid issue type", err)
-        end)
-
-        it("should reject nil issue type", function()
-            local result, err = core.fetch_template(nil)
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("Invalid issue type", err)
-        end)
+        for _, test_case in ipairs(invalid_type_test_cases) do
+            it("should reject " .. test_case.name, function()
+                local result, err = core.fetch_template(test_case.input)
+                assert.is_nil(result)
+                assert.is_not_nil(err)
+                assert.matches(test_case.expected_error, err)
+                if test_case.additional_match then
+                    assert.matches(test_case.additional_match, err)
+                end
+            end)
+        end
     end)
 
     describe("command construction", function()

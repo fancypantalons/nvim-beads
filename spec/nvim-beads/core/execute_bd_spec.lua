@@ -20,26 +20,20 @@ describe("nvim-beads.core.execute_bd", function()
     end)
 
     describe("argument validation", function()
-        it("should return error when args is not a table", function()
-            local result, err = core.execute_bd("not a table")
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("args must be a table", err)
-        end)
+        local invalid_args_test_cases = {
+            { name = "not a table", input = "not a table" },
+            { name = "nil", input = nil },
+            { name = "a number", input = 42 },
+        }
 
-        it("should return error when args is nil", function()
-            local result, err = core.execute_bd(nil)
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("args must be a table", err)
-        end)
-
-        it("should return error when args is a number", function()
-            local result, err = core.execute_bd(42)
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("args must be a table", err)
-        end)
+        for _, test_case in ipairs(invalid_args_test_cases) do
+            it("should return error when args is " .. test_case.name, function()
+                local result, err = core.execute_bd(test_case.input)
+                assert.is_nil(result)
+                assert.is_not_nil(err)
+                assert.matches("args must be a table", err)
+            end)
+        end
     end)
 
     describe("successful command execution", function()
@@ -170,124 +164,78 @@ describe("nvim-beads.core.execute_bd", function()
     end)
 
     describe("command failure handling", function()
-        it("should return error when command fails with non-zero exit code", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 1,
-                            stdout = "",
-                            stderr = "Command not found",
-                        }
-                    end,
-                }
-            end
+        local failure_test_cases = {
+            {
+                name = "command fails with non-zero exit code",
+                code = 1,
+                stderr = "Command not found",
+                expected_matches = { "bd command failed", "exit code 1", "Command not found" },
+            },
+            {
+                name = "empty stderr in error message",
+                code = 127,
+                stderr = "",
+                expected_matches = { "exit code 127", "no error output" },
+            },
+            {
+                name = "nil stderr in error message",
+                code = 1,
+                stderr = nil,
+                expected_matches = { "no error output" },
+            },
+        }
 
-            local result, err = core.execute_bd({ "invalid_command" })
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("bd command failed", err)
-            assert.matches("exit code 1", err)
-            assert.matches("Command not found", err)
-        end)
+        for _, test_case in ipairs(failure_test_cases) do
+            it("should handle " .. test_case.name, function()
+                vim.system = function(_, _)
+                    return {
+                        wait = function()
+                            return {
+                                code = test_case.code,
+                                stdout = "",
+                                stderr = test_case.stderr,
+                            }
+                        end,
+                    }
+                end
 
-        it("should handle empty stderr in error message", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 127,
-                            stdout = "",
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
-
-            local result, err = core.execute_bd({ "missing_command" })
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("exit code 127", err)
-            assert.matches("no error output", err)
-        end)
-
-        it("should handle nil stderr in error message", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 1,
-                            stdout = "",
-                            stderr = nil,
-                        }
-                    end,
-                }
-            end
-
-            local result, err = core.execute_bd({ "failing_command" })
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("no error output", err)
-        end)
+                local result, err = core.execute_bd({ "test_command" })
+                assert.is_nil(result)
+                assert.is_not_nil(err)
+                for _, pattern in ipairs(test_case.expected_matches) do
+                    assert.matches(pattern, err)
+                end
+            end)
+        end
     end)
 
     describe("JSON parsing error handling", function()
-        it("should return error when output is not valid JSON", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = "This is not JSON",
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
+        local json_error_test_cases = {
+            { name = "not valid JSON", stdout = "This is not JSON" },
+            { name = "incomplete", stdout = '{"result": [' },
+            { name = "empty string", stdout = "" },
+        }
 
-            local result, err = core.execute_bd({ "ready" })
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("Failed to parse JSON output", err)
-        end)
+        for _, test_case in ipairs(json_error_test_cases) do
+            it("should return error when output is " .. test_case.name, function()
+                vim.system = function(_, _)
+                    return {
+                        wait = function()
+                            return {
+                                code = 0,
+                                stdout = test_case.stdout,
+                                stderr = "",
+                            }
+                        end,
+                    }
+                end
 
-        it("should return error when JSON is incomplete", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = '{"result": [',
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
-
-            local result, err = core.execute_bd({ "ready" })
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("Failed to parse JSON output", err)
-        end)
-
-        it("should return error when JSON is empty string", function()
-            vim.system = function(_, _)
-                return {
-                    wait = function()
-                        return {
-                            code = 0,
-                            stdout = "",
-                            stderr = "",
-                        }
-                    end,
-                }
-            end
-
-            local result, err = core.execute_bd({ "ready" })
-            assert.is_nil(result)
-            assert.is_not_nil(err)
-            assert.matches("Failed to parse JSON output", err)
-        end)
+                local result, err = core.execute_bd({ "ready" })
+                assert.is_nil(result)
+                assert.is_not_nil(err)
+                assert.matches("Failed to parse JSON output", err)
+            end)
+        end
     end)
 
     describe("complex JSON structures", function()
