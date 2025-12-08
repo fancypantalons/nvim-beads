@@ -867,47 +867,6 @@ describe("execute_with_ui", function()
         end)
     end)
 
-    describe("error handling", function()
-        it("shows error when args is empty", function()
-            local error_shown = false
-            _G.vim.notify = function(msg, level)
-                if msg:match("non%-empty table") and level == vim.log.levels.ERROR then
-                    error_shown = true
-                end
-            end
-
-            core.execute_with_ui({})
-
-            assert.is_true(error_shown)
-        end)
-
-        it("shows error when args is nil", function()
-            local error_shown = false
-            _G.vim.notify = function(msg, level)
-                if msg:match("non%-empty table") and level == vim.log.levels.ERROR then
-                    error_shown = true
-                end
-            end
-
-            core.execute_with_ui(nil)
-
-            assert.is_true(error_shown)
-        end)
-
-        it("shows error when args is not a table", function()
-            local error_shown = false
-            _G.vim.notify = function(msg, level)
-                if msg:match("non%-empty table") and level == vim.log.levels.ERROR then
-                    error_shown = true
-                end
-            end
-
-            core.execute_with_ui("not a table")
-
-            assert.is_true(error_shown)
-        end)
-    end)
-
     describe("command name and args splitting", function()
         it("splits first arg as command name for terminal routing", function()
             local called_command

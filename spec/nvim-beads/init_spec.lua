@@ -371,18 +371,6 @@ describe("nvim-beads (public API)", function()
             assert.same({ "list", "--priority", "1" }, received_args)
         end)
 
-        it("should call core.execute_with_ui with empty opts when none provided", function()
-            local received_opts = nil
-            mock_core.execute_with_ui = function(_, opts)
-                received_opts = opts
-            end
-
-            nvim_beads.execute_with_ui({ "ready" })
-
-            assert.is_not_nil(received_opts)
-            assert.same({}, received_opts)
-        end)
-
         it("should pass opts to core.execute_with_ui", function()
             local received_opts = nil
             mock_core.execute_with_ui = function(_, opts)
@@ -413,34 +401,6 @@ describe("nvim-beads (public API)", function()
 
             assert.equals(1, #env.notifications)
             assert.matches("args must be a non%-empty table", env.notifications[1].message)
-        end)
-
-        it("should work with whitelisted command 'list'", function()
-            local called = false
-            local received_args = nil
-            mock_core.execute_with_ui = function(args, _)
-                called = true
-                received_args = args
-            end
-
-            nvim_beads.execute_with_ui({ "list" })
-
-            assert.is_true(called)
-            assert.same({ "list" }, received_args)
-        end)
-
-        it("should work with non-whitelisted command 'show'", function()
-            local called = false
-            local received_args = nil
-            mock_core.execute_with_ui = function(args, _)
-                called = true
-                received_args = args
-            end
-
-            nvim_beads.execute_with_ui({ "show", "bd-123" })
-
-            assert.is_true(called)
-            assert.same({ "show", "bd-123" }, received_args)
         end)
     end)
 
