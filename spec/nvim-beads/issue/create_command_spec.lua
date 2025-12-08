@@ -3,20 +3,7 @@
 
 describe("nvim-beads.issue.diff", function()
     local diff
-
-    -- Helper function to check if a command table contains a flag with value
-    local function cmd_has_flag(cmd, flag, value)
-        for i = 1, #cmd do
-            if cmd[i] == flag then
-                if value == nil then
-                    return true
-                elseif i + 1 <= #cmd and cmd[i + 1] == tostring(value) then
-                    return true
-                end
-            end
-        end
-        return false
-    end
+    local assertions = require("test_utilities.assertions")
 
     before_each(function()
         -- Clear the module cache to get fresh instance
@@ -179,7 +166,7 @@ describe("nvim-beads.issue.diff", function()
                     local command, err = diff.build_create_command(test_case.parsed_issue)
 
                     assert.is_nil(err)
-                    assert.is_true(cmd_has_flag(command, test_case.expected_flag, test_case.expected_value))
+                    assertions.assert_command_has_flag(command, test_case.expected_flag, test_case.expected_value)
                 end)
             end
         end)
@@ -223,7 +210,10 @@ describe("nvim-beads.issue.diff", function()
                     local command, err = diff.build_create_command(test_case.parsed_issue)
 
                     assert.is_nil(err)
-                    assert.is_false(cmd_has_flag(command, test_case.omitted_flag))
+                    -- Verify flag is not present in command
+                    for i = 1, #command do
+                        assert.not_equals(test_case.omitted_flag, command[i], "Flag should not be present")
+                    end
                 end)
             end
         end)
@@ -263,7 +253,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(cmd_has_flag(command, "--description", "The user's session wasn't saved"))
+                assertions.assert_command_has_flag(command, "--description", "The user's session wasn't saved")
             end)
 
             it("should handle newlines in description", function()
@@ -276,7 +266,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(cmd_has_flag(command, "--description", "Line 1\nLine 2\nLine 3"))
+                assertions.assert_command_has_flag(command, "--description", "Line 1\nLine 2\nLine 3")
             end)
 
             it("should handle special shell characters in arguments", function()
@@ -301,7 +291,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(cmd_has_flag(command, "--acceptance", "User's can login successfully"))
+                assertions.assert_command_has_flag(command, "--acceptance", "User's can login successfully")
             end)
 
             it("should handle single quotes in design", function()
@@ -314,7 +304,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(cmd_has_flag(command, "--design", "Use the system's default config"))
+                assertions.assert_command_has_flag(command, "--design", "Use the system's default config")
             end)
 
             it("should handle single quotes in labels", function()
@@ -327,7 +317,7 @@ describe("nvim-beads.issue.diff", function()
                 local command, err = diff.build_create_command(parsed_issue)
 
                 assert.is_nil(err)
-                assert.is_true(cmd_has_flag(command, "--labels", "user's-bug,frontend"))
+                assertions.assert_command_has_flag(command, "--labels", "user's-bug,frontend")
             end)
         end)
 
@@ -350,18 +340,20 @@ describe("nvim-beads.issue.diff", function()
                 assert.is_nil(err)
                 assert.is_not_nil(command)
 
-                -- Verify all components are present
-                assert.same("bd", command[1])
-                assert.same("create", command[2])
-                assert.same("Comprehensive issue", command[3])
-                assert.is_true(cmd_has_flag(command, "--type", "feature"))
-                assert.is_true(cmd_has_flag(command, "--priority", 1))
-                assert.is_true(cmd_has_flag(command, "--description", "This is a detailed description"))
-                assert.is_true(cmd_has_flag(command, "--acceptance", "Must meet all criteria"))
-                assert.is_true(cmd_has_flag(command, "--design", "Follow MVC pattern"))
-                assert.is_true(cmd_has_flag(command, "--labels", "backend,api,critical"))
-                assert.is_true(cmd_has_flag(command, "--parent", "bd-100"))
-                assert.is_true(cmd_has_flag(command, "--deps", "blocks:bd-50,blocks:bd-60"))
+                -- Verify command structure
+                assertions.assert_bd_command(command, "create", { "Comprehensive issue" })
+
+                -- Verify all flags are present
+                assertions.assert_command_has_flags(command, {
+                    ["--type"] = "feature",
+                    ["--priority"] = "1",
+                    ["--description"] = "This is a detailed description",
+                    ["--acceptance"] = "Must meet all criteria",
+                    ["--design"] = "Follow MVC pattern",
+                    ["--labels"] = "backend,api,critical",
+                    ["--parent"] = "bd-100",
+                    ["--deps"] = "blocks:bd-50,blocks:bd-60",
+                })
             end)
         end)
 
@@ -399,7 +391,7 @@ describe("nvim-beads.issue.diff", function()
                     local command, err = diff.build_create_command(test_case.parsed_issue)
 
                     assert.is_nil(err)
-                    assert.is_true(cmd_has_flag(command, "--priority", test_case.expected_value))
+                    assertions.assert_command_has_flag(command, "--priority", test_case.expected_value)
                 end)
             end
         end)

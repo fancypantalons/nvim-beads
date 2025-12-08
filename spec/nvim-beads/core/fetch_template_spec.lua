@@ -180,15 +180,8 @@ describe("nvim-beads.core.fetch_template", function()
             assert.is_nil(err)
             assert.is_not_nil(executed_cmd)
 
-            -- Check for --json flag (value doesn't matter, just presence)
-            local has_json = false
-            for _, arg in ipairs(executed_cmd) do
-                if arg == "--json" then
-                    has_json = true
-                    break
-                end
-            end
-            assert.is_true(has_json)
+            -- Check for --json flag presence
+            assert.is_true(vim.tbl_contains(executed_cmd, "--json"))
         end)
     end)
 

@@ -83,15 +83,10 @@ describe("nvim-beads.core.execute_bd_async", function()
         end)
 
         it("should add --json flag automatically", function()
-            local cmd_has_json = false
+            local captured_cmd = nil
 
             vim.system = function(cmd, _, callback)
-                for _, arg in ipairs(cmd) do
-                    if arg == "--json" then
-                        cmd_has_json = true
-                        break
-                    end
-                end
+                captured_cmd = cmd
 
                 vim.schedule(function()
                     callback({
@@ -111,7 +106,8 @@ describe("nvim-beads.core.execute_bd_async", function()
                 return callback_called
             end)
 
-            assert.is_true(cmd_has_json)
+            -- Verify --json flag was added to command
+            assert.is_true(vim.tbl_contains(captured_cmd, "--json"))
         end)
     end)
 
