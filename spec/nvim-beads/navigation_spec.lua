@@ -1,11 +1,11 @@
 --- Unit tests for navigation module
 
+local env = require("test_utilities.env")
+
 describe("navigation", function()
     local navigation
     local core_module
     local buffer_module
-    local original_vim_fn
-    local original_vim_keymap
 
     before_each(function()
         -- Clear module cache
@@ -13,19 +13,16 @@ describe("navigation", function()
         package.loaded["nvim-beads.core"] = nil
         package.loaded["nvim-beads.buffer"] = nil
 
+        -- Setup mock environment
+        env.setup_mock_env()
+
         navigation = require("nvim-beads.navigation")
         core_module = require("nvim-beads.core")
         buffer_module = require("nvim-beads.buffer")
-
-        -- Save originals
-        original_vim_fn = vim.fn
-        original_vim_keymap = vim.keymap
     end)
 
     after_each(function()
-        -- Restore originals
-        vim.fn = original_vim_fn
-        vim.keymap = original_vim_keymap
+        env.teardown_mock_env()
     end)
 
     describe("navigate_to_issue_at_cursor", function()
@@ -197,13 +194,6 @@ describe("navigation", function()
                 end,
             }
 
-            -- Mock notifications
-            local notifications = {}
-            local original_notify = vim.notify
-            vim.notify = function(msg, level)
-                table.insert(notifications, { message = msg, level = level })
-            end
-
             local buffer_opened = false
             buffer_module.open_issue_buffer = function(_issue_id)
                 buffer_opened = true
@@ -212,13 +202,10 @@ describe("navigation", function()
 
             local success = navigation.navigate_to_issue_at_cursor()
 
-            -- Restore notify
-            vim.notify = original_notify
-
             assert.is_false(success)
             assert.is_false(buffer_opened)
             -- Should have warning about prefix detection failure
-            assert.is_true(#notifications > 0)
+            assert.is_true(#env.notifications > 0)
         end)
 
         it("should handle special characters in prefix", function()
@@ -268,22 +255,12 @@ describe("navigation", function()
                 end,
             }
 
-            -- Mock notifications
-            local notifications = {}
-            local original_notify = vim.notify
-            vim.notify = function(msg, level)
-                table.insert(notifications, { message = msg, level = level })
-            end
-
             local success = navigation.navigate_to_issue_at_cursor({ notify_on_miss = true })
 
-            -- Restore notify
-            vim.notify = original_notify
-
             assert.is_false(success)
-            assert.equals(1, #notifications)
-            assert.equals("No issue ID found under cursor", notifications[1].message)
-            assert.equals(vim.log.levels.WARN, notifications[1].level)
+            assert.equals(1, #env.notifications)
+            assert.equals("No issue ID found under cursor", env.notifications[1].message)
+            assert.equals(vim.log.levels.WARN, env.notifications[1].level)
         end)
 
         it("should not notify when no issue ID found and notify_on_miss is false", function()
@@ -303,21 +280,11 @@ describe("navigation", function()
                 end,
             }
 
-            -- Mock notifications
-            local notifications = {}
-            local original_notify = vim.notify
-            vim.notify = function(msg, level)
-                table.insert(notifications, { message = msg, level = level })
-            end
-
             local success = navigation.navigate_to_issue_at_cursor({ notify_on_miss = false })
-
-            -- Restore notify
-            vim.notify = original_notify
 
             assert.is_false(success)
             -- Should have no notifications (silent failure)
-            assert.equals(0, #notifications)
+            assert.equals(0, #env.notifications)
         end)
 
         it("should default to silent (no notification) when opts not provided", function()
@@ -337,21 +304,11 @@ describe("navigation", function()
                 end,
             }
 
-            -- Mock notifications
-            local notifications = {}
-            local original_notify = vim.notify
-            vim.notify = function(msg, level)
-                table.insert(notifications, { message = msg, level = level })
-            end
-
             local success = navigation.navigate_to_issue_at_cursor()
-
-            -- Restore notify
-            vim.notify = original_notify
 
             assert.is_false(success)
             -- Should have no notifications by default
-            assert.equals(0, #notifications)
+            assert.equals(0, #env.notifications)
         end)
     end)
 

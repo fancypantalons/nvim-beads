@@ -1,30 +1,19 @@
 --- Integration tests for plugin-level commands
 --- Tests :BeadsCreateIssue command validation and integration
 
-describe("BeadsCreateIssue command", function()
-    local original_vim_system
-    local original_notify
-    local notifications
+local env = require("test_utilities.env")
 
+describe("BeadsCreateIssue command", function()
     before_each(function()
         -- Clear module cache
         package.loaded["nvim-beads.core"] = nil
 
-        -- Save original functions
-        original_vim_system = vim.system
-        original_notify = vim.notify
-
-        -- Mock vim.notify to capture notifications
-        notifications = {}
-        vim.notify = function(msg, level)
-            table.insert(notifications, { msg = msg, level = level })
-        end
+        -- Setup mock environment
+        env.setup_mock_env()
     end)
 
     after_each(function()
-        -- Restore original functions
-        vim.system = original_vim_system
-        vim.notify = original_notify
+        env.teardown_mock_env()
     end)
 
     describe("argument validation", function()
@@ -45,10 +34,10 @@ describe("BeadsCreateIssue command", function()
 
             command_func({ fargs = {} })
 
-            assert.equals(2, #notifications)
-            assert.matches("missing issue type", notifications[1].msg)
-            assert.equals(vim.log.levels.ERROR, notifications[1].level)
-            assert.matches("Valid types", notifications[2].msg)
+            assert.equals(2, #env.notifications)
+            assert.matches("missing issue type", env.notifications[1].message)
+            assert.equals(vim.log.levels.ERROR, env.notifications[1].level)
+            assert.matches("Valid types", env.notifications[2].message)
         end)
 
         it("should show error when too many arguments provided", function()
@@ -66,9 +55,9 @@ describe("BeadsCreateIssue command", function()
 
             command_func({ fargs = { "task", "extra" } })
 
-            assert.equals(1, #notifications)
-            assert.matches("too many arguments", notifications[1].msg)
-            assert.equals(vim.log.levels.ERROR, notifications[1].level)
+            assert.equals(1, #env.notifications)
+            assert.matches("too many arguments", env.notifications[1].message)
+            assert.equals(vim.log.levels.ERROR, env.notifications[1].level)
         end)
     end)
 
@@ -200,9 +189,9 @@ describe("BeadsCreateIssue command", function()
 
             command_func({ fargs = { "invalid" } })
 
-            assert.equals(1, #notifications)
-            assert.matches("Invalid issue type", notifications[1].msg)
-            assert.equals(vim.log.levels.ERROR, notifications[1].level)
+            assert.equals(1, #env.notifications)
+            assert.matches("Invalid issue type", env.notifications[1].message)
+            assert.equals(vim.log.levels.ERROR, env.notifications[1].level)
         end)
     end)
 

@@ -1,9 +1,9 @@
+local env = require("test_utilities.env")
+
 describe("telescope nvim_beads extension", function()
     local telescope_picker
     local telescope_finders
     local extension
-
-    local original_vim_system
 
     -- Sample issue data
     local sample_issues = {
@@ -19,8 +19,10 @@ describe("telescope nvim_beads extension", function()
     }
 
     before_each(function()
-        -- Mock vim.system
-        original_vim_system = vim.system
+        -- Setup mock environment
+        env.setup_mock_env()
+
+        -- Override vim.system with custom behavior for telescope tests
         vim.system = function(cmd, _, callback)
             local stdout = ""
             if cmd[2] == "list" then
@@ -91,8 +93,8 @@ describe("telescope nvim_beads extension", function()
     end)
 
     after_each(function()
-        vim.system = original_vim_system
         _G.test_results = nil
+        env.teardown_mock_env()
     end)
 
     it("should register with telescope", function()
