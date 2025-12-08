@@ -1,6 +1,7 @@
 --- Integration tests for execute_with_ui infrastructure
 
 local env = require("test_utilities.env")
+local assertions = require("test_utilities.assertions")
 
 describe("execute_with_ui", function()
     local core
@@ -206,6 +207,31 @@ describe("execute_with_ui", function()
             core.execute_with_ui({ "list", "--status", "open" })
 
             assert.same({ "list", "--status", "open" }, called_with_bd_args)
+        end)
+    end)
+
+    describe("argument validation and error handling", function()
+        it("shows error when args is empty", function()
+            assertions.assert_error_notification(function()
+                core.execute_with_ui({})
+            end, "non%-empty table")
+        end)
+
+        it("shows error when args is not a table", function()
+            assertions.assert_error_notification(function()
+                core.execute_with_ui("not a table")
+            end, ".")
+        end)
+
+        it("handles nil opts gracefully", function()
+            local called_with_opts
+            core.show_issues = function(_, opts)
+                called_with_opts = opts
+            end
+
+            core.execute_with_ui({ "list" }, nil)
+
+            assert.same({}, called_with_opts)
         end)
     end)
 end)
