@@ -1,12 +1,17 @@
 --- Unit tests for public Lua API (nvim-beads)
 --- Tests the public interface that users will call
 
+local env = require("test_utilities.env")
+
 describe("nvim-beads (public API)", function()
     local nvim_beads
     local mock_core
     local mock_buffer
 
     before_each(function()
+        -- Set up mock vim environment
+        env.setup_mock_env()
+
         -- Clear module cache
         package.loaded["nvim-beads"] = nil
         package.loaded["nvim-beads.core"] = nil
@@ -47,6 +52,9 @@ describe("nvim-beads (public API)", function()
         package.loaded["nvim-beads"] = nil
         package.loaded["nvim-beads.core"] = nil
         package.loaded["nvim-beads.buffer"] = nil
+
+        -- Teardown mock vim environment
+        env.teardown_mock_env()
     end)
 
     describe("list", function()
@@ -115,45 +123,24 @@ describe("nvim-beads (public API)", function()
         end)
 
         it("should show error when issue_id is nil", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _level)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.show(nil)
 
-            assert.is_true(notified)
-            assert.matches("issue_id is required", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("issue_id is required", env.notifications[1].message)
         end)
 
         it("should show error when issue_id is empty string", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _level)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.show("")
 
-            assert.is_true(notified)
-            assert.matches("issue_id is required", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("issue_id is required", env.notifications[1].message)
         end)
 
         it("should show error when issue_id is not a string", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _level)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.show(123)
 
-            assert.is_true(notified)
-            assert.matches("issue_id is required", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("issue_id is required", env.notifications[1].message)
         end)
     end)
 
@@ -223,17 +210,10 @@ describe("nvim-beads (public API)", function()
         end)
 
         it("should show error for invalid issue type", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _level)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.create({ type = "invalid" })
 
-            assert.is_true(notified)
-            assert.matches("invalid issue type", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("invalid issue type", env.notifications[1].message)
         end)
 
         it("should call buffer.open_new_issue_buffer with type and template", function()
@@ -256,13 +236,6 @@ describe("nvim-beads (public API)", function()
         end)
 
         it("should show error when buffer creation fails", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _level)
-                notified = true
-                notify_msg = msg
-            end
-
             mock_core.fetch_template = function()
                 return { type = "task" }
             end
@@ -272,8 +245,8 @@ describe("nvim-beads (public API)", function()
 
             nvim_beads.create({ type = "task" })
 
-            assert.is_true(notified)
-            assert.matches("Failed to create issue buffer", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("Failed to create issue buffer", env.notifications[1].message)
         end)
     end)
 
@@ -422,45 +395,24 @@ describe("nvim-beads (public API)", function()
         end)
 
         it("should show error when args is nil", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.execute_with_ui(nil)
 
-            assert.is_true(notified)
-            assert.matches("args must be a non%-empty table", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("args must be a non%-empty table", env.notifications[1].message)
         end)
 
         it("should show error when args is not a table", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.execute_with_ui("not a table")
 
-            assert.is_true(notified)
-            assert.matches("args must be a non%-empty table", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("args must be a non%-empty table", env.notifications[1].message)
         end)
 
         it("should show error when args is empty table", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.execute_with_ui({})
 
-            assert.is_true(notified)
-            assert.matches("args must be a non%-empty table", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("args must be a non%-empty table", env.notifications[1].message)
         end)
 
         it("should work with whitelisted command 'list'", function()
@@ -494,31 +446,17 @@ describe("nvim-beads (public API)", function()
 
     describe("search()", function()
         it("should validate query parameter is non-empty string", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.search("")
 
-            assert.is_true(notified)
-            assert.matches("query is required", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("query is required", env.notifications[1].message)
         end)
 
         it("should validate query parameter is a string", function()
-            local notified = false
-            local notify_msg = nil
-            vim.notify = function(msg, _)
-                notified = true
-                notify_msg = msg
-            end
-
             nvim_beads.search(nil)
 
-            assert.is_true(notified)
-            assert.matches("query is required", notify_msg)
+            assert.equals(1, #env.notifications)
+            assert.matches("query is required", env.notifications[1].message)
         end)
 
         it("should split query into words and call execute_with_ui", function()
