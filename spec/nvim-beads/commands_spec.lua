@@ -502,8 +502,8 @@ describe("nvim-beads.issue.diff", function()
     end)
 end)
 
---- Tests for search command argument parsing
-describe("search command", function()
+--- Tests for search, list, and ready command filter extraction
+describe("command filter extraction", function()
     local commands
     local mock_beads
     local mock_constants
@@ -552,107 +552,114 @@ describe("search command", function()
         env.teardown_mock_env()
     end)
 
-    describe("argument parsing", function()
-        it("parses query without filters", function()
-            local called_with_bd_args
-            local called_with_filter
-            mock_beads.execute_with_ui = function(bd_args, filter)
-                called_with_bd_args = bd_args
-                called_with_filter = filter
-            end
+    -- Shared helper function for filter extraction testing
+    local function assert_filter_extraction(input_args, expected_bd_args, expected_filter)
+        local called_with_bd_args
+        local called_with_filter
+        mock_beads.execute_with_ui = function(bd_args, filter)
+            called_with_bd_args = bd_args
+            called_with_filter = filter
+        end
 
-            commands.execute({ fargs = { "search", "foo", "bar" } })
+        commands.execute({ fargs = input_args })
 
-            assert.same({ "search", "foo", "bar" }, called_with_bd_args)
-            assert.same({}, called_with_filter)
-        end)
+        assert.same(expected_bd_args, called_with_bd_args)
+        assert.same(expected_filter, called_with_filter)
+    end
 
-        it("extracts status filter from args", function()
-            local called_with_bd_args
-            local called_with_filter
-            mock_beads.execute_with_ui = function(bd_args, filter)
-                called_with_bd_args = bd_args
-                called_with_filter = filter
-            end
+    describe("filter extraction patterns", function()
+        local filter_test_cases = {
+            -- Search command cases
+            {
+                name = "search: query without filters",
+                input = { "search", "foo", "bar" },
+                expected_bd_args = { "search", "foo", "bar" },
+                expected_filter = {},
+            },
+            {
+                name = "search: status filter extraction",
+                input = { "search", "open", "foo" },
+                expected_bd_args = { "search", "foo" },
+                expected_filter = { status = "open" },
+            },
+            {
+                name = "search: type filter extraction",
+                input = { "search", "bugs", "foo" },
+                expected_bd_args = { "search", "foo" },
+                expected_filter = { type = "bug" },
+            },
+            {
+                name = "search: plural forms via PLURAL_MAP",
+                input = { "search", "features", "authentication" },
+                expected_bd_args = { "search", "authentication" },
+                expected_filter = { type = "feature" },
+            },
+            {
+                name = "search: combined filters",
+                input = { "search", "open", "bugs", "foo" },
+                expected_bd_args = { "search", "foo" },
+                expected_filter = { status = "open", type = "bug" },
+            },
+            {
+                name = "search: filters in any order",
+                input = { "search", "bugs", "open", "foo" },
+                expected_bd_args = { "search", "foo" },
+                expected_filter = { status = "open", type = "bug" },
+            },
+            {
+                name = "search: invalid filter treated as query term",
+                input = { "search", "invalid", "foo" },
+                expected_bd_args = { "search", "invalid", "foo" },
+                expected_filter = {},
+            },
+            -- List command cases
+            {
+                name = "list: no filters",
+                input = { "list" },
+                expected_bd_args = { "list" },
+                expected_filter = {},
+            },
+            {
+                name = "list: status filter",
+                input = { "list", "open" },
+                expected_bd_args = { "list" },
+                expected_filter = { status = "open" },
+            },
+            {
+                name = "list: type filter",
+                input = { "list", "bugs" },
+                expected_bd_args = { "list" },
+                expected_filter = { type = "bug" },
+            },
+            {
+                name = "list: status and type filters",
+                input = { "list", "open", "bugs" },
+                expected_bd_args = { "list" },
+                expected_filter = { status = "open", type = "bug" },
+            },
+            -- Ready command cases
+            {
+                name = "ready: no filters",
+                input = { "ready" },
+                expected_bd_args = { "ready" },
+                expected_filter = {},
+            },
+            {
+                name = "ready: type filter",
+                input = { "ready", "features" },
+                expected_bd_args = { "ready" },
+                expected_filter = { type = "feature" },
+            },
+        }
 
-            commands.execute({ fargs = { "search", "open", "foo" } })
-
-            assert.same({ "search", "foo" }, called_with_bd_args)
-            assert.same({ status = "open" }, called_with_filter)
-        end)
-
-        it("extracts type filter from args", function()
-            local called_with_bd_args
-            local called_with_filter
-            mock_beads.execute_with_ui = function(bd_args, filter)
-                called_with_bd_args = bd_args
-                called_with_filter = filter
-            end
-
-            commands.execute({ fargs = { "search", "bugs", "foo" } })
-
-            assert.same({ "search", "foo" }, called_with_bd_args)
-            assert.same({ type = "bug" }, called_with_filter)
-        end)
-
-        it("handles plural forms via PLURAL_MAP", function()
-            local called_with_bd_args
-            local called_with_filter
-            mock_beads.execute_with_ui = function(bd_args, filter)
-                called_with_bd_args = bd_args
-                called_with_filter = filter
-            end
-
-            commands.execute({ fargs = { "search", "features", "authentication" } })
-
-            assert.same({ "search", "authentication" }, called_with_bd_args)
-            assert.same({ type = "feature" }, called_with_filter)
-        end)
-
-        it("extracts combined filters", function()
-            local called_with_bd_args
-            local called_with_filter
-            mock_beads.execute_with_ui = function(bd_args, filter)
-                called_with_bd_args = bd_args
-                called_with_filter = filter
-            end
-
-            commands.execute({ fargs = { "search", "open", "bugs", "foo" } })
-
-            assert.same({ "search", "foo" }, called_with_bd_args)
-            assert.same({ status = "open", type = "bug" }, called_with_filter)
-        end)
-
-        it("handles filters in any order", function()
-            local called_with_bd_args
-            local called_with_filter
-            mock_beads.execute_with_ui = function(bd_args, filter)
-                called_with_bd_args = bd_args
-                called_with_filter = filter
-            end
-
-            commands.execute({ fargs = { "search", "bugs", "open", "foo" } })
-
-            assert.same({ "search", "foo" }, called_with_bd_args)
-            assert.same({ status = "open", type = "bug" }, called_with_filter)
-        end)
-
-        it("treats invalid filter as query term", function()
-            local called_with_bd_args
-            local called_with_filter
-            mock_beads.execute_with_ui = function(bd_args, filter)
-                called_with_bd_args = bd_args
-                called_with_filter = filter
-            end
-
-            commands.execute({ fargs = { "search", "invalid", "foo" } })
-
-            assert.same({ "search", "invalid", "foo" }, called_with_bd_args)
-            assert.same({}, called_with_filter)
-        end)
+        for _, test_case in ipairs(filter_test_cases) do
+            it(test_case.name, function()
+                assert_filter_extraction(test_case.input, test_case.expected_bd_args, test_case.expected_filter)
+            end)
+        end
     end)
 
-    describe("error handling", function()
+    describe("search command error handling", function()
         it("errors when no query provided", function()
             local error_shown = false
             _G.vim.notify = function(msg, level)
@@ -899,149 +906,6 @@ describe("execute_with_ui", function()
             core.execute_with_ui({ "list", "--status", "open" })
 
             assert.same({ "list", "--status", "open" }, called_with_bd_args)
-        end)
-    end)
-end)
-
---- Tests for list and ready command argument building
-describe("list and ready commands", function()
-    local commands
-    local mock_beads
-    local mock_constants
-
-    before_each(function()
-        env.setup_mock_env()
-
-        -- Mock constants
-        mock_constants = {
-            STATUSES = {
-                open = true,
-                closed = true,
-                in_progress = true,
-                blocked = true,
-            },
-            ISSUE_TYPES = {
-                bug = true,
-                feature = true,
-                task = true,
-                epic = true,
-                chore = true,
-            },
-            PLURAL_MAP = {
-                bugs = "bug",
-                features = "feature",
-                tasks = "task",
-                epics = "epic",
-                chores = "chore",
-            },
-        }
-
-        -- Mock beads module
-        mock_beads = {
-            execute_with_ui = function() end,
-        }
-
-        package.loaded["nvim-beads.constants"] = mock_constants
-        package.loaded["nvim-beads"] = mock_beads
-
-        -- Load commands module
-        package.loaded["nvim-beads.commands"] = nil
-        commands = require("nvim-beads.commands")
-    end)
-
-    after_each(function()
-        env.teardown_mock_env()
-    end)
-
-    describe("list command", function()
-        it("builds bd_args with 'list' command", function()
-            local called_bd_args
-            mock_beads.execute_with_ui = function(bd_args)
-                called_bd_args = bd_args
-            end
-
-            commands.execute({ fargs = { "list" } })
-
-            assert.same({ "list" }, called_bd_args)
-        end)
-
-        it("builds filter with status from args", function()
-            local called_filter
-            mock_beads.execute_with_ui = function(_, filter)
-                called_filter = filter
-            end
-
-            commands.execute({ fargs = { "list", "open" } })
-
-            assert.same({ status = "open" }, called_filter)
-        end)
-
-        it("builds filter with type from args", function()
-            local called_filter
-            mock_beads.execute_with_ui = function(_, filter)
-                called_filter = filter
-            end
-
-            commands.execute({ fargs = { "list", "bugs" } })
-
-            assert.same({ type = "bug" }, called_filter)
-        end)
-
-        it("builds filter with both status and type", function()
-            local called_filter
-            mock_beads.execute_with_ui = function(_, filter)
-                called_filter = filter
-            end
-
-            commands.execute({ fargs = { "list", "open", "bugs" } })
-
-            assert.same({ status = "open", type = "bug" }, called_filter)
-        end)
-
-        it("preserves bd_args as just 'list' when filters are extracted", function()
-            local called_bd_args
-            mock_beads.execute_with_ui = function(bd_args)
-                called_bd_args = bd_args
-            end
-
-            commands.execute({ fargs = { "list", "open", "bugs" } })
-
-            assert.same({ "list" }, called_bd_args)
-        end)
-    end)
-
-    describe("ready command", function()
-        it("builds bd_args with 'ready' command", function()
-            local called_bd_args
-            mock_beads.execute_with_ui = function(bd_args)
-                called_bd_args = bd_args
-            end
-
-            commands.execute({ fargs = { "ready" } })
-
-            assert.same({ "ready" }, called_bd_args)
-        end)
-
-        it("builds filter with type from args", function()
-            local called_filter
-            mock_beads.execute_with_ui = function(_, filter)
-                called_filter = filter
-            end
-
-            commands.execute({ fargs = { "ready", "features" } })
-
-            assert.same({ type = "feature" }, called_filter)
-        end)
-
-        it("preserves bd_args as just 'ready' when type is extracted", function()
-            local called_bd_args
-            mock_beads.execute_with_ui = function(bd_args)
-                called_bd_args = bd_args
-            end
-
-            commands.execute({ fargs = { "ready", "features" } })
-
-            assert.same({ "ready" }, called_bd_args)
         end)
     end)
 end)
