@@ -17,4 +17,18 @@ ignore = {
 -- Global objects defined by the C code
 read_globals = { "vim" }
 
+-- Spec files have busted globals available
+files["spec/**/*.lua"] = {
+  read_globals = {
+    "describe",
+    "it",
+    "before_each",
+    "after_each",
+    "setup",
+    "teardown",
+    "pending",
+    "assert",
+  }
+}
+
 exclude_files = {  }
