@@ -1,3 +1,28 @@
+---@class test_utilities.env
+---Mock Neovim environment for unit tests
+---
+---This module provides comprehensive mocking of Neovim's API, notification system,
+---and system functions to enable isolated unit testing without a running Neovim instance.
+---
+---Usage:
+---  local env = require("test_utilities.env")
+---
+---  before_each(function()
+---    env.setup_mock_env({
+---      expand_cword = "bd-123",  -- Mock vim.fn.expand("<cWORD>")
+---      expand_cfile = "test.lua" -- Mock vim.fn.expand("<cfile>")
+---    })
+---  end)
+---
+---  after_each(function()
+---    env.teardown_mock_env()
+---  end)
+---
+---  it("should notify on error", function()
+---    some_function_that_errors()
+---    local errors = env.get_error_notifications()
+---    assert.equals(1, #errors)
+---  end)
 local M = {}
 
 local original_vim_api_create_buf
@@ -12,21 +37,50 @@ local original_vim_system
 local original_vim_keymap
 local original_vim_fn
 
--- Mock state variables
+---Mock state: Buffer number returned by nvim_create_buf
 M.created_bufnr = 42
+
+---Mock state: Name set via nvim_buf_set_name
 M.buffer_name = nil
+
+---Mock state: Lines set via nvim_buf_set_lines (array of strings)
 M.buffer_lines = nil
+
+---Mock state: Buffer-local options set via nvim_set_option_value
+---Format: {[bufnr] = {[option] = value}}
 M.buffer_options = {}
+
+---Mock state: Current buffer number set via nvim_set_current_buf
 M.current_buf = nil
+
+---Mock state: Cursor position set via nvim_win_set_cursor ([line, col])
 M.cursor_position = nil
+
+---Mock state: All vim.notify calls captured here
+---Format: {{message = "text", level = vim.log.levels.ERROR}, ...}
 M.notifications = {}
+
+---Mock state: All vim.system commands captured here
+---Format: {{command = {...}, opts = {...}}, ...}
 M.system_commands = {}
+
+---Mock state: All vim.keymap.set calls captured here
+---Format: {{mode = "n", lhs = "<leader>x", rhs = fn, opts = {...}}, ...}
 M.keymaps = {}
 
---- Sets up a mocked Neovim environment for testing.
--- Mocks `vim.api` functions, `vim.notify`, and `vim.system`.
--- Stores mock state in `M.created_bufnr`, `M.buffer_name`, etc.
-function M.setup_mock_env()
+---Sets up a mocked Neovim environment for testing
+---
+---Mocks vim.api buffer functions, vim.notify, vim.system, vim.keymap, and vim.fn.
+---All mock state is stored in M.* variables (see module documentation).
+---
+---@param config? table Optional configuration for vim.fn mocks
+---@param config.expand_cword? string Value to return for vim.fn.expand("<cWORD>")
+---@param config.expand_cfile? string Value to return for vim.fn.expand("<cfile>")
+---
+---Example:
+---  env.setup_mock_env({expand_cword = "bd-123"})
+---  -- Now vim.fn.expand("<cWORD>") returns "bd-123"
+function M.setup_mock_env(config)
     -- Save originals
     original_vim_api_create_buf = vim.api.nvim_create_buf
     original_vim_api_set_name = vim.api.nvim_buf_set_name
@@ -144,6 +198,7 @@ function M.setup_mock_env()
     }
 
     -- Mock vim.fn
+    config = config or {}
     vim.fn = {
         bufnr = function(name)
             if name == M.buffer_name then
@@ -151,14 +206,22 @@ function M.setup_mock_env()
             end
             return -1
         end,
-        expand = function(_expr)
-            -- Default implementation - tests can override
+        expand = function(expr)
+            -- Check config for common patterns
+            if expr == "<cWORD>" and config.expand_cword then
+                return config.expand_cword
+            elseif expr == "<cfile>" and config.expand_cfile then
+                return config.expand_cfile
+            end
+            -- Default implementation - returns empty string
             return ""
         end,
     }
 end
 
---- Restores the original Neovim functions.
+---Restores the original Neovim functions
+---
+---Call this in after_each() to clean up after tests
 function M.teardown_mock_env()
     vim.api.nvim_create_buf = original_vim_api_create_buf
     vim.api.nvim_buf_set_name = original_vim_api_set_name
@@ -171,6 +234,88 @@ function M.teardown_mock_env()
     vim.system = original_vim_system
     vim.keymap = original_vim_keymap
     vim.fn = original_vim_fn
+end
+
+---Set the value returned by vim.fn.expand("<cWORD>")
+---
+---Useful for tests that extract issue IDs from cursor position
+---@param word string The word to return (e.g., "bd-123")
+---
+---Example:
+---  env.set_cursor_word("bd-456")
+---  assert.equals("bd-456", vim.fn.expand("<cWORD>"))
+function M.set_cursor_word(word)
+    local original_expand = vim.fn.expand
+    vim.fn.expand = function(expr)
+        if expr == "<cWORD>" then
+            return word
+        end
+        return original_expand(expr)
+    end
+end
+
+---Set the value returned by vim.fn.expand("<cfile>")
+---
+---Useful for tests that extract filenames from cursor position
+---@param filename string The filename to return (e.g., "test.lua")
+---
+---Example:
+---  env.set_cursor_file("init.lua")
+---  assert.equals("init.lua", vim.fn.expand("<cfile>"))
+function M.set_cursor_file(filename)
+    local original_expand = vim.fn.expand
+    vim.fn.expand = function(expr)
+        if expr == "<cfile>" then
+            return filename
+        end
+        return original_expand(expr)
+    end
+end
+
+---Get all error notifications (vim.log.levels.ERROR)
+---@return table[] Array of notification tables with 'message' and 'level' fields
+---
+---Example:
+---  local errors = env.get_error_notifications()
+---  assert.equals(1, #errors)
+---  assert.matches("Failed to", errors[1].message)
+function M.get_error_notifications()
+    local errors = {}
+    for _, notif in ipairs(M.notifications) do
+        if notif.level == vim.log.levels.ERROR then
+            table.insert(errors, notif)
+        end
+    end
+    return errors
+end
+
+---Get all warning notifications (vim.log.levels.WARN)
+---@return table[] Array of notification tables with 'message' and 'level' fields
+---
+---Example:
+---  local warnings = env.get_warning_notifications()
+---  assert.equals(0, #warnings)
+function M.get_warning_notifications()
+    local warnings = {}
+    for _, notif in ipairs(M.notifications) do
+        if notif.level == vim.log.levels.WARN then
+            table.insert(warnings, notif)
+        end
+    end
+    return warnings
+end
+
+---Clear all captured notifications
+---
+---Useful when you need to reset notification state mid-test
+---
+---Example:
+---  some_function() -- might notify
+---  env.clear_notifications()
+---  another_function()
+---  assert.equals(0, #env.notifications) -- only captures notifications after clear
+function M.clear_notifications()
+    M.notifications = {}
 end
 
 return M
