@@ -3,11 +3,13 @@
 
 describe("nvim-beads.issue.diff", function()
     local diff
+    local assertions
 
     before_each(function()
         -- Clear the module cache to get fresh instance
         package.loaded["nvim-beads.issue.diff"] = nil
         diff = require("nvim-beads.issue.diff")
+        assertions = require("test_utilities.assertions")
     end)
 
     describe("generate_update_commands", function()
@@ -64,22 +66,11 @@ describe("nvim-beads.issue.diff", function()
 
                 assert.equals(1, #commands)
                 local cmd = commands[1]
-                -- Check that the command has all expected elements
-                assert.equals("bd", cmd[1])
-                assert.equals("update", cmd[2])
-                assert.equals("bd-1", cmd[3])
-                -- Find positions of --title and --priority flags
-                local has_title = false
-                local has_priority = false
-                for i = 4, #cmd, 2 do
-                    if cmd[i] == "--title" and cmd[i + 1] == "Updated Title" then
-                        has_title = true
-                    elseif cmd[i] == "--priority" and cmd[i + 1] == "0" then
-                        has_priority = true
-                    end
-                end
-                assert.is_true(has_title)
-                assert.is_true(has_priority)
+                assertions.assert_bd_command(cmd, "update", { "bd-1" })
+                assertions.assert_command_has_flags(cmd, {
+                    ["--title"] = "Updated Title",
+                    ["--priority"] = "0",
+                })
             end)
         end)
 
@@ -133,22 +124,11 @@ describe("nvim-beads.issue.diff", function()
 
                 assert.equals(1, #commands)
                 local cmd = commands[1]
-                -- Check command structure
-                assert.equals("bd", cmd[1])
-                assert.equals("update", cmd[2])
-                assert.equals("bd-1", cmd[3])
-                -- Find --description and --design flags
-                local has_description = false
-                local has_design = false
-                for i = 4, #cmd, 2 do
-                    if cmd[i] == "--description" and cmd[i + 1] == "New desc" then
-                        has_description = true
-                    elseif cmd[i] == "--design" and cmd[i + 1] == "New design" then
-                        has_design = true
-                    end
-                end
-                assert.is_true(has_description)
-                assert.is_true(has_design)
+                assertions.assert_bd_command(cmd, "update", { "bd-1" })
+                assertions.assert_command_has_flags(cmd, {
+                    ["--description"] = "New desc",
+                    ["--design"] = "New design",
+                })
             end)
         end)
 
@@ -450,29 +430,14 @@ describe("nvim-beads.issue.diff", function()
                 assert.same({ "bd", "label", "add", "bd-1", "backend" }, commands[5])
                 assert.same({ "bd", "update", "bd-1", "--status", "in_progress" }, commands[6])
 
-                -- Command 7 is a combined update with multiple flags - check structure
+                -- Command 7 is a combined update with multiple flags
                 local cmd7 = commands[7]
-                assert.equals("bd", cmd7[1])
-                assert.equals("update", cmd7[2])
-                assert.equals("bd-1", cmd7[3])
-                -- Check for presence of all expected flags
-                local has_title = false
-                local has_priority = false
-                local has_description = false
-                for i = 4, #cmd7, 2 do
-                    if cmd7[i] == "--title" then
-                        has_title = true
-                    end
-                    if cmd7[i] == "--priority" then
-                        has_priority = true
-                    end
-                    if cmd7[i] == "--description" then
-                        has_description = true
-                    end
-                end
-                assert.is_true(has_title)
-                assert.is_true(has_priority)
-                assert.is_true(has_description)
+                assertions.assert_bd_command(cmd7, "update", { "bd-1" })
+                assertions.assert_command_has_flags(cmd7, {
+                    ["--title"] = "Updated Title",
+                    ["--priority"] = "1",
+                    ["--description"] = "New description",
+                })
             end)
         end)
 

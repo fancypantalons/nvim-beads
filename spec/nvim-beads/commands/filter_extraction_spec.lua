@@ -1,6 +1,7 @@
 --- Tests for search, list, and ready command filter extraction
 
 local env = require("test_utilities.env")
+local assertions = require("test_utilities.assertions")
 
 describe("command filter extraction", function()
     local commands
@@ -160,42 +161,21 @@ describe("command filter extraction", function()
 
     describe("search command error handling", function()
         it("errors when no query provided", function()
-            local error_shown = false
-            _G.vim.notify = function(msg, level)
-                if msg:match("query required") and level == vim.log.levels.ERROR then
-                    error_shown = true
-                end
-            end
-
-            commands.execute({ fargs = { "search" } })
-
-            assert.is_true(error_shown)
+            assertions.assert_error_notification(function()
+                commands.execute({ fargs = { "search" } })
+            end, "query required")
         end)
 
         it("errors when only status filter provided", function()
-            local error_shown = false
-            _G.vim.notify = function(msg, level)
-                if msg:match("query required") and level == vim.log.levels.ERROR then
-                    error_shown = true
-                end
-            end
-
-            commands.execute({ fargs = { "search", "open" } })
-
-            assert.is_true(error_shown)
+            assertions.assert_error_notification(function()
+                commands.execute({ fargs = { "search", "open" } })
+            end, "query required")
         end)
 
         it("errors when only type filter provided", function()
-            local error_shown = false
-            _G.vim.notify = function(msg, level)
-                if msg:match("query required") and level == vim.log.levels.ERROR then
-                    error_shown = true
-                end
-            end
-
-            commands.execute({ fargs = { "search", "bugs" } })
-
-            assert.is_true(error_shown)
+            assertions.assert_error_notification(function()
+                commands.execute({ fargs = { "search", "bugs" } })
+            end, "query required")
         end)
     end)
 end)

@@ -18,6 +18,9 @@
 ---    assertions.assert_bd_command(cmd, "update", {"bd-123"})
 ---    assertions.assert_command_has_flags(cmd, {["--title"] = "New"})
 ---  end)
+
+local assert = require("luassert")
+
 local M = {}
 
 ---Assert that a function triggers vim.notify with expected pattern and level

@@ -1,6 +1,8 @@
 --- Unit tests for nvim-beads core module
 --- Tests use mocked vim.system to verify JSON parsing and error handling
 
+local assertions = require("test_utilities.assertions")
+
 describe("nvim-beads.core", function()
     local core
     local original_vim_system
@@ -490,10 +492,7 @@ describe("nvim-beads.core", function()
                 local _, err = core.fetch_template("task")
                 assert.is_nil(err)
                 assert.is_not_nil(executed_cmd)
-                assert.equals("bd", executed_cmd[1])
-                assert.equals("template", executed_cmd[2])
-                assert.equals("show", executed_cmd[3])
-                assert.equals("task", executed_cmd[4])
+                assertions.assert_bd_command(executed_cmd, "template", { "show", "task" })
             end)
 
             it("should include --json flag in command", function()
@@ -517,6 +516,7 @@ describe("nvim-beads.core", function()
                 assert.is_nil(err)
                 assert.is_not_nil(executed_cmd)
 
+                -- Check for --json flag (value doesn't matter, just presence)
                 local has_json = false
                 for _, arg in ipairs(executed_cmd) do
                     if arg == "--json" then
@@ -875,18 +875,7 @@ describe("nvim-beads.core", function()
         end)
 
         it("should show error when telescope is not installed", function()
-            local notify_called = false
-            local notify_msg = nil
-            local notify_level = nil
-
-            local original_notify = vim.notify
             local original_pcall = _G.pcall
-
-            vim.notify = function(msg, level)
-                notify_called = true
-                notify_msg = msg
-                notify_level = level
-            end
 
             -- Mock pcall to make require("telescope") fail
             _G.pcall = function(fn, ...)
@@ -896,14 +885,11 @@ describe("nvim-beads.core", function()
                 return original_pcall(fn, ...)
             end
 
-            core.show_issues({ "list" }, {})
+            assertions.assert_error_notification(function()
+                core.show_issues({ "list" }, {})
+            end, "Telescope not found")
 
-            vim.notify = original_notify
             _G.pcall = original_pcall
-
-            assert.is_true(notify_called)
-            assert.matches("Telescope not found", notify_msg)
-            assert.equals(vim.log.levels.ERROR, notify_level)
         end)
 
         it("should handle nil opts", function()
@@ -1039,42 +1025,19 @@ describe("nvim-beads.core", function()
         end)
 
         it("should show error when args is empty", function()
-            local notify_called = false
-            local notify_msg = nil
-
-            local original_notify = vim.notify
-            vim.notify = function(msg, _)
-                notify_called = true
-                notify_msg = msg
-            end
-
             -- Reload core to ensure it picks up our vim.notify mock
             package.loaded["nvim-beads.core"] = nil
             local test_core = require("nvim-beads.core")
 
-            test_core.execute_with_ui({})
-
-            vim.notify = original_notify
-
-            assert.is_true(notify_called, "vim.notify should have been called, got: " .. tostring(notify_called))
-            assert.is_not_nil(notify_msg, "notify message should not be nil")
-            assert.is_string(notify_msg, "notify_msg should be a string, got: " .. type(notify_msg))
-            assert.matches("non%-empty table", notify_msg)
+            assertions.assert_error_notification(function()
+                test_core.execute_with_ui({})
+            end, "non%-empty table")
         end)
 
         it("should show error when args is not a table", function()
-            local notify_called = false
-
-            local original_notify = vim.notify
-            vim.notify = function()
-                notify_called = true
-            end
-
-            core.execute_with_ui("not a table")
-
-            vim.notify = original_notify
-
-            assert.is_true(notify_called)
+            assertions.assert_error_notification(function()
+                core.execute_with_ui("not a table")
+            end, ".")
         end)
 
         it("should handle nil opts", function()
