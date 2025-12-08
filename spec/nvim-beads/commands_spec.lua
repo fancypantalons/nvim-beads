@@ -1,6 +1,8 @@
 --- Unit tests for nvim-beads.issue.diff generate_update_commands function
 --- Tests command generation from diff changes to bd CLI commands
 
+local env = require("test_utilities.env")
+
 describe("nvim-beads.issue.diff", function()
     local diff
 
@@ -507,10 +509,7 @@ describe("search command", function()
     local mock_constants
 
     before_each(function()
-        -- Mock vim.notify
-        _G.vim = _G.vim or {}
-        _G.vim.notify = function() end
-        _G.vim.log = { levels = { ERROR = 1 } }
+        env.setup_mock_env()
 
         -- Mock constants
         mock_constants = {
@@ -547,6 +546,10 @@ describe("search command", function()
         -- Load commands module
         package.loaded["nvim-beads.commands"] = nil
         commands = require("nvim-beads.commands")
+    end)
+
+    after_each(function()
+        env.teardown_mock_env()
     end)
 
     describe("argument parsing", function()
@@ -698,17 +701,7 @@ describe("execute_with_ui", function()
     local mock_util
 
     before_each(function()
-        -- Setup vim environment
-        _G.vim = _G.vim or {}
-        _G.vim.notify = function() end
-        _G.vim.log = { levels = { ERROR = 1 } }
-        _G.vim.list_slice = function(tbl, start, finish)
-            local result = {}
-            for i = start, finish or #tbl do
-                table.insert(result, tbl[i])
-            end
-            return result
-        end
+        env.setup_mock_env()
 
         -- Mock util module
         mock_util = {
@@ -727,6 +720,10 @@ describe("execute_with_ui", function()
 
         -- Replace show_issues with mock
         core.show_issues = mock_beads.show_issues
+    end)
+
+    after_each(function()
+        env.teardown_mock_env()
     end)
 
     describe("telescope routing", function()
@@ -954,10 +951,7 @@ describe("list and ready commands", function()
     local mock_constants
 
     before_each(function()
-        -- Mock vim environment
-        _G.vim = _G.vim or {}
-        _G.vim.notify = function() end
-        _G.vim.log = { levels = { ERROR = 1, INFO = 2 } }
+        env.setup_mock_env()
 
         -- Mock constants
         mock_constants = {
@@ -994,6 +988,10 @@ describe("list and ready commands", function()
         -- Load commands module
         package.loaded["nvim-beads.commands"] = nil
         commands = require("nvim-beads.commands")
+    end)
+
+    after_each(function()
+        env.teardown_mock_env()
     end)
 
     describe("list command", function()

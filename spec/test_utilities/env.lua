@@ -217,6 +217,15 @@ function M.setup_mock_env(config)
             return ""
         end,
     }
+
+    -- Mock vim.list_slice (used by some commands code)
+    vim.list_slice = function(tbl, start, finish)
+        local result = {}
+        for i = start, finish or #tbl do
+            table.insert(result, tbl[i])
+        end
+        return result
+    end
 end
 
 ---Restores the original Neovim functions
